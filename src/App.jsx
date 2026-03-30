@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from './lib/supabase'
+import Auth from './components/Auth'
 
 const CRYPTO_MARKETS = [
   { id: '1', question: 'Will Bitcoin be above $90k on April 30?', outcomePrices: ['0.62', '0.38'], change: '+2.3%', volume: 145000 },
@@ -62,13 +64,11 @@ function Chart({ market }) {
 
   const scaleP = v => chartH - ((v - minP) / (maxP - minP)) * (chartH - pad * 2) - pad
   const scaleV = v => volH - (v / maxVol) * (volH - 4)
-
   const totalW = candles.length * W + 60
 
   return (
     <div style={{ overflowX: 'auto', marginTop: '12px' }}>
       <svg width={totalW} height={chartH + volH + 24}>
-        {/* Price labels */}
         {[0, 0.25, 0.5, 0.75, 1].map(t => {
           const val = minP + (maxP - minP) * (1 - t)
           const y = pad + t * (chartH - pad * 2)
@@ -79,32 +79,20 @@ function Chart({ market }) {
             </g>
           )
         })}
-
-        {/* Candles */}
         {candles.map((c, i) => {
           const isUp = c.close >= c.open
           const color = isUp ? '#26a69a' : '#ef5350'
           const bodyTop = scaleP(Math.max(c.open, c.close))
           const bodyH = Math.max(1, Math.abs(scaleP(c.open) - scaleP(c.close)))
           const x = i * W + W / 2
-
           return (
             <g key={i}>
               <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} />
               <rect x={i * W + 2} y={bodyTop} width={W - 4} height={bodyH} fill={color} />
-              {/* Volume bar */}
-              <rect
-                x={i * W + 2}
-                y={chartH + scaleV(c.volume)}
-                width={W - 4}
-                height={volH - scaleV(c.volume)}
-                fill={isUp ? '#1a3a38' : '#3a1a1a'}
-              />
+              <rect x={i * W + 2} y={chartH + scaleV(c.volume)} width={W - 4} height={volH - scaleV(c.volume)} fill={isUp ? '#1a3a38' : '#3a1a1a'} />
             </g>
           )
         })}
-
-        {/* Volume label */}
         <text x={4} y={chartH + 12} fill="#555" fontSize={9}>VOLUME</text>
         <line x1={0} y1={chartH + 2} x2={totalW - 50} y2={chartH + 2} stroke="#333" strokeWidth={1} />
       </svg>
@@ -113,11 +101,19 @@ function Chart({ market }) {
 }
 
 export default function App() {
+  // ALL hooks must be at the top — before any return
+  const [user, setUser] = useState(null)
   const [selected, setSelected] = useState(null)
   const [prices, setPrices] = useState(CRYPTO_MARKETS)
   const [analysis, setAnalysis] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [lastUpdate, setLastUpdate] = useState(new Date())
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null)
+    })
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -154,6 +150,9 @@ export default function App() {
     setAnalyzing(false)
   }
 
+  // NOW it's safe to return early after all hooks
+  if (!user) return <Auth onLogin={setUser} />
+
   const selectedLive = prices.find(m => m.id === selected?.id)
 
   return (
@@ -161,22 +160,24 @@ export default function App() {
 
       {/* Left Panel */}
       <div style={{ width: '280px', borderRight: '1px solid #2a2a2a', display: 'flex', flexDirection: 'column', background: '#1e222d' }}>
-        
-        {/* Header */}
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#fff', fontWeight: '600', fontSize: '14px' }}>📈 Markets</span>
-          <span style={{ color: '#26a69a', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '6px', height: '6px', background: '#26a69a', borderRadius: '50%', display: 'inline-block' }} />
-            LIVE
-          </span>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <span style={{ color: '#26a69a', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ width: '6px', height: '6px', background: '#26a69a', borderRadius: '50%', display: 'inline-block' }} />
+              LIVE
+            </span>
+            <span
+              onClick={async () => { await supabase.auth.signOut(); setUser(null) }}
+              style={{ color: '#555', fontSize: '11px', cursor: 'pointer' }}
+            >
+              Logout
+            </span>
+          </div>
         </div>
-
-        {/* Timestamp */}
         <div style={{ padding: '6px 16px', borderBottom: '1px solid #2a2a2a', color: '#555', fontSize: '11px' }}>
-          {lastUpdate.toLocaleTimeString()}
+          {user.email} · {lastUpdate.toLocaleTimeString()}
         </div>
-
-        {/* Market List */}
         <div style={{ overflowY: 'auto', flex: 1 }}>
           {prices.map(market => {
             const yes = (parseFloat(market.outcomePrices[0]) * 100).toFixed(1)
@@ -187,9 +188,7 @@ export default function App() {
                 key={market.id}
                 onClick={() => { setSelected(market); setAnalysis('') }}
                 style={{
-                  padding: '10px 16px',
-                  borderBottom: '1px solid #2a2a2a',
-                  cursor: 'pointer',
+                  padding: '10px 16px', borderBottom: '1px solid #2a2a2a', cursor: 'pointer',
                   background: isSelected ? '#2a2d3a' : 'transparent',
                   borderLeft: isSelected ? '2px solid #2962ff' : '2px solid transparent',
                 }}
@@ -201,7 +200,6 @@ export default function App() {
                   <span style={{ color: '#26a69a', fontWeight: '600' }}>{yes}%</span>
                   <span style={{ color: isUp ? '#26a69a' : '#ef5350', fontSize: '11px' }}>{market.change}</span>
                 </div>
-                {/* Progress bar */}
                 <div style={{ marginTop: '6px', height: '3px', background: '#2a2a2a', borderRadius: '2px' }}>
                   <div style={{ width: yes + '%', height: '100%', background: parseFloat(yes) > 50 ? '#26a69a' : '#ef5350', borderRadius: '2px' }} />
                 </div>
@@ -215,7 +213,6 @@ export default function App() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {selectedLive ? (
           <>
-            {/* Top bar */}
             <div style={{ padding: '12px 20px', borderBottom: '1px solid #2a2a2a', background: '#1e222d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ color: '#fff', fontWeight: '600', fontSize: '14px' }}>{selectedLive.question}</div>
@@ -236,13 +233,9 @@ export default function App() {
                 </div>
               </div>
             </div>
-
-            {/* Chart area */}
             <div style={{ flex: 1, padding: '16px 20px', overflowY: 'auto' }}>
               <div style={{ color: '#555', fontSize: '11px', marginBottom: '4px' }}>5-MIN · PROBABILITY CHART</div>
               <Chart market={selectedLive} />
-
-              {/* AI Analysis */}
               <div style={{ marginTop: '24px', padding: '16px', background: '#1e222d', borderRadius: '6px', border: '1px solid #2a2a2a' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <span style={{ color: '#fff', fontWeight: '600' }}>🤖 AI Analysis</span>
@@ -268,7 +261,7 @@ export default function App() {
             </div>
           </>
         ) : (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', color: '#555' }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '40px' }}>📈</div>
             <div style={{ fontSize: '16px', color: '#666' }}>Select a market to view chart</div>
             <div style={{ fontSize: '12px', color: '#444' }}>Live candlestick charts with AI analysis</div>
