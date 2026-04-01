@@ -453,7 +453,7 @@ function CopyTrading({ onClose }) {
   )
 }
 
-// Main App - Logo always visible, clicking toggles menu items only
+// Main App - PolyTrader logo always visible, clicking toggles only the nav menu
 export default function App() {
   const [user, setUser] = useState(null)
   const [view, setView] = useState('dashboard')
@@ -464,7 +464,7 @@ export default function App() {
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [pulse, setPulse] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  const [menuOpen, setMenuOpen] = useState(true)   // Controls visibility of nav items
+  const [menuOpen, setMenuOpen] = useState(true)   // Controls visibility of nav items only
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
@@ -538,10 +538,10 @@ export default function App() {
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
       `}</style>
 
-      {/* Left Sidebar - Logo always visible */}
+      {/* Sidebar - Logo always visible */}
       <div style={{ width: 220, borderRight: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', background: 'rgba(10,10,26,0.9)', flexShrink: 0 }}>
         
-        {/* Logo - Always Visible & Clickable */}
+        {/* PolyTrader Logo - Always Visible & Clickable */}
         <div 
           style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer' }} 
           onClick={() => setMenuOpen(!menuOpen)}
@@ -555,7 +555,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Navigation Menu - Toggles */}
+        {/* Navigation Menu - Toggles when logo is clicked */}
         {menuOpen && (
           <div style={{ flex: 1, padding: '12px 10px' }}>
             {NAV_ITEMS.map(item => (
@@ -590,7 +590,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {isMobile && (
           <div style={{ padding: '12px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(10,10,26,0.9)' }}>
