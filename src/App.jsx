@@ -18,13 +18,6 @@ const PORTFOLIO = [
   { market: 'Will XRP be above $3?', side: 'YES', shares: 100, avgPrice: 0.38, current: 0.44 },
 ]
 
-const RECENT_DEPOSITS = [
-  { id: 1, crypto: 'USDT', amount: 1250.00, date: '2 hours ago', status: 'Completed' },
-  { id: 2, crypto: 'BTC',  amount: 0.042,   date: 'Yesterday',   status: 'Completed' },
-  { id: 3, crypto: 'ETH',  amount: 1.85,    date: '3 days ago',  status: 'Completed' },
-  { id: 4, crypto: 'USDC', amount: 800.00,  date: '5 days ago',  status: 'Completed' },
-]
-
 const T = {
   bg0: '#0a0a1a', bg1: '#0f0f23', bg2: '#14142e', bg3: '#1a1a38', bgCard: '#111128',
   border: 'rgba(255,255,255,0.06)', borderHi: 'rgba(255,255,255,0.12)',
@@ -36,7 +29,7 @@ const T = {
   sans: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
 }
 
-function DashboardPage({ user }) {
+function DashboardPage({ user, recentDeposits }) {
   const totalPnL = PORTFOLIO.reduce((sum, p) => sum + (p.current - p.avgPrice) * p.shares, 0)
   const totalValue = PORTFOLIO.reduce((sum, p) => sum + p.current * p.shares, 0)
 
@@ -72,10 +65,10 @@ function DashboardPage({ user }) {
         ))}
       </div>
 
-      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16, marginBottom: 24 }}>
+      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16 }}>
         <div style={{ color: T.text0, fontWeight: 600, marginBottom: 12 }}>💸 Recent Deposits & Transactions</div>
-        {RECENT_DEPOSITS.map((dep, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < RECENT_DEPOSITS.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+        {recentDeposits.map((dep, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < recentDeposits.length - 1 ? `1px solid ${T.border}` : 'none' }}>
             <div>
               <div style={{ color: T.text1 }}>{dep.crypto} Deposit</div>
               <div style={{ color: T.text2, fontSize: 12 }}>{dep.date}</div>
@@ -104,44 +97,135 @@ function MarketsPage({ prices, selected, setSelected }) {
   )
 }
 
-function DepositsPage() {
+function DepositsPage({ onDepositSuccess }) {
   const [selectedCrypto, setSelectedCrypto] = useState(null)
   const [amount, setAmount] = useState('')
 
   const cryptos = [
-    { symbol: 'BTC', name: 'Bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png' },
-    { symbol: 'ETH', name: 'Ethereum', logo: 'https://cryptologos.cc/logos/ethereum-eth-logo.png' },
-    { symbol: 'USDT', name: 'Tether', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png' },
-    { symbol: 'USDC', name: 'USD Coin', logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png' },
+    { 
+      symbol: 'BTC', 
+      name: 'Bitcoin', 
+      logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png',
+      address: 'bc1qxy2kdyz3f3y3f3y3f3y3f3y3f3y3f3y3f3y3f'
+    },
+    { 
+      symbol: 'ETH', 
+      name: 'Ethereum', 
+      logo: 'https://cryptologos.cc/logos/ethereum-eth-logo.png',
+      address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
+    },
+    { 
+      symbol: 'USDT', 
+      name: 'Tether (USDT)', 
+      logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png',
+      address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
+    },
+    { 
+      symbol: 'USDC', 
+      name: 'USD Coin (USDC)', 
+      logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png',
+      address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
+    },
   ]
+
+  const handleConfirmDeposit = () => {
+    if (!amount || !selectedCrypto) return
+
+    const newDeposit = {
+      id: Date.now(),
+      crypto: selectedCrypto.symbol,
+      amount: parseFloat(amount),
+      date: 'Just now',
+      status: 'Pending Confirmation'
+    }
+
+    onDepositSuccess(newDeposit)
+    alert(`Deposit of ${amount} ${selectedCrypto.symbol} submitted. Waiting for confirmations...`)
+    setSelectedCrypto(null)
+    setAmount('')
+  }
 
   return (
     <div style={{ padding: '20px', color: T.text0 }}>
       <h2>💰 Deposit Funds</h2>
+      <p style={{ color: T.text2, marginBottom: 24 }}>Select a cryptocurrency to deposit</p>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {cryptos.map(c => (
-          <div key={c.symbol} onClick={() => setSelectedCrypto(c)} style={{ background: T.bgCard, padding: 20, borderRadius: 12, textAlign: 'center', cursor: 'pointer' }}>
-            <img src={c.logo} alt={c.symbol} style={{ width: 60, height: 60 }} onError={(e) => e.target.src = 'https://via.placeholder.com/60?text=' + c.symbol} />
-            <div style={{ marginTop: 12, fontWeight: 600 }}>{c.symbol}</div>
+          <div 
+            key={c.symbol} 
+            onClick={() => setSelectedCrypto(c)} 
+            style={{ 
+              background: T.bgCard, 
+              padding: 20, 
+              borderRadius: 16, 
+              textAlign: 'center', 
+              cursor: 'pointer',
+              border: `2px solid ${T.border}`,
+              transition: 'all 0.2s'
+            }}
+          >
+            <img 
+              src={c.logo} 
+              alt={c.symbol} 
+              style={{ width: 72, height: 72, marginBottom: 16 }} 
+              onError={(e) => e.target.src = 'https://via.placeholder.com/72?text=' + c.symbol} 
+            />
+            <div style={{ fontSize: 20, fontWeight: 700, color: T.text0 }}>{c.symbol}</div>
+            <div style={{ fontSize: 13, color: T.text2 }}>{c.name}</div>
           </div>
         ))}
       </div>
 
+      {/* Deposit Modal */}
       {selectedCrypto && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: T.bgCard, padding: 24, borderRadius: 16, width: '90%', maxWidth: 420, position: 'relative' }}>
-            <button onClick={() => setSelectedCrypto(null)} style={{ position: 'absolute', top: 16, right: 16, fontSize: 24, background: 'none', border: 'none', color: T.text2 }}>✕</button>
-            <h3>Deposit {selectedCrypto.symbol}</h3>
-            <input 
-              type="number" 
-              placeholder="Amount" 
-              value={amount} 
-              onChange={e => setAmount(e.target.value)} 
-              style={{ width: '100%', padding: 12, margin: '16px 0', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0 }} 
-            />
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: T.bgCard, padding: 28, borderRadius: 20, width: '92%', maxWidth: 460, position: 'relative' }}>
+            
             <button 
-              onClick={() => { alert(`Simulated deposit of ${amount || 0} ${selectedCrypto.symbol}`); setSelectedCrypto(null); setAmount(''); }} 
-              style={{ width: '100%', padding: 14, background: T.blue, color: '#fff', border: 'none', borderRadius: 12 }}
+              onClick={() => { setSelectedCrypto(null); setAmount(''); }}
+              style={{ position: 'absolute', top: 20, right: 24, fontSize: 28, background: 'none', border: 'none', color: T.text2, cursor: 'pointer' }}
+            >
+              ✕
+            </button>
+
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <img src={selectedCrypto.logo} alt={selectedCrypto.symbol} style={{ width: 80, height: 80, marginBottom: 12 }} onError={(e) => e.target.src = 'https://via.placeholder.com/80?text=' + selectedCrypto.symbol} />
+              <div style={{ fontSize: 22, fontWeight: 700, color: T.text0 }}>Deposit {selectedCrypto.symbol}</div>
+            </div>
+
+            <div style={{ background: '#0a0a1a', borderRadius: 14, padding: 20, textAlign: 'center', marginBottom: 24, border: `1px solid ${T.border}` }}>
+              <div style={{ fontSize: 13, color: T.text2, marginBottom: 12 }}>Send only {selectedCrypto.symbol} to this address</div>
+              <div style={{ width: 180, height: 180, margin: '0 auto 16px', background: '#111', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60, color: '#555', border: '2px dashed rgba(255,255,255,0.2)' }}>QR</div>
+              <div style={{ fontSize: 12, color: T.text2, wordBreak: 'break-all', userSelect: 'all' }}>{selectedCrypto.address}</div>
+            </div>
+
+            <button 
+              onClick={() => navigator.clipboard.writeText(selectedCrypto.address).then(() => alert('Address copied!'))}
+              style={{ width: '100%', padding: '12px', background: T.blueDim, color: T.blue, border: 'none', borderRadius: 12, fontWeight: 600, marginBottom: 20 }}
+            >
+              📋 Copy Address
+            </button>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ color: T.text2, fontSize: 13.5, marginBottom: 8 }}>Deposit Amount</div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <input 
+                  type="number" 
+                  step="0.000001" 
+                  value={amount} 
+                  onChange={e => setAmount(e.target.value)} 
+                  placeholder="0.00" 
+                  style={{ flex: 1, background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '16px 18px', color: T.text0, fontSize: 20, fontWeight: 500 }} 
+                />
+                <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '16px 22px', color: T.text1, fontWeight: 700, fontSize: 18, display: 'flex', alignItems: 'center' }}>{selectedCrypto.symbol}</div>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleConfirmDeposit} 
+              disabled={!amount} 
+              style={{ width: '100%', padding: '17px', background: amount ? T.teal : T.blueDim, color: '#fff', border: 'none', borderRadius: 14, fontSize: 16.5, fontWeight: 700, cursor: amount ? 'pointer' : 'not-allowed' }}
             >
               Confirm Deposit
             </button>
@@ -206,10 +290,15 @@ export default function App() {
   const [view, setView] = useState('dashboard')
   const [showMenu, setShowMenu] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [recentDeposits, setRecentDeposits] = useState(RECENT_DEPOSITS)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
   }, [])
+
+  const handleNewDeposit = (newDeposit) => {
+    setRecentDeposits([newDeposit, ...recentDeposits])
+  }
 
   if (!user) return <Auth onLogin={setUser} />
 
@@ -220,27 +309,17 @@ export default function App() {
     { id: 'deposits', label: 'Deposits', icon: '💰' },
   ]
 
-  const BOTTOM_ITEMS = [
-    { id: 'profile', label: 'Profile', icon: '👤' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' },
-    { id: 'withdraw', label: 'Withdraw', icon: '💸' },
-  ]
-
   const renderPage = () => {
-    if (view === 'dashboard') return <DashboardPage user={user} />
+    if (view === 'dashboard') return <DashboardPage user={user} recentDeposits={recentDeposits} />
     if (view === 'markets') return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} />
     if (view === 'copy') return <CopyTrading />
-    if (view === 'deposits') return <DepositsPage />
-    if (view === 'profile') return <div style={{ padding: '40px', color: T.text0, textAlign: 'center' }}>👤 Profile Page</div>
-    if (view === 'settings') return <div style={{ padding: '40px', color: T.text0, textAlign: 'center' }}>⚙️ Settings Page</div>
-    if (view === 'withdraw') return <div style={{ padding: '40px', color: T.text0, textAlign: 'center' }}>💸 Withdraw Page</div>
+    if (view === 'deposits') return <DepositsPage onDepositSuccess={handleNewDeposit} />
     return null
   }
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: T.bg0, color: T.text0, fontFamily: T.sans }}>
 
-      {/* Sidebar */}
       <div style={{ 
         width: showMenu ? 220 : 72, 
         borderRight: `1px solid ${T.border}`, 
@@ -251,7 +330,6 @@ export default function App() {
         transition: 'width 0.3s ease'
       }}>
 
-        {/* PolyTrader Logo - Always Visible */}
         <div 
           onClick={() => setShowMenu(!showMenu)}
           style={{ padding: '20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
@@ -265,7 +343,6 @@ export default function App() {
           )}
         </div>
 
-        {/* Main Navigation */}
         {showMenu && (
           <div style={{ flex: 1, padding: '12px 10px' }}>
             {NAV_ITEMS.map(item => (
@@ -294,35 +371,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Profile, Settings, Withdraw */}
-        {showMenu && (
-          <div style={{ padding: '0 10px 10px' }}>
-            {BOTTOM_ITEMS.map(item => (
-              <div 
-                key={item.id}
-                onClick={() => {
-                  setView(item.id)
-                  setShowMenu(false)
-                }}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 10, 
-                  padding: '10px 12px', 
-                  borderRadius: 10, 
-                  marginBottom: 4, 
-                  cursor: 'pointer', 
-                  color: T.text1 
-                }}
-              >
-                <span style={{ fontSize: 16 }}>{item.icon}</span>
-                {item.label}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Logout */}
         <div style={{ padding: 16, borderTop: `1px solid ${T.border}` }}>
           <button onClick={async () => { await supabase.auth.signOut(); setUser(null) }} style={{ width: '100%', padding: 8, background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text1 }}>
             Log out
@@ -330,7 +378,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div style={{ flex: 1, overflow: 'auto' }}>
         {renderPage()}
       </div>
