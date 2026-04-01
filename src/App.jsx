@@ -36,32 +36,170 @@ const T = {
   sans: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
 }
 
-function DashboardPage({ user }) {
+function Chart({ market }) {
+  const [candles, setCandles] = useState([])
+  useEffect(() => {
+    let price = parseFloat(market.outcomePrices[0])
+    const initial = Array.from({ length: 42 }, (_, i) => {
+      const open = price
+      const change = (Math.random() - 0.48) * 0.04
+      const close = Math.min(0.99, Math.max(0.01, open + change))
+      const high = Math.max(open, close) + Math.random() * 0.012
+      const low = Math.min(open, close) - Math.random() * 0.012
+      price = close
+      return { time: i, open, close, high, low, volume: Math.floor(Math.random() * 50000 + 10000) }
+    })
+    setCandles(initial)
+  }, [market])
+
+  if (!candles.length) return null
+
+  const W = 14, chartH = 160, volH = 36, pad = 6
+  const highs = candles.map(c => c.high), lows = candles.map(c => c.low)
+  const minP = Math.min(...lows), maxP = Math.max(...highs)
+  const maxVol = Math.max(...candles.map(c => c.volume))
+  const scaleP = v => chartH - ((v - minP) / (maxP - minP)) * (chartH - pad * 2) - pad
+  const scaleV = v => volH - (v / maxVol) * (volH - 3)
+  const totalW = candles.length * W + 52
+
   return (
-    <div style={{ padding: '20px', color: T.text0 }}>
-      <h2>Welcome back 👋</h2>
-      <p style={{ color: T.text2 }}>{user.email}</p>
-      <p>Dashboard content goes here...</p>
+    <div style={{ overflowX: 'auto', marginTop: 10 }}>
+      <svg width={totalW} height={chartH + volH + 20}>
+        {candles.map((c, i) => {
+          const isUp = c.close >= c.open
+          const color = isUp ? T.teal : T.red
+          const bodyTop = scaleP(Math.max(c.open, c.close))
+          const bodyH = Math.max(1, Math.abs(scaleP(c.open) - scaleP(c.close)))
+          const x = i * W + W / 2
+          return (
+            <g key={i}>
+              <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} opacity={0.6} />
+              <rect x={i * W + 2} y={bodyTop} width={W - 4} height={bodyH} fill={color} opacity={0.85} rx={1} />
+              <rect x={i * W + 2} y={chartH + scaleV(c.volume)} width={W - 4} height={volH - scaleV(c.volume)} fill={isUp ? T.teal : T.red} opacity={0.2} rx={1} />
+            </g>
+          )
+        })}
+      </svg>
     </div>
   )
 }
 
-function MarketsPage() {
-  return <div style={{ padding: '20px', color: T.text0 }}>Markets Page</div>
+function DashboardPage({ user, prices }) {
+  const totalPnL = PORTFOLIO.reduce((sum, p) => sum + (p.current - p.avgPrice) * p.shares, 0)
+  const totalValue = PORTFOLIO.reduce((sum, p) => sum + p.current * p.shares, 0)
+
+  const [aiInsights, setAiInsights] = useState([
+    "BTC 5m market shows strong bullish momentum.",
+    "ETH short-term volatility is increasing.",
+    "SOL currently has the highest volume."
+  ])
+
+  const refreshInsights = () => {
+    setAiInsights(["New insight 1", "New insight 2", "New insight 3"])
+  }
+
+  return (
+    <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 18 }}>Welcome back 👋</h2>
+      <p style={{ color: T.text2, marginBottom: 20, fontSize: 13 }}>{user.email}</p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 24 }}>
+        {[
+          { label: 'Portfolio Value', value: `$${totalValue.toFixed(2)}`, color: T.text0 },
+          { label: 'Total P&L', value: `+$${totalPnL.toFixed(2)}`, color: T.teal },
+          { label: 'Open Positions', value: PORTFOLIO.length, color: T.blue },
+          { label: 'Live Markets', value: prices.length, color: T.teal },
+        ].map((s, i) => (
+          <div key={i} style={{ background: T.bgCard, borderRadius: 12, padding: '14px 16px', border: `1px solid ${T.border}` }}>
+            <div style={{ color: T.text2, fontSize: 11 }}>{s.label}</div>
+            <div style={{ color: s.color, fontSize: 20, fontWeight: 700, marginTop: 4 }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16, marginBottom: 24 }}>
+        <div style={{ color: T.text0, fontWeight: 600, marginBottom: 12 }}>📊 Open Positions</div>
+        {PORTFOLIO.map((p, i) => (
+          <div key={i} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: i < PORTFOLIO.length-1 ? `1px solid ${T.border}` : 'none' }}>
+            <div style={{ color: T.text1 }}>{p.market}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: p.side === 'YES' ? T.teal : T.red }}>{p.side} • {p.shares} shares</span>
+              <span style={{ color: T.teal }}>${((p.current - p.avgPrice) * p.shares).toFixed(2)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16 }}>
+        <div style={{ color: T.text0, fontWeight: 600, marginBottom: 12 }}>✦ AI Market Insights</div>
+        <button onClick={refreshInsights} style={{ background: T.blueDim, color: T.blue, border: 'none', padding: '6px 12px', borderRadius: 8, marginBottom: 12 }}>Refresh</button>
+        {aiInsights.map((insight, i) => (
+          <div key={i} style={{ color: T.text1, marginBottom: 8 }}>{insight}</div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
-function CopyTrading() {
-  return <div style={{ padding: '20px', color: T.text0 }}>Copy Trade Page</div>
+function MarketsPage({ prices, selected, setSelected }) {
+  return (
+    <div style={{ padding: '20px', color: T.text0 }}>
+      <h2>Live Markets</h2>
+      {prices.map(m => (
+        <div key={m.id} onClick={() => setSelected(m)} style={{ padding: 12, background: T.bgCard, marginBottom: 8, borderRadius: 8, cursor: 'pointer' }}>
+          {m.question}
+        </div>
+      ))}
+    </div>
+  )
 }
 
 function DepositsPage() {
-  return <div style={{ padding: '20px', color: T.text0 }}>Deposits Page</div>
+  const [selectedCrypto, setSelectedCrypto] = useState(null)
+  const [amount, setAmount] = useState('')
+
+  const cryptos = [
+    { symbol: 'BTC', name: 'Bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png' },
+    { symbol: 'ETH', name: 'Ethereum', logo: 'https://cryptologos.cc/logos/ethereum-eth-logo.png' },
+    { symbol: 'USDT', name: 'Tether', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png' },
+    { symbol: 'USDC', name: 'USD Coin', logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png' },
+  ]
+
+  return (
+    <div style={{ padding: '20px', color: T.text0 }}>
+      <h2>💰 Deposits</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+        {cryptos.map(c => (
+          <div key={c.symbol} onClick={() => setSelectedCrypto(c)} style={{ background: T.bgCard, padding: 20, borderRadius: 12, textAlign: 'center', cursor: 'pointer' }}>
+            <img src={c.logo} alt={c.symbol} style={{ width: 60, height: 60 }} onError={(e) => e.target.src = 'https://via.placeholder.com/60?text=' + c.symbol} />
+            <div style={{ marginTop: 12, fontWeight: 600 }}>{c.symbol}</div>
+          </div>
+        ))}
+      </div>
+
+      {selectedCrypto && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: T.bgCard, padding: 24, borderRadius: 16, width: '90%', maxWidth: 420, position: 'relative' }}>
+            <button onClick={() => setSelectedCrypto(null)} style={{ position: 'absolute', top: 16, right: 16, fontSize: 24, background: 'none', border: 'none', color: T.text2 }}>✕</button>
+            <h3>Deposit {selectedCrypto.symbol}</h3>
+            <input type="number" placeholder="Amount" value={amount} onChange={e => setAmount(e.target.value)} style={{ width: '100%', padding: 12, margin: '16px 0', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0 }} />
+            <button onClick={() => { alert(`Simulated deposit of ${amount} ${selectedCrypto.symbol}`); setSelectedCrypto(null); setAmount(''); }} style={{ width: '100%', padding: 14, background: T.blue, color: '#fff', border: 'none', borderRadius: 12 }}>Confirm Deposit</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CopyTrading() {
+  return <div style={{ padding: '20px', color: T.text0 }}>Copy Trading Page</div>
 }
 
 export default function App() {
   const [user, setUser] = useState(null)
   const [view, setView] = useState('dashboard')
   const [showMenu, setShowMenu] = useState(false)
+  const [selected, setSelected] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
@@ -77,8 +215,8 @@ export default function App() {
   ]
 
   const renderPage = () => {
-    if (view === 'dashboard') return <DashboardPage user={user} />
-    if (view === 'markets') return <MarketsPage />
+    if (view === 'dashboard') return <DashboardPage user={user} prices={CRYPTO_MARKETS} />
+    if (view === 'markets') return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} />
     if (view === 'copy') return <CopyTrading />
     if (view === 'deposits') return <DepositsPage />
     return null
@@ -87,10 +225,9 @@ export default function App() {
   return (
     <div style={{ display: 'flex', height: '100vh', background: T.bg0, color: T.text0, fontFamily: T.sans }}>
 
-      {/* Sidebar */}
+      {/* Sidebar with clickable PolyTrader logo */}
       <div style={{ width: 220, borderRight: `1px solid ${T.border}`, background: 'rgba(10,10,26,0.95)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
 
-        {/* PolyTrader Logo - Always Visible */}
         <div 
           onClick={() => setShowMenu(!showMenu)}
           style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer' }}
@@ -104,7 +241,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Dropdown Menu that pops out BELOW the logo */}
+        {/* Dropdown Menu Below Logo */}
         {showMenu && (
           <div style={{ 
             position: 'absolute', 
@@ -142,10 +279,7 @@ export default function App() {
         )}
 
         <div style={{ marginTop: 'auto', padding: 16, borderTop: `1px solid ${T.border}` }}>
-          <button 
-            onClick={async () => { await supabase.auth.signOut(); setUser(null) }} 
-            style={{ width: '100%', padding: 8, background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text1 }}
-          >
+          <button onClick={async () => { await supabase.auth.signOut(); setUser(null) }} style={{ width: '100%', padding: 8, background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text1 }}>
             Log out
           </button>
         </div>
