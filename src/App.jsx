@@ -155,80 +155,15 @@ function DashboardPage({ user }) {
   )
 }
 
-// Original nice Markets Page (side-by-side layout with chart)
-function MarketsPage({ prices, selected, setSelected, analysis, setAnalysis, analyzeMarket, analyzing }) {
-  const selectedLive = prices.find(m => m.id === selected?.id)
-
+function MarketsPage({ prices, selected, setSelected }) {
   return (
-    <div style={{ display: 'flex', flex: 1, overflow: 'hidden', flexDirection: window.innerWidth < 768 ? 'column' : 'row' }}>
-      {/* Market List */}
-      <div style={{ width: window.innerWidth < 768 ? '100%' : 300, borderRight: window.innerWidth >= 768 ? `1px solid ${T.border}` : 'none', borderBottom: window.innerWidth < 768 ? `1px solid ${T.border}` : 'none', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-        <div style={{ padding: '12px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: T.text0 }}>🔴 Live Crypto Markets</span>
-          <span style={{ fontSize: 11, color: T.text2, background: T.purpleDim, padding: '4px 10px', borderRadius: 20 }}>7 active • 5-15m focus</span>
+    <div style={{ padding: '20px', color: T.text0 }}>
+      <h2>Live Crypto Markets</h2>
+      {prices.map(m => (
+        <div key={m.id} onClick={() => setSelected(m)} style={{ padding: 12, background: T.bgCard, marginBottom: 8, borderRadius: 8, cursor: 'pointer' }}>
+          {m.question}
         </div>
-        <div style={{ overflowY: 'auto', flex: 1 }}>
-          {prices.map(market => {
-            const yes = (parseFloat(market.outcomePrices[0]) * 100).toFixed(0)
-            const isUp = market.change.startsWith('+')
-            const isSelected = selected?.id === market.id
-            return (
-              <div key={market.id} onClick={() => { setSelected(market); setAnalysis('') }}
-                style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer', background: isSelected ? T.bg3 : 'transparent', borderLeft: `4px solid ${isSelected ? T.blue : 'transparent'}`, transition: 'all 0.2s' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                  <div style={{ fontSize: 13.5, lineHeight: 1.35, color: isSelected ? T.text0 : T.text1, flex: 1 }}>{market.question}</div>
-                  <div style={{ fontSize: 11, color: T.text2, background: T.bg2, padding: '2px 6px', borderRadius: 4 }}>{market.timeframe}</div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 17, fontWeight: 700, color: parseFloat(yes) > 50 ? T.teal : T.red }}>{yes}%</span>
-                  <span style={{ fontSize: 12, color: isUp ? T.teal : T.red, background: isUp ? T.tealDim : T.redDim, padding: '3px 8px', borderRadius: 6 }}>{market.change}</span>
-                </div>
-                <div style={{ marginTop: 8, fontSize: 11, color: T.text2 }}>Vol ${(market.volume / 1000).toFixed(0)}K</div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Chart + Analysis Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {selectedLive ? (
-          <>
-            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${T.border}`, background: 'rgba(15,15,35,0.6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: T.text0 }}>{selectedLive.question}</div>
-                <div style={{ fontSize: 12, color: T.text2 }}>{selectedLive.timeframe} • Polymarket Crypto</div>
-              </div>
-              <div style={{ display: 'flex', gap: 12 }}>
-                {[{ label: 'YES', val: selectedLive.outcomePrices[0], color: T.teal }, { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red }].map(item => (
-                  <div key={item.label} style={{ textAlign: 'center', background: T.bg2, padding: '8px 18px', borderRadius: 10, minWidth: 90 }}>
-                    <div style={{ fontSize: 11, color: item.color, fontWeight: 600 }}>{item.label}</div>
-                    <div style={{ fontSize: 21, fontWeight: 700, color: item.color }}>{(parseFloat(item.val) * 100).toFixed(0)}%</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-              <div style={{ fontSize: 11, color: T.text2, marginBottom: 8 }}>LIVE PROBABILITY CHART</div>
-              <Chart market={selectedLive} />
-              <div style={{ marginTop: 28, padding: '20px', background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: T.text0 }}>✦ AI Market Analysis</span>
-                  <button onClick={() => alert("AI Analysis would appear here (simulated)")} style={{ background: T.blueDim, color: T.blue, border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                    Get AI Insight
-                  </button>
-                </div>
-                <p style={{ color: T.text1, lineHeight: 1.65, fontSize: 13.5 }}>Click a market on the left to see live chart and analysis.</p>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: T.text2 }}>
-            <div style={{ fontSize: 48, opacity: 0.6 }}>📊</div>
-            <div>Select a live crypto market from the left</div>
-          </div>
-        )}
-      </div>
+      ))}
     </div>
   )
 }
@@ -333,10 +268,8 @@ function CopyTrading() {
 export default function App() {
   const [user, setUser] = useState(null)
   const [view, setView] = useState('dashboard')
-  const [showMenu, setShowMenu] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)   // controls collapsed/expanded state
   const [selected, setSelected] = useState(null)
-  const [analysis, setAnalysis] = useState('')
-  const [analyzing, setAnalyzing] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
@@ -353,7 +286,7 @@ export default function App() {
 
   const renderPage = () => {
     if (view === 'dashboard') return <DashboardPage user={user} />
-    if (view === 'markets') return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} analysis={analysis} setAnalysis={setAnalysis} analyzeMarket={() => alert("AI Analysis")} analyzing={analyzing} />
+    if (view === 'markets') return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} />
     if (view === 'copy') return <CopyTrading />
     if (view === 'deposits') return <DepositsPage />
     return null
@@ -362,61 +295,63 @@ export default function App() {
   return (
     <div style={{ display: 'flex', height: '100vh', background: T.bg0, color: T.text0, fontFamily: T.sans }}>
 
-      {/* Sidebar */}
-      <div style={{ width: 220, borderRight: `1px solid ${T.border}`, background: 'rgba(10,10,26,0.95)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {/* Sidebar - Collapsible */}
+      <div style={{ 
+        width: showMenu ? 220 : 72, 
+        borderRight: `1px solid ${T.border}`, 
+        background: 'rgba(10,10,26,0.95)', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        position: 'relative',
+        transition: 'width 0.3s ease'
+      }}>
 
         {/* PolyTrader Logo - Always Visible */}
         <div 
           onClick={() => setShowMenu(!showMenu)}
-          style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer' }}
+          style={{ padding: '20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff' }}>P</div>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0 }}>P</div>
+          {showMenu && (
             <div>
               <div style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</div>
               <div style={{ fontSize: 10, color: T.text2 }}>Prediction Markets</div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Dropdown Menu Below Logo */}
+        {/* Expanded Menu */}
         {showMenu && (
-          <div style={{ 
-            position: 'absolute', 
-            top: 78, 
-            left: 12, 
-            background: T.bgCard, 
-            border: `1px solid ${T.border}`, 
-            borderRadius: 12, 
-            width: 196, 
-            zIndex: 200,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-          }}>
+          <div style={{ flex: 1, padding: '12px 10px' }}>
             {NAV_ITEMS.map(item => (
               <div 
                 key={item.id}
                 onClick={() => {
                   setView(item.id)
-                  setShowMenu(false)
+                  setShowMenu(false)   // Auto collapse after selecting
                 }}
                 style={{ 
-                  padding: '14px 20px', 
-                  cursor: 'pointer', 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: 12,
-                  color: view === item.id ? T.blue : T.text1,
-                  background: view === item.id ? T.bg3 : 'transparent'
+                  gap: 10, 
+                  padding: '10px 12px', 
+                  borderRadius: 10, 
+                  marginBottom: 4, 
+                  cursor: 'pointer', 
+                  background: view === item.id ? T.bg3 : 'transparent', 
+                  color: view === item.id ? T.text0 : T.text1, 
+                  fontSize: 13, 
+                  fontWeight: view === item.id ? 600 : 400 
                 }}
               >
-                <span style={{ fontSize: 18 }}>{item.icon}</span>
-                <span>{item.label}</span>
+                <span style={{ fontSize: 16 }}>{item.icon}</span>
+                {item.label}
               </div>
             ))}
           </div>
         )}
 
-        <div style={{ marginTop: 'auto', padding: 16, borderTop: `1px solid ${T.border}` }}>
+        <div style={{ padding: 16, borderTop: `1px solid ${T.border}` }}>
           <button onClick={async () => { await supabase.auth.signOut(); setUser(null) }} style={{ width: '100%', padding: 8, background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text1 }}>
             Log out
           </button>
