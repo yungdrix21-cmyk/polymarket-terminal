@@ -36,6 +36,54 @@ const T = {
   sans: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
 }
 
+function Chart({ market }) {
+  const [candles, setCandles] = useState([])
+  useEffect(() => {
+    let price = parseFloat(market.outcomePrices[0])
+    const initial = Array.from({ length: 42 }, (_, i) => {
+      const open = price
+      const change = (Math.random() - 0.48) * 0.04
+      const close = Math.min(0.99, Math.max(0.01, open + change))
+      const high = Math.max(open, close) + Math.random() * 0.012
+      const low = Math.min(open, close) - Math.random() * 0.012
+      price = close
+      return { time: i, open, close, high, low, volume: Math.floor(Math.random() * 50000 + 10000) }
+    })
+    setCandles(initial)
+  }, [market])
+
+  if (!candles.length) return null
+
+  const W = 14, chartH = 160, volH = 36, pad = 6
+  const highs = candles.map(c => c.high), lows = candles.map(c => c.low)
+  const minP = Math.min(...lows), maxP = Math.max(...highs)
+  const maxVol = Math.max(...candles.map(c => c.volume))
+  const scaleP = v => chartH - ((v - minP) / (maxP - minP)) * (chartH - pad * 2) - pad
+  const scaleV = v => volH - (v / maxVol) * (volH - 3)
+  const totalW = candles.length * W + 52
+
+  return (
+    <div style={{ overflowX: 'auto', marginTop: 10 }}>
+      <svg width={totalW} height={chartH + volH + 20}>
+        {candles.map((c, i) => {
+          const isUp = c.close >= c.open
+          const color = isUp ? T.teal : T.red
+          const bodyTop = scaleP(Math.max(c.open, c.close))
+          const bodyH = Math.max(1, Math.abs(scaleP(c.open) - scaleP(c.close)))
+          const x = i * W + W / 2
+          return (
+            <g key={i}>
+              <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} opacity={0.6} />
+              <rect x={i * W + 2} y={bodyTop} width={W - 4} height={bodyH} fill={color} opacity={0.85} rx={1} />
+              <rect x={i * W + 2} y={chartH + scaleV(c.volume)} width={W - 4} height={volH - scaleV(c.volume)} fill={isUp ? T.teal : T.red} opacity={0.2} rx={1} />
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
 function DashboardPage({ user, recentDeposits }) {
   const totalPnL = PORTFOLIO.reduce((sum, p) => sum + (p.current - p.avgPrice) * p.shares, 0)
   const totalValue = PORTFOLIO.reduce((sum, p) => sum + p.current * p.shares, 0)
@@ -92,14 +140,69 @@ function DashboardPage({ user, recentDeposits }) {
 }
 
 function MarketsPage({ prices, selected, setSelected }) {
+  const selectedLive = prices.find(m => m.id === selected?.id)
+
   return (
-    <div style={{ padding: '20px', color: T.text0 }}>
-      <h2>Live Crypto Markets</h2>
-      {prices.map(m => (
-        <div key={m.id} onClick={() => setSelected(m)} style={{ padding: 12, background: T.bgCard, marginBottom: 8, borderRadius: 8, cursor: 'pointer' }}>
-          {m.question}
+    <div style={{ display: 'flex', flex: 1, overflow: 'hidden', flexDirection: window.innerWidth < 768 ? 'column' : 'row' }}>
+      {/* Left - Market List */}
+      <div style={{ width: window.innerWidth < 768 ? '100%' : 300, borderRight: window.innerWidth >= 768 ? `1px solid ${T.border}` : 'none', borderBottom: window.innerWidth < 768 ? `1px solid ${T.border}` : 'none', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '12px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: T.text0 }}>🔴 Live Crypto Markets</span>
+          <span style={{ fontSize: 11, color: T.text2, background: T.purpleDim, padding: '4px 10px', borderRadius: 20 }}>7 active • 5-15m focus</span>
         </div>
-      ))}
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          {prices.map(market => {
+            const yes = (parseFloat(market.outcomePrices[0]) * 100).toFixed(0)
+            const isUp = market.change.startsWith('+')
+            const isSelected = selected?.id === market.id
+            return (
+              <div key={market.id} onClick={() => setSelected(market)}
+                style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer', background: isSelected ? T.bg3 : 'transparent', borderLeft: `4px solid ${isSelected ? T.blue : 'transparent'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13.5, lineHeight: 1.35, color: isSelected ? T.text0 : T.text1, flex: 1 }}>{market.question}</div>
+                  <div style={{ fontSize: 11, color: T.text2, background: T.bg2, padding: '2px 6px', borderRadius: 4 }}>{market.timeframe}</div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 17, fontWeight: 700, color: parseFloat(yes) > 50 ? T.teal : T.red }}>{yes}%</span>
+                  <span style={{ fontSize: 12, color: isUp ? T.teal : T.red, background: isUp ? T.tealDim : T.redDim, padding: '3px 8px', borderRadius: 6 }}>{market.change}</span>
+                </div>
+                <div style={{ marginTop: 8, fontSize: 11, color: T.text2 }}>Vol ${(market.volume / 1000).toFixed(0)}K</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Right - Selected Market + Chart */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {selectedLive ? (
+          <>
+            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${T.border}`, background: 'rgba(15,15,35,0.6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: T.text0 }}>{selectedLive.question}</div>
+                <div style={{ fontSize: 12, color: T.text2 }}>{selectedLive.timeframe} • Polymarket Crypto</div>
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                {[{ label: 'YES', val: selectedLive.outcomePrices[0], color: T.teal }, { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red }].map(item => (
+                  <div key={item.label} style={{ textAlign: 'center', background: T.bg2, padding: '8px 18px', borderRadius: 10, minWidth: 90 }}>
+                    <div style={{ fontSize: 11, color: item.color, fontWeight: 600 }}>{item.label}</div>
+                    <div style={{ fontSize: 21, fontWeight: 700, color: item.color }}>{(parseFloat(item.val) * 100).toFixed(0)}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+              <div style={{ fontSize: 11, color: T.text2, marginBottom: 8 }}>LIVE PROBABILITY CHART</div>
+              <Chart market={selectedLive} />
+            </div>
+          </>
+        ) : (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: T.text2 }}>
+            <div style={{ fontSize: 48, opacity: 0.6 }}>📊</div>
+            <div>Select a market from the left</div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -117,7 +220,6 @@ function DepositsPage({ onDepositSuccess }) {
 
   const handleConfirmDeposit = () => {
     if (!amount || !selectedCrypto) return
-
     const newDeposit = {
       id: Date.now(),
       crypto: selectedCrypto.symbol,
@@ -125,9 +227,8 @@ function DepositsPage({ onDepositSuccess }) {
       date: 'Just now',
       status: 'Pending Confirmation'
     }
-
     onDepositSuccess(newDeposit)
-    alert(`✅ Deposit of ${amount} ${selectedCrypto.symbol} submitted and registered!`)
+    alert(`Deposit of ${amount} ${selectedCrypto.symbol} submitted. Waiting for confirmations...`)
     setSelectedCrypto(null)
     setAmount('')
   }
@@ -137,14 +238,9 @@ function DepositsPage({ onDepositSuccess }) {
       <h2>💰 Deposit Funds</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {cryptos.map(c => (
-          <div 
-            key={c.symbol} 
-            onClick={() => setSelectedCrypto(c)} 
-            style={{ background: T.bgCard, padding: 20, borderRadius: 16, textAlign: 'center', cursor: 'pointer', border: `2px solid ${T.border}` }}
-          >
-            <img src={c.logo} alt={c.symbol} style={{ width: 72, height: 72, marginBottom: 12 }} onError={(e) => e.target.src = 'https://via.placeholder.com/72?text=' + c.symbol} />
-            <div style={{ fontSize: 20, fontWeight: 700 }}>{c.symbol}</div>
-            <div style={{ fontSize: 13, color: T.text2 }}>{c.name}</div>
+          <div key={c.symbol} onClick={() => setSelectedCrypto(c)} style={{ background: T.bgCard, padding: 20, borderRadius: 16, textAlign: 'center', cursor: 'pointer' }}>
+            <img src={c.logo} alt={c.symbol} style={{ width: 72, height: 72 }} onError={(e) => e.target.src = 'https://via.placeholder.com/72?text=' + c.symbol} />
+            <div style={{ marginTop: 12, fontWeight: 600 }}>{c.symbol}</div>
           </div>
         ))}
       </div>
@@ -276,7 +372,7 @@ export default function App() {
       }}>
 
         <div onClick={() => setShowMenu(!showMenu)} style={{ padding: '20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0 }}>P</div>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff' }}>P</div>
           {showMenu && (
             <div>
               <div style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</div>
