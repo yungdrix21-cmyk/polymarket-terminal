@@ -339,21 +339,43 @@ function DepositsPage() {
         ))}
       </div>
 
+      {/* Deposit Modal with X button */}
       {selectedCrypto && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.border}`, width: '92%', maxWidth: 460, padding: 24, position: 'relative' }}>
-            <button onClick={() => { setSelectedCrypto(null); setAmount(''); setDepositSuccess(false) }} style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', fontSize: 28, color: T.text2, cursor: 'pointer' }}>✕</button>
+            
+            {/* X Close Button */}
+            <button 
+              onClick={() => { setSelectedCrypto(null); setAmount(''); setDepositSuccess(false); }}
+              style={{ 
+                position: 'absolute', 
+                top: 16, 
+                right: 20, 
+                background: 'none', 
+                border: 'none', 
+                fontSize: 28, 
+                color: T.text2, 
+                cursor: 'pointer',
+                zIndex: 10 
+              }}
+            >
+              ✕
+            </button>
+
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <img src={selectedCrypto.logo} alt={selectedCrypto.symbol} style={{ width: 80, height: 80, marginBottom: 12 }} />
+              <img src={selectedCrypto.logo} alt={selectedCrypto.symbol} style={{ width: 80, height: 80, marginBottom: 12 }} onError={(e) => e.target.src = 'https://via.placeholder.com/80?text=' + selectedCrypto.symbol} />
               <div style={{ fontSize: 22, fontWeight: 700, color: T.text0 }}>Deposit {selectedCrypto.symbol}</div>
               <div style={{ color: T.text2, fontSize: 13 }}>{selectedCrypto.network}</div>
             </div>
+
             <div style={{ background: '#0a0a1a', borderRadius: 14, padding: 20, textAlign: 'center', marginBottom: 20, border: `1px solid ${T.border}` }}>
               <div style={{ fontSize: 13, color: T.text2, marginBottom: 12 }}>Send only {selectedCrypto.symbol} to this address</div>
               <div style={{ width: 180, height: 180, margin: '0 auto 12px', background: '#111', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 70, color: '#444', border: '2px dashed rgba(255,255,255,0.15)' }}>QR</div>
               <div style={{ fontSize: 11.5, color: T.text2, wordBreak: 'break-all' }}>{selectedCrypto.address}</div>
             </div>
+
             <button onClick={() => copyAddress(selectedCrypto.address)} style={{ width: '100%', padding: '13px', background: T.blueDim, color: T.blue, border: 'none', borderRadius: 12, fontWeight: 600, marginBottom: 24, cursor: 'pointer' }}>📋 Copy Address</button>
+
             <div style={{ marginBottom: 20 }}>
               <div style={{ color: T.text2, fontSize: 13.5, marginBottom: 8 }}>Deposit Amount</div>
               <div style={{ display: 'flex', gap: 12 }}>
@@ -361,9 +383,11 @@ function DepositsPage() {
                 <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '16px 22px', color: T.text1, fontWeight: 700, fontSize: 18, display: 'flex', alignItems: 'center' }}>{selectedCrypto.symbol}</div>
               </div>
             </div>
+
             <button onClick={handleDeposit} disabled={depositing || !amount} style={{ width: '100%', padding: '17px', background: depositing ? T.blueDim : 'linear-gradient(135deg, #3b82f6, #6366f1)', color: '#fff', border: 'none', borderRadius: 14, fontSize: 16.5, fontWeight: 700, cursor: depositing || !amount ? 'not-allowed' : 'pointer', opacity: depositing || !amount ? 0.75 : 1 }}>
               {depositing ? 'Processing Deposit...' : `Confirm Deposit $${amount || '0.00'}`}
             </button>
+
             {depositSuccess && <div style={{ marginTop: 16, padding: 14, background: T.tealDim, color: T.teal, borderRadius: 12, textAlign: 'center', fontWeight: 600 }}>✅ Deposit Simulated Successfully</div>}
           </div>
         </div>
@@ -442,7 +466,7 @@ function CopyTrading({ onClose }) {
   )
 }
 
-// Main App with Clickable Logo Menu
+// Main App
 export default function App() {
   const [user, setUser] = useState(null)
   const [view, setView] = useState('dashboard')
@@ -453,7 +477,6 @@ export default function App() {
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [pulse, setPulse] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  const [showLogoMenu, setShowLogoMenu] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
@@ -527,10 +550,9 @@ export default function App() {
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
       `}</style>
 
-      {/* Sidebar / Logo Menu */}
       {!isMobile && (
         <div style={{ width: 220, borderRight: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', background: 'rgba(10,10,26,0.9)', flexShrink: 0 }}>
-          <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer' }} onClick={() => setShowLogoMenu(!showLogoMenu)}>
+          <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${T.border}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff' }}>P</div>
               <div>
@@ -539,20 +561,6 @@ export default function App() {
               </div>
             </div>
           </div>
-
-          {/* Logo Dropdown Menu */}
-          {showLogoMenu && (
-            <div style={{ position: 'absolute', top: 80, left: 20, background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 12, padding: '8px 0', zIndex: 100, width: 200 }}>
-              {NAV_ITEMS.map(item => (
-                <div key={item.id} onClick={() => { setView(item.id); setShowLogoMenu(false); }}
-                  style={{ padding: '10px 16px', cursor: 'pointer', color: view === item.id ? T.blue : T.text1, background: view === item.id ? T.bg3 : 'transparent', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 16 }}>{item.icon}</span>
-                  {item.label}
-                </div>
-              ))}
-            </div>
-          )}
-
           <div style={{ flex: 1, padding: '12px 10px' }}>
             {NAV_ITEMS.map(item => (
               <div key={item.id} onClick={() => setView(item.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, marginBottom: 4, cursor: 'pointer', background: view === item.id ? T.bg3 : 'transparent', color: view === item.id ? T.text0 : T.text1, fontSize: 13, fontWeight: view === item.id ? 600 : 400, borderLeft: `3px solid ${view === item.id ? T.blue : 'transparent'}` }}>
@@ -561,7 +569,6 @@ export default function App() {
               </div>
             ))}
           </div>
-
           <div style={{ padding: '12px 16px', borderTop: `1px solid ${T.border}` }}>
             <div style={{ fontSize: 11, color: T.text2, marginBottom: 8 }}>{user.email}</div>
             <button onClick={async () => { await supabase.auth.signOut(); setUser(null) }} style={{ width: '100%', padding: '7px', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text1, fontSize: 12, cursor: 'pointer' }}>Log out</button>
@@ -569,11 +576,10 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {isMobile && (
           <div style={{ padding: '12px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(10,10,26,0.9)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setShowLogoMenu(!showLogoMenu)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff' }}>P</div>
               <span style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</span>
             </div>
