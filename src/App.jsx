@@ -18,6 +18,13 @@ const PORTFOLIO = [
   { market: 'Will XRP be above $3?', side: 'YES', shares: 100, avgPrice: 0.38, current: 0.44 },
 ]
 
+const RECENT_DEPOSITS = [
+  { id: 1, crypto: 'USDT', amount: 1250.00, date: '2 hours ago', status: 'Completed' },
+  { id: 2, crypto: 'BTC',  amount: 0.042,   date: 'Yesterday',   status: 'Completed' },
+  { id: 3, crypto: 'ETH',  amount: 1.85,    date: '3 days ago',  status: 'Completed' },
+  { id: 4, crypto: 'USDC', amount: 800.00,  date: '5 days ago',  status: 'Completed' },
+]
+
 const T = {
   bg0: '#0a0a1a', bg1: '#0f0f23', bg2: '#14142e', bg3: '#1a1a38', bgCard: '#111128',
   border: 'rgba(255,255,255,0.06)', borderHi: 'rgba(255,255,255,0.12)',
@@ -102,13 +109,31 @@ function Chart({ market }) {
   )
 }
 
+// Improved Dashboard with Recent Deposits and AI Insights
 function DashboardPage({ user, prices }) {
   const totalPnL = PORTFOLIO.reduce((sum, p) => sum + (p.current - p.avgPrice) * p.shares, 0)
   const totalValue = PORTFOLIO.reduce((sum, p) => sum + p.current * p.shares, 0)
+
+  const [aiInsights, setAiInsights] = useState([
+    "BTC 5m market shows strong bullish momentum with rising YES probability.",
+    "ETH short-term volatility is increasing — watch closely.",
+    "SOL currently has the highest volume among short-term markets."
+  ])
+
+  const refreshInsights = () => {
+    setAiInsights([
+      "BTC momentum building — YES probability now at 55%.",
+      "ETH 15m market leaning slightly bearish after recent rejection.",
+      "High activity detected in SOL 5-minute Up/Down market."
+    ])
+  }
+
   return (
     <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 18 }}>Welcome back 👋</h2>
       <p style={{ color: T.text2, margin: '0 0 20px', fontSize: 13 }}>{user.email}</p>
+
+      {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'Portfolio Value', value: `$${totalValue.toFixed(2)}`, color: T.text0 },
@@ -122,10 +147,76 @@ function DashboardPage({ user, prices }) {
           </div>
         ))}
       </div>
+
+      {/* Open Positions */}
+      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, marginBottom: 24 }}>
+        <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, color: T.text0, fontWeight: 600, fontSize: 13 }}>
+          📊 Open Positions
+        </div>
+        {PORTFOLIO.map((p, i) => {
+          const pnl = (p.current - p.avgPrice) * p.shares
+          const pnlPct = ((p.current - p.avgPrice) / p.avgPrice * 100).toFixed(1)
+          return (
+            <div key={i} style={{ padding: '12px 16px', borderBottom: i < PORTFOLIO.length - 1 ? `1px solid ${T.border}` : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 140 }}>
+                <div style={{ color: T.text1, fontSize: 12, marginBottom: 4 }}>{p.market.slice(0, 32)}...</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <span style={{ background: p.side === 'YES' ? T.tealDim : T.redDim, color: p.side === 'YES' ? T.teal : T.red, padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{p.side}</span>
+                  <span style={{ color: T.text2, fontSize: 11 }}>{p.shares} shares</span>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: pnl >= 0 ? T.teal : T.red, fontWeight: 700, fontSize: 14 }}>{pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}</div>
+                <div style={{ color: T.text2, fontSize: 11 }}>{pnlPct}%</div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Recent Deposits */}
+      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, marginBottom: 24 }}>
+        <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, color: T.text0, fontWeight: 600, fontSize: 13 }}>
+          💸 Recent Deposits
+        </div>
+        {RECENT_DEPOSITS.map((dep, i) => (
+          <div key={i} style={{ padding: '12px 16px', borderBottom: i < RECENT_DEPOSITS.length - 1 ? `1px solid ${T.border}` : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ color: T.text1, fontSize: 13 }}>{dep.crypto} Deposit</div>
+              <div style={{ color: T.text2, fontSize: 12 }}>{dep.date}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ color: T.teal, fontWeight: 600 }}>+${typeof dep.amount === 'number' ? dep.amount.toFixed(2) : dep.amount}</div>
+              <div style={{ color: T.text2, fontSize: 11 }}>{dep.status}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* AI Market Insights */}
+      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}` }}>
+        <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ color: T.text0, fontWeight: 600, fontSize: 13 }}>✦ AI Market Insights</div>
+          <button 
+            onClick={refreshInsights}
+            style={{ background: T.blueDim, color: T.blue, border: 'none', padding: '6px 14px', borderRadius: 8, fontSize: 12.5, cursor: 'pointer' }}
+          >
+            Refresh
+          </button>
+        </div>
+        <div style={{ padding: '16px' }}>
+          {aiInsights.map((insight, i) => (
+            <div key={i} style={{ padding: '12px 0', borderBottom: i < aiInsights.length - 1 ? `1px solid ${T.border}` : 'none', color: T.text1, fontSize: 13.5, lineHeight: 1.55 }}>
+              {insight}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
 
+// MarketsPage, DepositsPage, CopyTrading (unchanged)
 function MarketsPage({ prices, selected, setSelected, analysis, setAnalysis, analyzeMarket, analyzing }) {
   const selectedLive = prices.find(m => m.id === selected?.id)
   return (
@@ -283,7 +374,6 @@ function DepositsPage() {
   )
 }
 
-// ── COPY TRADING PAGE WITH SEARCH ──────────────────────────────
 function CopyTrading({ onClose }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [copiedTrader, setCopiedTrader] = useState(null)
@@ -299,7 +389,6 @@ function CopyTrading({ onClose }) {
     { name: "SolanaSniper", profit: "+$1,672,450", winRate: "76%", followers: "5.1K", color: T.purple },
   ]
 
-  // Filter traders based on search
   const filteredTraders = allTraders.filter(trader =>
     trader.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -307,7 +396,7 @@ function CopyTrading({ onClose }) {
   const handleCopy = (trader) => {
     setCopiedTrader(trader.name)
     setTimeout(() => setCopiedTrader(null), 2000)
-    alert(`✅ You are now copying ${trader.name}! Their trades will be mirrored automatically.`)
+    alert(`✅ You are now copying ${trader.name}!`)
   }
 
   return (
@@ -320,29 +409,17 @@ function CopyTrading({ onClose }) {
         {onClose && <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.text2, fontSize: 26, cursor: 'pointer' }}>✕</button>}
       </div>
 
-      {/* Search Bar */}
       <div style={{ marginBottom: 24 }}>
         <input
           type="text"
           placeholder="Search traders by name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '14px 18px',
-            background: T.bg2,
-            border: `1px solid ${T.border}`,
-            borderRadius: 12,
-            color: T.text0,
-            fontSize: 15,
-            outline: 'none'
-          }}
+          style={{ width: '100%', padding: '14px 18px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 12, color: T.text0, fontSize: 15, outline: 'none' }}
         />
       </div>
 
-      <div style={{ marginBottom: 16, color: T.text0, fontSize: 15, fontWeight: 600 }}>
-        Top Crypto Traders on Polymarket
-      </div>
+      <div style={{ marginBottom: 16, color: T.text0, fontSize: 15, fontWeight: 600 }}>Top Crypto Traders on Polymarket</div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
         {filteredTraders.length > 0 ? (
@@ -352,39 +429,22 @@ function CopyTrading({ onClose }) {
                 <div style={{ fontSize: 18, fontWeight: 700, color: T.text0 }}>{trader.name}</div>
                 <div style={{ fontSize: 13, color: trader.color, fontWeight: 600 }}>{trader.winRate} Win Rate</div>
               </div>
-
               <div style={{ color: T.teal, fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{trader.profit}</div>
               <div style={{ color: T.text2, fontSize: 13, marginBottom: 20 }}>{trader.followers} followers</div>
-
-              <button
-                onClick={() => handleCopy(trader)}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  background: copiedTrader === trader.name ? T.tealDim : 'linear-gradient(135deg, #14b8a6, #0f766e)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 12,
-                  fontWeight: 700,
-                  fontSize: 15,
-                  cursor: 'pointer'
-                }}
-              >
+              <button onClick={() => handleCopy(trader)} style={{ width: '100%', padding: '14px', background: copiedTrader === trader.name ? T.tealDim : 'linear-gradient(135deg, #14b8a6, #0f766e)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
                 {copiedTrader === trader.name ? '✓ Copying Active' : 'Copy Trader'}
               </button>
             </div>
           ))
         ) : (
-          <div style={{ color: T.text2, textAlign: 'center', padding: '40px 20px' }}>
-            No traders found matching "{searchTerm}"
-          </div>
+          <div style={{ color: T.text2, textAlign: 'center', padding: '40px 20px' }}>No traders found matching "{searchTerm}"</div>
         )}
       </div>
     </div>
   )
 }
 
-// ── MAIN APP ──────────────────────────────
+// Main App
 export default function App() {
   const [user, setUser] = useState(null)
   const [view, setView] = useState('dashboard')
