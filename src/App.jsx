@@ -107,17 +107,19 @@ function DashboardPage({ user, recentDeposits }) {
         ))}
       </div>
 
-      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16, marginBottom: 24 }}>
-        <div style={{ color: T.text0, fontWeight: 600, marginBottom: 12 }}>📊 Open Positions</div>
-        {PORTFOLIO.map((p, i) => (
-          <div key={i} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: i < PORTFOLIO.length-1 ? `1px solid ${T.border}` : 'none' }}>
-            <div style={{ color: T.text1 }}>{p.market}</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: p.side === 'YES' ? T.teal : T.red }}>{p.side} • {p.shares} shares</span>
-              <span style={{ color: T.teal }}>${((p.current - p.avgPrice) * p.shares).toFixed(2)}</span>
-            </div>
-          </div>
-        ))}
+      {/* Open Positions & Orders - exactly like your screenshot */}
+      <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: 20, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <span style={{ fontSize: 20 }}>↑</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: T.text0 }}>Open Positions & Orders</span>
+        </div>
+        <div style={{ color: T.text1, fontSize: 13, marginBottom: 16 }}>Open positions, working orders, and more</div>
+
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20 }}>
+          <div style={{ color: T.text2, fontSize: 12, marginBottom: 8 }}>ACTIVE POSITIONS</div>
+          <div style={{ fontSize: 48, fontWeight: 700, color: T.text0, lineHeight: 1 }}>0</div>
+          <div style={{ color: T.text2, fontSize: 14 }}>$0.00 in positions</div>
+        </div>
       </div>
 
       <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16 }}>
@@ -212,7 +214,7 @@ function DepositsPage({ onDepositSuccess }) {
   const [amount, setAmount] = useState('')
 
   const cryptos = [
-    { symbol: 'BTC', name: 'Bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', address: 'bc1qxy2kdyz3f3y3f3y3f3y3f3y3f3y3f3y3f' },
+    { symbol: 'BTC', name: 'Bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', address: 'bc1qxy2kdyz3f3y3f3y3f3y3f3y3f3y3f' },
     { symbol: 'ETH', name: 'Ethereum', logo: 'https://cryptologos.cc/logos/ethereum-eth-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' },
     { symbol: 'USDT', name: 'Tether (USDT)', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' },
     { symbol: 'USDC', name: 'USD Coin (USDC)', logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' },
@@ -249,20 +251,16 @@ function DepositsPage({ onDepositSuccess }) {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: T.bgCard, padding: 28, borderRadius: 20, width: '92%', maxWidth: 460, position: 'relative' }}>
             <button onClick={() => { setSelectedCrypto(null); setAmount(''); }} style={{ position: 'absolute', top: 20, right: 24, fontSize: 28, background: 'none', border: 'none', color: T.text2 }}>✕</button>
-
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <img src={selectedCrypto.logo} alt={selectedCrypto.symbol} style={{ width: 80, height: 80 }} onError={(e) => e.target.src = 'https://via.placeholder.com/80?text=' + selectedCrypto.symbol} />
               <h3>Deposit {selectedCrypto.symbol}</h3>
             </div>
-
             <div style={{ background: '#0a0a1a', borderRadius: 14, padding: 20, textAlign: 'center', marginBottom: 20, border: `1px solid ${T.border}` }}>
               <div style={{ fontSize: 13, color: T.text2, marginBottom: 12 }}>Send only {selectedCrypto.symbol} to this address</div>
               <div style={{ width: 180, height: 180, margin: '0 auto 12px', background: '#111', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 70, color: '#444', border: '2px dashed rgba(255,255,255,0.2)' }}>QR</div>
               <div style={{ fontSize: 12, color: T.text2, wordBreak: 'break-all' }}>{selectedCrypto.address}</div>
             </div>
-
             <button onClick={() => { navigator.clipboard.writeText(selectedCrypto.address); alert('Address copied!') }} style={{ width: '100%', padding: '13px', background: T.blueDim, color: T.blue, border: 'none', borderRadius: 12, fontWeight: 600, marginBottom: 20 }}>📋 Copy Address</button>
-
             <div style={{ marginBottom: 20 }}>
               <div style={{ color: T.text2, fontSize: 13.5, marginBottom: 8 }}>Deposit Amount</div>
               <div style={{ display: 'flex', gap: 12 }}>
@@ -270,7 +268,6 @@ function DepositsPage({ onDepositSuccess }) {
                 <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '16px 22px', color: T.text1, fontWeight: 700, fontSize: 18 }}>{selectedCrypto.symbol}</div>
               </div>
             </div>
-
             <button onClick={handleConfirmDeposit} disabled={!amount} style={{ width: '100%', padding: '17px', background: amount ? T.teal : T.blueDim, color: '#fff', border: 'none', borderRadius: 14, fontSize: 16.5, fontWeight: 700 }}>
               Confirm Deposit
             </button>
