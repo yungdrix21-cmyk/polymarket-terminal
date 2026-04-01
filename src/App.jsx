@@ -36,7 +36,7 @@ const T = {
   sans: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
 }
 
-function DashboardPage({ user }) {
+function DashboardPage({ user, recentDeposits }) {
   const totalPnL = PORTFOLIO.reduce((sum, p) => sum + (p.current - p.avgPrice) * p.shares, 0)
   const totalValue = PORTFOLIO.reduce((sum, p) => sum + p.current * p.shares, 0)
 
@@ -72,10 +72,10 @@ function DashboardPage({ user }) {
         ))}
       </div>
 
-      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16, marginBottom: 24 }}>
+      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16 }}>
         <div style={{ color: T.text0, fontWeight: 600, marginBottom: 12 }}>💸 Recent Deposits & Transactions</div>
-        {RECENT_DEPOSITS.map((dep, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < RECENT_DEPOSITS.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+        {recentDeposits.map((dep, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < recentDeposits.length - 1 ? `1px solid ${T.border}` : 'none' }}>
             <div>
               <div style={{ color: T.text1 }}>{dep.crypto} Deposit</div>
               <div style={{ color: T.text2, fontSize: 12 }}>{dep.date}</div>
@@ -104,45 +104,78 @@ function MarketsPage({ prices, selected, setSelected }) {
   )
 }
 
-function DepositsPage() {
+function DepositsPage({ onDepositSuccess }) {
   const [selectedCrypto, setSelectedCrypto] = useState(null)
   const [amount, setAmount] = useState('')
 
   const cryptos = [
-    { symbol: 'BTC', name: 'Bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png' },
-    { symbol: 'ETH', name: 'Ethereum', logo: 'https://cryptologos.cc/logos/ethereum-eth-logo.png' },
-    { symbol: 'USDT', name: 'Tether', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png' },
-    { symbol: 'USDC', name: 'USD Coin', logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png' },
+    { symbol: 'BTC', name: 'Bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', address: 'bc1qxy2kdyz3f3y3f3y3f3y3f3y3f3y3f3y3f' },
+    { symbol: 'ETH', name: 'Ethereum', logo: 'https://cryptologos.cc/logos/ethereum-eth-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' },
+    { symbol: 'USDT', name: 'Tether (USDT)', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' },
+    { symbol: 'USDC', name: 'USD Coin (USDC)', logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' },
   ]
+
+  const handleConfirmDeposit = () => {
+    if (!amount || !selectedCrypto) return
+
+    const newDeposit = {
+      id: Date.now(),
+      crypto: selectedCrypto.symbol,
+      amount: parseFloat(amount),
+      date: 'Just now',
+      status: 'Pending Confirmation'
+    }
+
+    onDepositSuccess(newDeposit)
+    alert(`✅ Deposit of ${amount} ${selectedCrypto.symbol} submitted and registered!`)
+    setSelectedCrypto(null)
+    setAmount('')
+  }
 
   return (
     <div style={{ padding: '20px', color: T.text0 }}>
       <h2>💰 Deposit Funds</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {cryptos.map(c => (
-          <div key={c.symbol} onClick={() => setSelectedCrypto(c)} style={{ background: T.bgCard, padding: 20, borderRadius: 12, textAlign: 'center', cursor: 'pointer' }}>
-            <img src={c.logo} alt={c.symbol} style={{ width: 60, height: 60 }} onError={(e) => e.target.src = 'https://via.placeholder.com/60?text=' + c.symbol} />
-            <div style={{ marginTop: 12, fontWeight: 600 }}>{c.symbol}</div>
+          <div 
+            key={c.symbol} 
+            onClick={() => setSelectedCrypto(c)} 
+            style={{ background: T.bgCard, padding: 20, borderRadius: 16, textAlign: 'center', cursor: 'pointer', border: `2px solid ${T.border}` }}
+          >
+            <img src={c.logo} alt={c.symbol} style={{ width: 72, height: 72, marginBottom: 12 }} onError={(e) => e.target.src = 'https://via.placeholder.com/72?text=' + c.symbol} />
+            <div style={{ fontSize: 20, fontWeight: 700 }}>{c.symbol}</div>
+            <div style={{ fontSize: 13, color: T.text2 }}>{c.name}</div>
           </div>
         ))}
       </div>
 
       {selectedCrypto && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: T.bgCard, padding: 24, borderRadius: 16, width: '90%', maxWidth: 420, position: 'relative' }}>
-            <button onClick={() => setSelectedCrypto(null)} style={{ position: 'absolute', top: 16, right: 16, fontSize: 24, background: 'none', border: 'none', color: T.text2 }}>✕</button>
-            <h3>Deposit {selectedCrypto.symbol}</h3>
-            <input 
-              type="number" 
-              placeholder="Amount" 
-              value={amount} 
-              onChange={e => setAmount(e.target.value)} 
-              style={{ width: '100%', padding: 12, margin: '16px 0', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0 }} 
-            />
-            <button 
-              onClick={() => { alert(`Simulated deposit of ${amount || 0} ${selectedCrypto.symbol}`); setSelectedCrypto(null); setAmount(''); }} 
-              style={{ width: '100%', padding: 14, background: T.blue, color: '#fff', border: 'none', borderRadius: 12 }}
-            >
+          <div style={{ background: T.bgCard, padding: 28, borderRadius: 20, width: '92%', maxWidth: 460, position: 'relative' }}>
+            <button onClick={() => { setSelectedCrypto(null); setAmount(''); }} style={{ position: 'absolute', top: 20, right: 24, fontSize: 28, background: 'none', border: 'none', color: T.text2 }}>✕</button>
+
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <img src={selectedCrypto.logo} alt={selectedCrypto.symbol} style={{ width: 80, height: 80 }} onError={(e) => e.target.src = 'https://via.placeholder.com/80?text=' + selectedCrypto.symbol} />
+              <h3>Deposit {selectedCrypto.symbol}</h3>
+            </div>
+
+            <div style={{ background: '#0a0a1a', borderRadius: 14, padding: 20, textAlign: 'center', marginBottom: 20, border: `1px solid ${T.border}` }}>
+              <div style={{ fontSize: 13, color: T.text2, marginBottom: 12 }}>Send only {selectedCrypto.symbol} to this address</div>
+              <div style={{ width: 180, height: 180, margin: '0 auto 12px', background: '#111', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 70, color: '#444', border: '2px dashed rgba(255,255,255,0.2)' }}>QR</div>
+              <div style={{ fontSize: 12, color: T.text2, wordBreak: 'break-all' }}>{selectedCrypto.address}</div>
+            </div>
+
+            <button onClick={() => { navigator.clipboard.writeText(selectedCrypto.address); alert('Address copied!') }} style={{ width: '100%', padding: '13px', background: T.blueDim, color: T.blue, border: 'none', borderRadius: 12, fontWeight: 600, marginBottom: 20 }}>📋 Copy Address</button>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ color: T.text2, fontSize: 13.5, marginBottom: 8 }}>Deposit Amount</div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <input type="number" step="0.000001" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" style={{ flex: 1, background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '16px 18px', color: T.text0, fontSize: 20 }} />
+                <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '16px 22px', color: T.text1, fontWeight: 700, fontSize: 18 }}>{selectedCrypto.symbol}</div>
+              </div>
+            </div>
+
+            <button onClick={handleConfirmDeposit} disabled={!amount} style={{ width: '100%', padding: '17px', background: amount ? T.teal : T.blueDim, color: '#fff', border: 'none', borderRadius: 14, fontSize: 16.5, fontWeight: 700 }}>
               Confirm Deposit
             </button>
           </div>
@@ -164,38 +197,24 @@ function CopyTrading() {
     { name: "Fredi9999", profit: "+$1,983,898", winRate: "73%", followers: "9.3K" },
   ]
 
-  const filteredTraders = traders.filter(t => 
-    t.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredTraders = traders.filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
   return (
     <div style={{ padding: '20px', color: T.text0 }}>
       <h2>📋 Copy Trading</h2>
       <p style={{ color: T.text2, marginBottom: 20 }}>Follow successful Polymarket crypto traders</p>
 
-      <input
-        type="text"
-        placeholder="Search traders..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        style={{ width: '100%', padding: '14px 18px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 12, color: T.text0, marginBottom: 20 }}
-      />
+      <input type="text" placeholder="Search traders..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '14px 18px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 12, color: T.text0, marginBottom: 20 }} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-        {filteredTraders.length > 0 ? (
-          filteredTraders.map((trader, i) => (
-            <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: 20 }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: T.text0, marginBottom: 8 }}>{trader.name}</div>
-              <div style={{ color: T.teal, fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{trader.profit}</div>
-              <div style={{ color: T.text2, marginBottom: 16 }}>{trader.winRate} win rate • {trader.followers} followers</div>
-              <button style={{ width: '100%', padding: '14px', background: T.teal, color: '#fff', border: 'none', borderRadius: 12, fontWeight: 600 }}>
-                Copy Trader
-              </button>
-            </div>
-          ))
-        ) : (
-          <div style={{ color: T.text2, textAlign: 'center', padding: 40 }}>No traders found</div>
-        )}
+        {filteredTraders.length > 0 ? filteredTraders.map((trader, i) => (
+          <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: 20 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: T.text0, marginBottom: 8 }}>{trader.name}</div>
+            <div style={{ color: T.teal, fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{trader.profit}</div>
+            <div style={{ color: T.text2, marginBottom: 16 }}>{trader.winRate} win rate • {trader.followers} followers</div>
+            <button style={{ width: '100%', padding: '14px', background: T.teal, color: '#fff', border: 'none', borderRadius: 12, fontWeight: 600 }}>Copy Trader</button>
+          </div>
+        )) : <div style={{ color: T.text2, textAlign: 'center', padding: 40 }}>No traders found</div>}
       </div>
     </div>
   )
@@ -206,10 +225,15 @@ export default function App() {
   const [view, setView] = useState('dashboard')
   const [showMenu, setShowMenu] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [recentDeposits, setRecentDeposits] = useState(RECENT_DEPOSITS)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
   }, [])
+
+  const handleNewDeposit = (newDeposit) => {
+    setRecentDeposits([newDeposit, ...recentDeposits])
+  }
 
   if (!user) return <Auth onLogin={setUser} />
 
@@ -227,10 +251,10 @@ export default function App() {
   ]
 
   const renderPage = () => {
-    if (view === 'dashboard') return <DashboardPage user={user} />
+    if (view === 'dashboard') return <DashboardPage user={user} recentDeposits={recentDeposits} />
     if (view === 'markets') return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} />
     if (view === 'copy') return <CopyTrading />
-    if (view === 'deposits') return <DepositsPage />
+    if (view === 'deposits') return <DepositsPage onDepositSuccess={handleNewDeposit} />
     if (view === 'profile') return <div style={{ padding: '40px', color: T.text0, textAlign: 'center' }}>👤 Profile Page</div>
     if (view === 'settings') return <div style={{ padding: '40px', color: T.text0, textAlign: 'center' }}>⚙️ Settings Page</div>
     if (view === 'withdraw') return <div style={{ padding: '40px', color: T.text0, textAlign: 'center' }}>💸 Withdraw Page</div>
@@ -251,11 +275,7 @@ export default function App() {
         transition: 'width 0.3s ease'
       }}>
 
-        {/* PolyTrader Logo - Always Visible */}
-        <div 
-          onClick={() => setShowMenu(!showMenu)}
-          style={{ padding: '20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
-        >
+        <div onClick={() => setShowMenu(!showMenu)} style={{ padding: '20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0 }}>P</div>
           {showMenu && (
             <div>
@@ -265,28 +285,10 @@ export default function App() {
           )}
         </div>
 
-        {/* Main Navigation */}
         {showMenu && (
           <div style={{ flex: 1, padding: '12px 10px' }}>
             {NAV_ITEMS.map(item => (
-              <div 
-                key={item.id}
-                onClick={() => {
-                  setView(item.id)
-                  setShowMenu(false)
-                }}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 10, 
-                  padding: '10px 12px', 
-                  borderRadius: 10, 
-                  marginBottom: 4, 
-                  cursor: 'pointer', 
-                  background: view === item.id ? T.bg3 : 'transparent', 
-                  color: view === item.id ? T.text0 : T.text1 
-                }}
-              >
+              <div key={item.id} onClick={() => { setView(item.id); setShowMenu(false) }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, marginBottom: 4, cursor: 'pointer', background: view === item.id ? T.bg3 : 'transparent', color: view === item.id ? T.text0 : T.text1 }}>
                 <span style={{ fontSize: 16 }}>{item.icon}</span>
                 {item.label}
               </div>
@@ -294,27 +296,10 @@ export default function App() {
           </div>
         )}
 
-        {/* Profile, Settings, Withdraw */}
         {showMenu && (
           <div style={{ padding: '0 10px 10px' }}>
             {BOTTOM_ITEMS.map(item => (
-              <div 
-                key={item.id}
-                onClick={() => {
-                  setView(item.id)
-                  setShowMenu(false)
-                }}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 10, 
-                  padding: '10px 12px', 
-                  borderRadius: 10, 
-                  marginBottom: 4, 
-                  cursor: 'pointer', 
-                  color: T.text1 
-                }}
-              >
+              <div key={item.id} onClick={() => { setView(item.id); setShowMenu(false) }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, marginBottom: 4, cursor: 'pointer', color: T.text1 }}>
                 <span style={{ fontSize: 16 }}>{item.icon}</span>
                 {item.label}
               </div>
@@ -322,7 +307,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Logout */}
         <div style={{ padding: 16, borderTop: `1px solid ${T.border}` }}>
           <button onClick={async () => { await supabase.auth.signOut(); setUser(null) }} style={{ width: '100%', padding: 8, background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text1 }}>
             Log out
@@ -330,7 +314,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div style={{ flex: 1, overflow: 'auto' }}>
         {renderPage()}
       </div>
