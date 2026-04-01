@@ -103,7 +103,6 @@ function DashboardPage({ user }) {
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 18 }}>Welcome back 👋</h2>
       <p style={{ color: T.text2, marginBottom: 20, fontSize: 13 }}>{user.email}</p>
 
-      {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'Portfolio Value', value: `$${totalValue.toFixed(2)}`, color: T.text0 },
@@ -118,7 +117,6 @@ function DashboardPage({ user }) {
         ))}
       </div>
 
-      {/* Open Positions */}
       <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16, marginBottom: 24 }}>
         <div style={{ color: T.text0, fontWeight: 600, marginBottom: 12 }}>📊 Open Positions</div>
         {PORTFOLIO.map((p, i) => (
@@ -132,7 +130,6 @@ function DashboardPage({ user }) {
         ))}
       </div>
 
-      {/* Recent Deposits / Transactions */}
       <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16, marginBottom: 24 }}>
         <div style={{ color: T.text0, fontWeight: 600, marginBottom: 12 }}>💸 Recent Deposits & Transactions</div>
         {RECENT_DEPOSITS.map((dep, i) => (
@@ -149,7 +146,6 @@ function DashboardPage({ user }) {
         ))}
       </div>
 
-      {/* AI Market Insights */}
       <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16 }}>
         <div style={{ color: T.text0, fontWeight: 600, marginBottom: 12 }}>✦ AI Market Insights</div>
         <button onClick={refreshInsights} style={{ background: T.blueDim, color: T.blue, border: 'none', padding: '6px 12px', borderRadius: 8, marginBottom: 12 }}>Refresh</button>
@@ -284,7 +280,7 @@ export default function App() {
   const NAV_ITEMS = [
     { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
     { id: 'markets', label: 'Markets', icon: '📈' },
-    { id: 'copy', label: 'Copy Trade', icon: '📋' },
+    { id: 'copy', label: 'Copy Trading', icon: '📋' },   // renamed here
     { id: 'deposits', label: 'Deposits', icon: '💰' },
   ]
 
