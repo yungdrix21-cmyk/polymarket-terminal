@@ -130,7 +130,6 @@ function MarketsPage({ prices, selected, setSelected, analysis, setAnalysis, ana
   const selectedLive = prices.find(m => m.id === selected?.id)
   return (
     <div style={{ display: 'flex', flex: 1, overflow: 'hidden', flexDirection: window.innerWidth < 768 ? 'column' : 'row' }}>
-      {/* Market List */}
       <div style={{ width: window.innerWidth < 768 ? '100%' : 300, borderRight: window.innerWidth >= 768 ? `1px solid ${T.border}` : 'none', borderBottom: window.innerWidth < 768 ? `1px solid ${T.border}` : 'none', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         <div style={{ padding: '12px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: T.text0 }}>🔴 Live Crypto Markets</span>
@@ -159,7 +158,6 @@ function MarketsPage({ prices, selected, setSelected, analysis, setAnalysis, ana
         </div>
       </div>
 
-      {/* Chart Panel */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {selectedLive ? (
           <>
@@ -202,7 +200,6 @@ function MarketsPage({ prices, selected, setSelected, analysis, setAnalysis, ana
   )
 }
 
-// ── DEPOSITS PAGE (unchanged from last version) ──────────────────────────────
 function DepositsPage() {
   const [selectedCrypto, setSelectedCrypto] = useState(null)
   const [amount, setAmount] = useState('')
@@ -286,18 +283,26 @@ function DepositsPage() {
   )
 }
 
-// ── COPY TRADING PAGE (New Consistent Design) ──────────────────────────────
+// ── COPY TRADING PAGE WITH SEARCH ──────────────────────────────
 function CopyTrading({ onClose }) {
+  const [searchTerm, setSearchTerm] = useState('')
   const [copiedTrader, setCopiedTrader] = useState(null)
 
-  const topTraders = [
+  const allTraders = [
     { name: "beachboy4", profit: "+$3,660,645", winRate: "87%", followers: "12.4K", color: T.teal },
     { name: "HorizonSplendidView", profit: "+$4,016,108", winRate: "91%", followers: "8.9K", color: T.teal },
     { name: "reachingthesky", profit: "+$3,742,635", winRate: "84%", followers: "6.2K", color: T.teal },
     { name: "majorexploiter", profit: "+$2,416,975", winRate: "79%", followers: "4.1K", color: T.purple },
     { name: "Theo4", profit: "+$2,053,953", winRate: "89%", followers: "15.7K", color: T.teal },
     { name: "Fredi9999", profit: "+$1,983,898", winRate: "73%", followers: "9.3K", color: T.purple },
+    { name: "CryptoWhaleKing", profit: "+$2,845,120", winRate: "82%", followers: "7.8K", color: T.teal },
+    { name: "SolanaSniper", profit: "+$1,672,450", winRate: "76%", followers: "5.1K", color: T.purple },
   ]
+
+  // Filter traders based on search
+  const filteredTraders = allTraders.filter(trader =>
+    trader.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   const handleCopy = (trader) => {
     setCopiedTrader(trader.name)
@@ -307,59 +312,74 @@ function CopyTrading({ onClose }) {
 
   return (
     <div style={{ padding: '20px', flex: 1, overflowY: 'auto', background: T.bg0 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <h2 style={{ color: T.text0, margin: 0, fontSize: 22 }}>📋 Copy Trading</h2>
-          <p style={{ color: T.text2, fontSize: 14, marginTop: 4 }}>Follow top Polymarket crypto traders</p>
+          <p style={{ color: T.text2, fontSize: 14, marginTop: 4 }}>Follow successful Polymarket crypto traders</p>
         </div>
-        {onClose && (
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.text2, fontSize: 24, cursor: 'pointer' }}>✕</button>
-        )}
+        {onClose && <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.text2, fontSize: 26, cursor: 'pointer' }}>✕</button>}
       </div>
 
-      <div style={{ background: T.bgCard, borderRadius: 16, padding: '16px 20px', border: `1px solid ${T.border}`, marginBottom: 24 }}>
-        <div style={{ color: T.text1, fontSize: 13, marginBottom: 6 }}>How it works</div>
-        <div style={{ color: T.text2, fontSize: 13, lineHeight: 1.5 }}>
-          Automatically mirror the trades of the best Polymarket crypto traders. Choose your copy amount and risk level.
-        </div>
+      {/* Search Bar */}
+      <div style={{ marginBottom: 24 }}>
+        <input
+          type="text"
+          placeholder="Search traders by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '14px 18px',
+            background: T.bg2,
+            border: `1px solid ${T.border}`,
+            borderRadius: 12,
+            color: T.text0,
+            fontSize: 15,
+            outline: 'none'
+          }}
+        />
       </div>
 
-      <div style={{ marginBottom: 16, color: T.text0, fontSize: 15, fontWeight: 600 }}>🔥 Top Crypto Traders This Month</div>
+      <div style={{ marginBottom: 16, color: T.text0, fontSize: 15, fontWeight: 600 }}>
+        Top Crypto Traders on Polymarket
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-        {topTraders.map((trader, i) => (
-          <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: 20, transition: 'all 0.2s' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: T.text0 }}>{trader.name}</div>
-              <div style={{ fontSize: 13, color: trader.color, fontWeight: 600 }}>{trader.winRate} Win Rate</div>
+        {filteredTraders.length > 0 ? (
+          filteredTraders.map((trader, i) => (
+            <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: T.text0 }}>{trader.name}</div>
+                <div style={{ fontSize: 13, color: trader.color, fontWeight: 600 }}>{trader.winRate} Win Rate</div>
+              </div>
+
+              <div style={{ color: T.teal, fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{trader.profit}</div>
+              <div style={{ color: T.text2, fontSize: 13, marginBottom: 20 }}>{trader.followers} followers</div>
+
+              <button
+                onClick={() => handleCopy(trader)}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  background: copiedTrader === trader.name ? T.tealDim : 'linear-gradient(135deg, #14b8a6, #0f766e)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 15,
+                  cursor: 'pointer'
+                }}
+              >
+                {copiedTrader === trader.name ? '✓ Copying Active' : 'Copy Trader'}
+              </button>
             </div>
-
-            <div style={{ color: T.teal, fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{trader.profit}</div>
-            <div style={{ color: T.text2, fontSize: 13, marginBottom: 20 }}>{trader.followers} followers</div>
-
-            <button
-              onClick={() => handleCopy(trader)}
-              style={{
-                width: '100%',
-                padding: '14px',
-                background: copiedTrader === trader.name ? T.tealDim : 'linear-gradient(135deg, #14b8a6, #0f766e)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 12,
-                fontWeight: 700,
-                fontSize: 15,
-                cursor: 'pointer'
-              }}
-            >
-              {copiedTrader === trader.name ? '✓ Copying Active' : 'Copy Trader'}
-            </button>
+          ))
+        ) : (
+          <div style={{ color: T.text2, textAlign: 'center', padding: '40px 20px' }}>
+            No traders found matching "{searchTerm}"
           </div>
-        ))}
+        )}
       </div>
-
-      <p style={{ marginTop: 32, textAlign: 'center', fontSize: 12, color: T.text2 }}>
-        This is a simulation. Real copy trading will mirror trades automatically with your chosen allocation.
-      </p>
     </div>
   )
 }
