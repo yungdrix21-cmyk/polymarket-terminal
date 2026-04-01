@@ -109,7 +109,6 @@ function Chart({ market }) {
   )
 }
 
-// Improved Dashboard with Recent Deposits and AI Insights
 function DashboardPage({ user, prices }) {
   const totalPnL = PORTFOLIO.reduce((sum, p) => sum + (p.current - p.avgPrice) * p.shares, 0)
   const totalValue = PORTFOLIO.reduce((sum, p) => sum + p.current * p.shares, 0)
@@ -133,7 +132,7 @@ function DashboardPage({ user, prices }) {
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 18 }}>Welcome back 👋</h2>
       <p style={{ color: T.text2, margin: '0 0 20px', fontSize: 13 }}>{user.email}</p>
 
-      {/* Stats Cards */}
+      {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'Portfolio Value', value: `$${totalValue.toFixed(2)}`, color: T.text0 },
@@ -216,7 +215,6 @@ function DashboardPage({ user, prices }) {
   )
 }
 
-// MarketsPage, DepositsPage, CopyTrading (unchanged)
 function MarketsPage({ prices, selected, setSelected, analysis, setAnalysis, analyzeMarket, analyzing }) {
   const selectedLive = prices.find(m => m.id === selected?.id)
   return (
@@ -444,7 +442,7 @@ function CopyTrading({ onClose }) {
   )
 }
 
-// Main App
+// Main App with Clickable Logo Menu
 export default function App() {
   const [user, setUser] = useState(null)
   const [view, setView] = useState('dashboard')
@@ -455,6 +453,7 @@ export default function App() {
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [pulse, setPulse] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [showLogoMenu, setShowLogoMenu] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
@@ -528,9 +527,10 @@ export default function App() {
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
       `}</style>
 
+      {/* Sidebar / Logo Menu */}
       {!isMobile && (
         <div style={{ width: 220, borderRight: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', background: 'rgba(10,10,26,0.9)', flexShrink: 0 }}>
-          <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer' }} onClick={() => setShowLogoMenu(!showLogoMenu)}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff' }}>P</div>
               <div>
@@ -539,6 +539,20 @@ export default function App() {
               </div>
             </div>
           </div>
+
+          {/* Logo Dropdown Menu */}
+          {showLogoMenu && (
+            <div style={{ position: 'absolute', top: 80, left: 20, background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 12, padding: '8px 0', zIndex: 100, width: 200 }}>
+              {NAV_ITEMS.map(item => (
+                <div key={item.id} onClick={() => { setView(item.id); setShowLogoMenu(false); }}
+                  style={{ padding: '10px 16px', cursor: 'pointer', color: view === item.id ? T.blue : T.text1, background: view === item.id ? T.bg3 : 'transparent', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 16 }}>{item.icon}</span>
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          )}
+
           <div style={{ flex: 1, padding: '12px 10px' }}>
             {NAV_ITEMS.map(item => (
               <div key={item.id} onClick={() => setView(item.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, marginBottom: 4, cursor: 'pointer', background: view === item.id ? T.bg3 : 'transparent', color: view === item.id ? T.text0 : T.text1, fontSize: 13, fontWeight: view === item.id ? 600 : 400, borderLeft: `3px solid ${view === item.id ? T.blue : 'transparent'}` }}>
@@ -547,6 +561,7 @@ export default function App() {
               </div>
             ))}
           </div>
+
           <div style={{ padding: '12px 16px', borderTop: `1px solid ${T.border}` }}>
             <div style={{ fontSize: 11, color: T.text2, marginBottom: 8 }}>{user.email}</div>
             <button onClick={async () => { await supabase.auth.signOut(); setUser(null) }} style={{ width: '100%', padding: '7px', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text1, fontSize: 12, cursor: 'pointer' }}>Log out</button>
@@ -554,10 +569,11 @@ export default function App() {
         </div>
       )}
 
+      {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {isMobile && (
           <div style={{ padding: '12px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(10,10,26,0.9)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setShowLogoMenu(!showLogoMenu)}>
               <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff' }}>P</div>
               <span style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</span>
             </div>
