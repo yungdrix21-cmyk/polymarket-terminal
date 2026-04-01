@@ -12,17 +12,44 @@ const CRYPTO_MARKETS = [
   { id: '6', question: 'Will BTC dominance exceed 60% in April?', outcomePrices: ['0.70', '0.30'], change: '+0.2%', volume: 32000 },
 ]
 
-function generateCandles(base, count = 40) {
+// ─── Design tokens matching prob.trade aesthetic ──────────────────────────────
+const T = {
+  // Backgrounds — deep navy with purple tint
+  bg0:      '#0a0a1a',   // page background
+  bg1:      '#0f0f23',   // card background
+  bg2:      '#14142e',   // elevated card
+  bg3:      '#1a1a38',   // hover / selected
+  bgCard:   '#111128',   // main card bg
+  // Borders
+  border:   'rgba(255,255,255,0.06)',
+  borderHi: 'rgba(255,255,255,0.12)',
+  // Accents
+  blue:     '#3b82f6',   // CTA buttons — bright blue like prob.trade
+  blueDim:  'rgba(59,130,246,0.15)',
+  teal:     '#14b8a6',   // positive / YES
+  tealDim:  'rgba(20,184,166,0.15)',
+  red:      '#f43f5e',   // negative / NO
+  redDim:   'rgba(244,63,94,0.15)',
+  purple:   '#a78bfa',   // accent highlights
+  purpleDim:'rgba(167,139,250,0.12)',
+  // Text
+  text0:    '#f8fafc',   // primary
+  text1:    '#94a3b8',   // secondary
+  text2:    '#475569',   // muted
+  // Font — soft sans like prob.trade (not mono)
+  sans:     '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+}
+
+function generateCandles(base, count = 42) {
   let price = base
   return Array.from({ length: count }, (_, i) => {
     const open = price
     const change = (Math.random() - 0.48) * 0.04
     const close = Math.min(0.99, Math.max(0.01, open + change))
-    const high = Math.max(open, close) + Math.random() * 0.015
-    const low = Math.min(open, close) - Math.random() * 0.015
-    const volume = Math.floor(Math.random() * 50000 + 10000)
+    const high = Math.max(open, close) + Math.random() * 0.012
+    const low = Math.min(open, close) - Math.random() * 0.012
     price = close
-    return { time: i, open, close, high, low, volume }
+    return { time: i, open, close, high, low, volume: Math.floor(Math.random() * 50000 + 10000) }
   })
 }
 
@@ -36,15 +63,12 @@ function Chart({ market }) {
         const last = prev[prev.length - 1]
         const change = (Math.random() - 0.48) * 0.02
         const newClose = Math.min(0.99, Math.max(0.01, last.close + change))
-        const newCandle = {
-          time: last.time + 1,
-          open: last.close,
-          close: newClose,
-          high: Math.max(last.close, newClose) + Math.random() * 0.01,
-          low: Math.min(last.close, newClose) - Math.random() * 0.01,
-          volume: Math.floor(Math.random() * 50000 + 10000)
-        }
-        return [...prev.slice(1), newCandle]
+        return [...prev.slice(1), {
+          time: last.time + 1, open: last.close, close: newClose,
+          high: Math.max(last.close, newClose) + Math.random() * 0.008,
+          low: Math.min(last.close, newClose) - Math.random() * 0.008,
+          volume: Math.floor(Math.random() * 50000 + 10000),
+        }]
       })
     }, 3000)
     return () => clearInterval(interval)
@@ -52,68 +76,76 @@ function Chart({ market }) {
 
   if (!candles.length) return null
 
-  const W = 16
-  const chartH = 180
-  const volH = 50
-  const pad = 8
-
+  const W = 15
+  const chartH = 160
+  const volH = 36
+  const pad = 6
   const highs = candles.map(c => c.high)
   const lows = candles.map(c => c.low)
   const minP = Math.min(...lows)
   const maxP = Math.max(...highs)
   const maxVol = Math.max(...candles.map(c => c.volume))
-
   const scaleP = v => chartH - ((v - minP) / (maxP - minP)) * (chartH - pad * 2) - pad
-  const scaleV = v => volH - (v / maxVol) * (volH - 4)
-  const totalW = candles.length * W + 60
+  const scaleV = v => volH - (v / maxVol) * (volH - 3)
+  const totalW = candles.length * W + 52
 
   return (
-    <div style={{ overflowX: 'auto', marginTop: '12px' }}>
-      <svg width={totalW} height={chartH + volH + 24}>
+    <div style={{ overflowX: 'auto', marginTop: 10 }}>
+      <svg width={totalW} height={chartH + volH + 20}>
         {[0, 0.25, 0.5, 0.75, 1].map(t => {
           const val = minP + (maxP - minP) * (1 - t)
           const y = pad + t * (chartH - pad * 2)
           return (
             <g key={t}>
-              <line x1={0} y1={y} x2={totalW - 50} y2={y} stroke="#2a2a2a" strokeWidth={1} />
-              <text x={totalW - 48} y={y + 4} fill="#666" fontSize={9}>{(val * 100).toFixed(1)}%</text>
+              <line x1={0} y1={y} x2={totalW - 46} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
+              <text x={totalW - 44} y={y + 3} fill={T.text2} fontSize={9} fontFamily={T.sans}>{(val * 100).toFixed(1)}%</text>
             </g>
           )
         })}
         {candles.map((c, i) => {
           const isUp = c.close >= c.open
-          const color = isUp ? '#26a69a' : '#ef5350'
+          const color = isUp ? T.teal : T.red
           const bodyTop = scaleP(Math.max(c.open, c.close))
           const bodyH = Math.max(1, Math.abs(scaleP(c.open) - scaleP(c.close)))
           const x = i * W + W / 2
           return (
             <g key={i}>
-              <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} />
-              <rect x={i * W + 2} y={bodyTop} width={W - 4} height={bodyH} fill={color} />
-              <rect x={i * W + 2} y={chartH + scaleV(c.volume)} width={W - 4} height={volH - scaleV(c.volume)} fill={isUp ? '#1a3a38' : '#3a1a1a'} />
+              <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} opacity={0.6} />
+              <rect x={i * W + 2} y={bodyTop} width={W - 4} height={bodyH} fill={color} opacity={0.85} rx={1} />
+              <rect x={i * W + 2} y={chartH + scaleV(c.volume)} width={W - 4}
+                height={volH - scaleV(c.volume)} fill={isUp ? T.teal : T.red} opacity={0.2} rx={1} />
             </g>
           )
         })}
-        <text x={4} y={chartH + 12} fill="#555" fontSize={9}>VOLUME</text>
-        <line x1={0} y1={chartH + 2} x2={totalW - 50} y2={chartH + 2} stroke="#333" strokeWidth={1} />
+        <line x1={0} y1={chartH + 1} x2={totalW - 46} y2={chartH + 1} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
       </svg>
     </div>
   )
 }
 
+function NavTab({ label, active, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: '0 16px', height: 48, fontSize: 13, fontWeight: active ? 600 : 400,
+      cursor: 'pointer', color: active ? T.text0 : T.text1,
+      background: 'none', border: 'none', borderBottom: `2px solid ${active ? T.blue : 'transparent'}`,
+      fontFamily: T.sans, transition: 'all 0.15s',
+    }}>{label}</button>
+  )
+}
+
 export default function App() {
   const [user, setUser] = useState(null)
-  const [view, setView] = useState('markets')       // 'markets' | 'copy'
+  const [view, setView] = useState('markets')
   const [selected, setSelected] = useState(null)
   const [prices, setPrices] = useState(CRYPTO_MARKETS)
   const [analysis, setAnalysis] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [lastUpdate, setLastUpdate] = useState(new Date())
+  const [pulse, setPulse] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null)
-    })
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
   }, [])
 
   useEffect(() => {
@@ -126,6 +158,8 @@ export default function App() {
         ]
       })))
       setLastUpdate(new Date())
+      setPulse(true)
+      setTimeout(() => setPulse(false), 500)
     }, 3000)
     return () => clearInterval(interval)
   }, [])
@@ -146,180 +180,231 @@ export default function App() {
       const data = await res.json()
       setAnalysis(data.content[0].text)
     } catch {
-      setAnalysis('Analysis unavailable. Check your API key.')
+      setAnalysis('Analysis unavailable.')
     }
     setAnalyzing(false)
   }
 
   if (!user) return <Auth onLogin={setUser} />
 
-  // Render CopyTrading as a full-page view
-  if (view === 'copy') return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#131722' }}>
-      {/* Top nav bar so user can get back */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '0',
-        borderBottom: '1px solid #2a2a2a', background: '#1e222d', flexShrink: 0,
-      }}>
-        <NavTab label="📈 Markets" active={false} onClick={() => setView('markets')} />
-        <NavTab label="⇄ Copy Trading" active={true} onClick={() => setView('copy')} />
-        <div style={{ marginLeft: 'auto', padding: '0 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ color: '#555', fontSize: '11px' }}>{user.email}</span>
-          <span
-            onClick={async () => { await supabase.auth.signOut(); setUser(null) }}
-            style={{ color: '#555', fontSize: '11px', cursor: 'pointer' }}
-          >
-            Logout
-          </span>
-        </div>
-      </div>
-      <div style={{ flex: 1, overflow: 'hidden' }}>
-        <CopyTrading />
-      </div>
-    </div>
-  )
-
-  // Default: Markets view
   const selectedLive = prices.find(m => m.id === selected?.id)
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#131722', color: '#d1d4dc', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>
+  const sharedLayout = (children) => (
+    <div style={{
+      display: 'flex', flexDirection: 'column', height: '100vh',
+      background: T.bg0, color: T.text0, fontFamily: T.sans,
+      // prob.trade's signature radial purple glow in top-left
+      backgroundImage: `
+        radial-gradient(ellipse 60% 40% at 20% 0%, rgba(99,51,220,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 80% 100%, rgba(59,130,246,0.08) 0%, transparent 60%)
+      `,
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 4px; background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+        .mkt-row:hover { background: ${T.bg3} !important; }
+        .nav-tab:hover { color: ${T.text0} !important; }
+      `}</style>
 
-      {/* Top nav */}
+      {/* ── Top nav ── */}
       <div style={{
-        display: 'flex', alignItems: 'center',
-        borderBottom: '1px solid #2a2a2a', background: '#1e222d', flexShrink: 0,
+        display: 'flex', alignItems: 'center', height: 48, flexShrink: 0,
+        borderBottom: `1px solid ${T.border}`,
+        background: 'rgba(10,10,26,0.8)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
       }}>
-        <NavTab label="📈 Markets" active={true} onClick={() => setView('markets')} />
-        <NavTab label="⇄ Copy Trading" active={false} onClick={() => setView('copy')} />
-        <div style={{ marginLeft: 'auto', padding: '0 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ color: '#26a69a', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '6px', height: '6px', background: '#26a69a', borderRadius: '50%', display: 'inline-block' }} />
-            LIVE
-          </span>
-          <span style={{ color: '#555', fontSize: '11px' }}>{user.email} · {lastUpdate.toLocaleTimeString()}</span>
-          <span
-            onClick={async () => { await supabase.auth.signOut(); setUser(null) }}
-            style={{ color: '#555', fontSize: '11px', cursor: 'pointer' }}
-          >
-            Logout
-          </span>
+        {/* Logo */}
+        <div style={{ padding: '0 20px', display: 'flex', alignItems: 'center', gap: 8, borderRight: `1px solid ${T.border}`, height: '100%' }}>
+          <div style={{
+            width: 24, height: 24, borderRadius: 6,
+            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, fontWeight: 700, color: '#fff',
+          }}>P</div>
+          <span style={{ fontSize: 14, fontWeight: 700, color: T.text0, letterSpacing: '-0.01em' }}>PolyTrader</span>
         </div>
-      </div>
 
-      {/* Body */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <NavTab label="Markets" active={view === 'markets'} onClick={() => setView('markets')} />
+        <NavTab label="Copy Trading" active={view === 'copy'} onClick={() => setView('copy')} />
 
-        {/* Left Panel */}
-        <div style={{ width: '280px', borderRight: '1px solid #2a2a2a', display: 'flex', flexDirection: 'column', background: '#1e222d' }}>
-          <div style={{ overflowY: 'auto', flex: 1 }}>
-            {prices.map(market => {
-              const yes = (parseFloat(market.outcomePrices[0]) * 100).toFixed(1)
-              const isUp = market.change.startsWith('+')
-              const isSelected = selected?.id === market.id
-              return (
-                <div
-                  key={market.id}
-                  onClick={() => { setSelected(market); setAnalysis('') }}
-                  style={{
-                    padding: '10px 16px', borderBottom: '1px solid #2a2a2a', cursor: 'pointer',
-                    background: isSelected ? '#2a2d3a' : 'transparent',
-                    borderLeft: isSelected ? '2px solid #2962ff' : '2px solid transparent',
-                  }}
-                >
-                  <div style={{ color: isSelected ? '#fff' : '#b2b5be', fontSize: '12px', marginBottom: '6px', lineHeight: '1.4' }}>
-                    {market.question}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#26a69a', fontWeight: '600' }}>{yes}%</span>
-                    <span style={{ color: isUp ? '#26a69a' : '#ef5350', fontSize: '11px' }}>{market.change}</span>
-                  </div>
-                  <div style={{ marginTop: '6px', height: '3px', background: '#2a2a2a', borderRadius: '2px' }}>
-                    <div style={{ width: yes + '%', height: '100%', background: parseFloat(yes) > 50 ? '#26a69a' : '#ef5350', borderRadius: '2px' }} />
-                  </div>
-                </div>
-              )
-            })}
+        <div style={{ marginLeft: 'auto', padding: '0 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: pulse ? '#22c55e' : T.text2,
+              boxShadow: pulse ? '0 0 6px #22c55e' : 'none',
+              transition: 'all 0.3s',
+            }} />
+            <span style={{ fontSize: 11, color: pulse ? '#22c55e' : T.text2, transition: 'color 0.3s' }}>Live</span>
           </div>
+          <span style={{ fontSize: 11, color: T.text2 }}>{lastUpdate.toLocaleTimeString()}</span>
+          <div style={{ width: 1, height: 16, background: T.border }} />
+          <span style={{ fontSize: 11, color: T.text1 }}>{user.email}</span>
+          <button onClick={async () => { await supabase.auth.signOut(); setUser(null) }} style={{
+            fontSize: 11, color: T.text1, background: 'none', border: `1px solid ${T.border}`,
+            borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: T.sans,
+          }}>Log out</button>
         </div>
-
-        {/* Main Panel */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {selectedLive ? (
-            <>
-              <div style={{ padding: '12px 20px', borderBottom: '1px solid #2a2a2a', background: '#1e222d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ color: '#fff', fontWeight: '600', fontSize: '14px' }}>{selectedLive.question}</div>
-                  <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>Polymarket · Crypto</div>
-                </div>
-                <div style={{ display: 'flex', gap: '24px', textAlign: 'right' }}>
-                  <div>
-                    <div style={{ color: '#555', fontSize: '10px' }}>YES</div>
-                    <div style={{ color: '#26a69a', fontSize: '20px', fontWeight: '700' }}>
-                      {(parseFloat(selectedLive.outcomePrices[0]) * 100).toFixed(1)}%
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ color: '#555', fontSize: '10px' }}>NO</div>
-                    <div style={{ color: '#ef5350', fontSize: '20px', fontWeight: '700' }}>
-                      {(parseFloat(selectedLive.outcomePrices[1]) * 100).toFixed(1)}%
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div style={{ flex: 1, padding: '16px 20px', overflowY: 'auto' }}>
-                <div style={{ color: '#555', fontSize: '11px', marginBottom: '4px' }}>5-MIN · PROBABILITY CHART</div>
-                <Chart market={selectedLive} />
-                <div style={{ marginTop: '24px', padding: '16px', background: '#1e222d', borderRadius: '6px', border: '1px solid #2a2a2a' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span style={{ color: '#fff', fontWeight: '600' }}>🤖 AI Analysis</span>
-                    <button
-                      onClick={() => analyzeMarket(selectedLive)}
-                      disabled={analyzing}
-                      style={{
-                        background: analyzing ? '#2a2a2a' : '#2962ff',
-                        color: '#fff', border: 'none', padding: '6px 14px',
-                        borderRadius: '4px', cursor: analyzing ? 'default' : 'pointer',
-                        fontSize: '12px', fontWeight: '600'
-                      }}
-                    >
-                      {analyzing ? 'Analyzing...' : 'Analyze Market'}
-                    </button>
-                  </div>
-                  {analysis ? (
-                    <p style={{ color: '#b2b5be', lineHeight: '1.7', margin: 0, fontSize: '13px' }}>{analysis}</p>
-                  ) : (
-                    <p style={{ color: '#555', margin: 0, fontSize: '12px' }}>Click "Analyze Market" to get AI insights on this prediction.</p>
-                  )}
-                </div>
-              </div>
-            </>
-          ) : (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ fontSize: '40px' }}>📈</div>
-              <div style={{ fontSize: '16px', color: '#666' }}>Select a market to view chart</div>
-              <div style={{ fontSize: '12px', color: '#444' }}>Live candlestick charts with AI analysis</div>
-            </div>
-          )}
-        </div>
-
       </div>
+
+      {children}
     </div>
   )
-}
 
-function NavTab({ label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '10px 18px', fontSize: '12px', fontWeight: active ? '600' : '400',
-        color: active ? '#fff' : '#555', background: 'none', border: 'none',
-        borderBottom: active ? '2px solid #2962ff' : '2px solid transparent',
-        cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
-      }}
-    >
-      {label}
-    </button>
+  if (view === 'copy') return sharedLayout(
+    <div style={{ flex: 1, overflow: 'hidden' }}>
+      <CopyTrading />
+    </div>
+  )
+
+  return sharedLayout(
+    <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+
+      {/* ── LEFT: market list ── */}
+      <div style={{
+        width: 300, borderRight: `1px solid ${T.border}`,
+        display: 'flex', flexDirection: 'column', flexShrink: 0,
+        background: 'rgba(15,15,35,0.6)',
+      }}>
+        <div style={{ padding: '10px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: T.text1 }}>Crypto Markets</span>
+          <span style={{ fontSize: 10, color: T.text2, background: T.purpleDim, padding: '2px 8px', borderRadius: 20, border: `1px solid rgba(167,139,250,0.2)` }}>{prices.length} active</span>
+        </div>
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          {prices.map(market => {
+            const yes = (parseFloat(market.outcomePrices[0]) * 100).toFixed(1)
+            const isUp = market.change.startsWith('+')
+            const isSelected = selected?.id === market.id
+            const yesNum = parseFloat(yes)
+            return (
+              <div key={market.id} className="mkt-row"
+                onClick={() => { setSelected(market); setAnalysis('') }}
+                style={{
+                  padding: '12px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer',
+                  background: isSelected ? T.bg3 : 'transparent',
+                  borderLeft: `3px solid ${isSelected ? T.blue : 'transparent'}`,
+                  transition: 'all 0.15s',
+                }}>
+                <div style={{ fontSize: 12, color: isSelected ? T.text0 : T.text1, marginBottom: 8, lineHeight: 1.45, fontWeight: isSelected ? 500 : 400 }}>
+                  {market.question}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: yesNum > 50 ? T.teal : T.red, letterSpacing: '-0.02em' }}>{yes}%</span>
+                    <span style={{ fontSize: 10, color: T.text2 }}>YES</span>
+                  </div>
+                  <span style={{
+                    fontSize: 11, fontWeight: 500,
+                    color: isUp ? T.teal : T.red,
+                    background: isUp ? T.tealDim : T.redDim,
+                    padding: '2px 6px', borderRadius: 4,
+                  }}>{market.change}</span>
+                </div>
+                <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                  <div style={{
+                    width: yes + '%', height: '100%', borderRadius: 2,
+                    background: yesNum > 50
+                      ? 'linear-gradient(90deg, #0d9488, #14b8a6)'
+                      : 'linear-gradient(90deg, #e11d48, #f43f5e)',
+                    transition: 'width 0.6s ease',
+                  }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── MAIN ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {selectedLive ? (
+          <>
+            {/* Market header */}
+            <div style={{
+              padding: '14px 24px', borderBottom: `1px solid ${T.border}`,
+              background: 'rgba(15,15,35,0.4)',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0,
+            }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: T.text0, marginBottom: 4 }}>{selectedLive.question}</div>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: T.text2 }}>Polymarket · Crypto</span>
+                  <span style={{ fontSize: 10, color: T.text2, background: T.purpleDim, padding: '1px 7px', borderRadius: 20, border: `1px solid rgba(167,139,250,0.15)` }}>
+                    Vol ${(selectedLive.volume / 1000).toFixed(0)}K
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                {[
+                  { label: 'YES', val: selectedLive.outcomePrices[0], color: T.teal, bg: T.tealDim },
+                  { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red, bg: T.redDim },
+                ].map(({ label, val, color, bg }) => (
+                  <div key={label} style={{ textAlign: 'center', background: bg, border: `1px solid ${color}33`, borderRadius: 12, padding: '8px 20px' }}>
+                    <div style={{ fontSize: 10, color, fontWeight: 600, marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 26, fontWeight: 700, color, letterSpacing: '-0.03em', lineHeight: 1 }}>
+                      {(parseFloat(val) * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ flex: 1, padding: '16px 24px', overflowY: 'auto' }}>
+              <div style={{ fontSize: 10, color: T.text2, fontWeight: 500, letterSpacing: '0.06em', marginBottom: 4, textTransform: 'uppercase' }}>5-Min Probability Chart</div>
+              <Chart market={selectedLive} />
+
+              {/* AI Analysis card */}
+              <div style={{
+                marginTop: 20, padding: '16px 20px',
+                background: T.bgCard,
+                border: `1px solid ${T.border}`,
+                borderRadius: 16,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 8,
+                      background: 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(139,92,246,0.3))',
+                      border: `1px solid rgba(139,92,246,0.3)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 14,
+                    }}>✦</div>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: T.text0 }}>AI Analysis</span>
+                  </div>
+                  <button onClick={() => analyzeMarket(selectedLive)} disabled={analyzing} style={{
+                    background: analyzing ? 'rgba(59,130,246,0.2)' : 'linear-gradient(135deg, #3b82f6, #6366f1)',
+                    color: '#fff', border: 'none', padding: '8px 18px', borderRadius: 10,
+                    cursor: analyzing ? 'default' : 'pointer', fontSize: 12, fontWeight: 600,
+                    fontFamily: T.sans, transition: 'all 0.2s',
+                    boxShadow: analyzing ? 'none' : '0 4px 12px rgba(59,130,246,0.3)',
+                  }}>
+                    {analyzing ? 'Analyzing...' : 'Analyze Market'}
+                  </button>
+                </div>
+                {analysis ? (
+                  <p style={{ color: T.text1, lineHeight: 1.7, margin: 0, fontSize: 13 }}>{analysis}</p>
+                ) : (
+                  <p style={{ color: T.text2, margin: 0, fontSize: 12 }}>Click "Analyze Market" to get AI insights on this prediction.</p>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: 16,
+              background: 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2))',
+              border: `1px solid rgba(139,92,246,0.25)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+            }}>📈</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: T.text1 }}>Select a market</div>
+            <div style={{ fontSize: 12, color: T.text2 }}>Live candlestick charts with AI analysis</div>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
