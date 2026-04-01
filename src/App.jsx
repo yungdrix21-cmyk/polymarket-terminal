@@ -84,18 +84,18 @@ function Chart({ market }) {
   )
 }
 
-function DashboardPage({ user, prices }) {
+function DashboardPage({ user }) {
   const totalPnL = PORTFOLIO.reduce((sum, p) => sum + (p.current - p.avgPrice) * p.shares, 0)
   const totalValue = PORTFOLIO.reduce((sum, p) => sum + p.current * p.shares, 0)
 
   const [aiInsights, setAiInsights] = useState([
-    "BTC 5m market shows strong bullish momentum.",
-    "ETH short-term volatility is increasing.",
-    "SOL currently has the highest volume."
+    "BTC 5m market shows strong bullish momentum with rising YES probability.",
+    "ETH short-term volatility is increasing — watch closely.",
+    "SOL currently has the highest volume among short-term markets."
   ])
 
   const refreshInsights = () => {
-    setAiInsights(["New insight 1", "New insight 2", "New insight 3"])
+    setAiInsights(["BTC momentum building", "ETH leaning slightly bearish", "High activity in SOL 5m market"])
   }
 
   return (
@@ -108,7 +108,7 @@ function DashboardPage({ user, prices }) {
           { label: 'Portfolio Value', value: `$${totalValue.toFixed(2)}`, color: T.text0 },
           { label: 'Total P&L', value: `+$${totalPnL.toFixed(2)}`, color: T.teal },
           { label: 'Open Positions', value: PORTFOLIO.length, color: T.blue },
-          { label: 'Live Markets', value: prices.length, color: T.teal },
+          { label: 'Live Markets', value: CRYPTO_MARKETS.length, color: T.teal },
         ].map((s, i) => (
           <div key={i} style={{ background: T.bgCard, borderRadius: 12, padding: '14px 16px', border: `1px solid ${T.border}` }}>
             <div style={{ color: T.text2, fontSize: 11 }}>{s.label}</div>
@@ -133,9 +133,7 @@ function DashboardPage({ user, prices }) {
       <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16 }}>
         <div style={{ color: T.text0, fontWeight: 600, marginBottom: 12 }}>✦ AI Market Insights</div>
         <button onClick={refreshInsights} style={{ background: T.blueDim, color: T.blue, border: 'none', padding: '6px 12px', borderRadius: 8, marginBottom: 12 }}>Refresh</button>
-        {aiInsights.map((insight, i) => (
-          <div key={i} style={{ color: T.text1, marginBottom: 8 }}>{insight}</div>
-        ))}
+        {aiInsights.map((insight, i) => <div key={i} style={{ color: T.text1, marginBottom: 8 }}>{insight}</div>)}
       </div>
     </div>
   )
@@ -144,7 +142,7 @@ function DashboardPage({ user, prices }) {
 function MarketsPage({ prices, selected, setSelected }) {
   return (
     <div style={{ padding: '20px', color: T.text0 }}>
-      <h2>Live Markets</h2>
+      <h2>Live Crypto Markets</h2>
       {prices.map(m => (
         <div key={m.id} onClick={() => setSelected(m)} style={{ padding: 12, background: T.bgCard, marginBottom: 8, borderRadius: 8, cursor: 'pointer' }}>
           {m.question}
@@ -167,7 +165,7 @@ function DepositsPage() {
 
   return (
     <div style={{ padding: '20px', color: T.text0 }}>
-      <h2>💰 Deposits</h2>
+      <h2>💰 Deposit Funds</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {cryptos.map(c => (
           <div key={c.symbol} onClick={() => setSelectedCrypto(c)} style={{ background: T.bgCard, padding: 20, borderRadius: 12, textAlign: 'center', cursor: 'pointer' }}>
@@ -182,8 +180,19 @@ function DepositsPage() {
           <div style={{ background: T.bgCard, padding: 24, borderRadius: 16, width: '90%', maxWidth: 420, position: 'relative' }}>
             <button onClick={() => setSelectedCrypto(null)} style={{ position: 'absolute', top: 16, right: 16, fontSize: 24, background: 'none', border: 'none', color: T.text2 }}>✕</button>
             <h3>Deposit {selectedCrypto.symbol}</h3>
-            <input type="number" placeholder="Amount" value={amount} onChange={e => setAmount(e.target.value)} style={{ width: '100%', padding: 12, margin: '16px 0', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0 }} />
-            <button onClick={() => { alert(`Simulated deposit of ${amount} ${selectedCrypto.symbol}`); setSelectedCrypto(null); setAmount(''); }} style={{ width: '100%', padding: 14, background: T.blue, color: '#fff', border: 'none', borderRadius: 12 }}>Confirm Deposit</button>
+            <input 
+              type="number" 
+              placeholder="Amount" 
+              value={amount} 
+              onChange={e => setAmount(e.target.value)} 
+              style={{ width: '100%', padding: 12, margin: '16px 0', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0 }} 
+            />
+            <button 
+              onClick={() => { alert(`Simulated deposit of ${amount || 0} ${selectedCrypto.symbol}`); setSelectedCrypto(null); setAmount(''); }} 
+              style={{ width: '100%', padding: 14, background: T.blue, color: '#fff', border: 'none', borderRadius: 12 }}
+            >
+              Confirm Deposit
+            </button>
           </div>
         </div>
       )}
@@ -192,7 +201,52 @@ function DepositsPage() {
 }
 
 function CopyTrading() {
-  return <div style={{ padding: '20px', color: T.text0 }}>Copy Trading Page</div>
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const traders = [
+    { name: "beachboy4", profit: "+$3,660,645", winRate: "87%", followers: "12.4K" },
+    { name: "HorizonSplendidView", profit: "+$4,016,108", winRate: "91%", followers: "8.9K" },
+    { name: "reachingthesky", profit: "+$3,742,635", winRate: "84%", followers: "6.2K" },
+    { name: "majorexploiter", profit: "+$2,416,975", winRate: "79%", followers: "4.1K" },
+    { name: "Theo4", profit: "+$2,053,953", winRate: "89%", followers: "15.7K" },
+    { name: "Fredi9999", profit: "+$1,983,898", winRate: "73%", followers: "9.3K" },
+  ]
+
+  const filteredTraders = traders.filter(t => 
+    t.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  return (
+    <div style={{ padding: '20px', color: T.text0 }}>
+      <h2>📋 Copy Trading</h2>
+      <p style={{ color: T.text2, marginBottom: 20 }}>Follow successful Polymarket crypto traders</p>
+
+      <input
+        type="text"
+        placeholder="Search traders..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{ width: '100%', padding: '14px 18px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 12, color: T.text0, marginBottom: 20 }}
+      />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        {filteredTraders.length > 0 ? (
+          filteredTraders.map((trader, i) => (
+            <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: 20 }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: T.text0, marginBottom: 8 }}>{trader.name}</div>
+              <div style={{ color: T.teal, fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{trader.profit}</div>
+              <div style={{ color: T.text2, marginBottom: 16 }}>{trader.winRate} win rate • {trader.followers} followers</div>
+              <button style={{ width: '100%', padding: '14px', background: T.teal, color: '#fff', border: 'none', borderRadius: 12, fontWeight: 600 }}>
+                Copy Trader
+              </button>
+            </div>
+          ))
+        ) : (
+          <div style={{ color: T.text2, textAlign: 'center', padding: 40 }}>No traders found</div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export default function App() {
@@ -215,7 +269,7 @@ export default function App() {
   ]
 
   const renderPage = () => {
-    if (view === 'dashboard') return <DashboardPage user={user} prices={CRYPTO_MARKETS} />
+    if (view === 'dashboard') return <DashboardPage user={user} />
     if (view === 'markets') return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} />
     if (view === 'copy') return <CopyTrading />
     if (view === 'deposits') return <DepositsPage />
@@ -225,9 +279,10 @@ export default function App() {
   return (
     <div style={{ display: 'flex', height: '100vh', background: T.bg0, color: T.text0, fontFamily: T.sans }}>
 
-      {/* Sidebar with clickable PolyTrader logo */}
+      {/* Sidebar */}
       <div style={{ width: 220, borderRight: `1px solid ${T.border}`, background: 'rgba(10,10,26,0.95)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
 
+        {/* PolyTrader Logo - Always Visible */}
         <div 
           onClick={() => setShowMenu(!showMenu)}
           style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer' }}
