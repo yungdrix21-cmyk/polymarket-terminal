@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
-import CopyTrading from './components/CopyTrading'
 
 const CRYPTO_MARKETS = [
   { id: '1', question: 'Bitcoin Up or Down - Next 5 Minutes', outcomePrices: ['0.53', '0.47'], change: '+1.2%', volume: 124000, timeframe: '5m', symbol: 'BTC' },
@@ -62,9 +61,7 @@ function Chart({ market }) {
     }, 3000)
     return () => clearInterval(interval)
   }, [market])
-
   if (!candles.length) return null
-
   const W = 14, chartH = 160, volH = 36, pad = 6
   const highs = candles.map(c => c.high), lows = candles.map(c => c.low)
   const minP = Math.min(...lows), maxP = Math.max(...highs)
@@ -72,7 +69,6 @@ function Chart({ market }) {
   const scaleP = v => chartH - ((v - minP) / (maxP - minP)) * (chartH - pad * 2) - pad
   const scaleV = v => volH - (v / maxVol) * (volH - 3)
   const totalW = candles.length * W + 52
-
   return (
     <div style={{ overflowX: 'auto', marginTop: 10 }}>
       <svg width={totalW} height={chartH + volH + 20}>
@@ -113,7 +109,6 @@ function DashboardPage({ user, prices }) {
     <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 18 }}>Welcome back 👋</h2>
       <p style={{ color: T.text2, margin: '0 0 20px', fontSize: 13 }}>{user.email}</p>
-      
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'Portfolio Value', value: `$${totalValue.toFixed(2)}`, color: T.text0 },
@@ -135,6 +130,7 @@ function MarketsPage({ prices, selected, setSelected, analysis, setAnalysis, ana
   const selectedLive = prices.find(m => m.id === selected?.id)
   return (
     <div style={{ display: 'flex', flex: 1, overflow: 'hidden', flexDirection: window.innerWidth < 768 ? 'column' : 'row' }}>
+      {/* Market List */}
       <div style={{ width: window.innerWidth < 768 ? '100%' : 300, borderRight: window.innerWidth >= 768 ? `1px solid ${T.border}` : 'none', borderBottom: window.innerWidth < 768 ? `1px solid ${T.border}` : 'none', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         <div style={{ padding: '12px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: T.text0 }}>🔴 Live Crypto Markets</span>
@@ -163,6 +159,7 @@ function MarketsPage({ prices, selected, setSelected, analysis, setAnalysis, ana
         </div>
       </div>
 
+      {/* Chart Panel */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {selectedLive ? (
           <>
@@ -205,7 +202,7 @@ function MarketsPage({ prices, selected, setSelected, analysis, setAnalysis, ana
   )
 }
 
-// ── DEPOSITS PAGE WITH REAL LOGOS + MODAL ──────────────────────────────
+// ── DEPOSITS PAGE (unchanged from last version) ──────────────────────────────
 function DepositsPage() {
   const [selectedCrypto, setSelectedCrypto] = useState(null)
   const [amount, setAmount] = useState('')
@@ -256,26 +253,21 @@ function DepositsPage() {
         ))}
       </div>
 
-      {/* Modal */}
       {selectedCrypto && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.border}`, width: '92%', maxWidth: 460, padding: 24, position: 'relative' }}>
             <button onClick={() => { setSelectedCrypto(null); setAmount(''); setDepositSuccess(false) }} style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', fontSize: 28, color: T.text2, cursor: 'pointer' }}>✕</button>
-
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <img src={selectedCrypto.logo} alt={selectedCrypto.symbol} style={{ width: 80, height: 80, marginBottom: 12 }} />
               <div style={{ fontSize: 22, fontWeight: 700, color: T.text0 }}>Deposit {selectedCrypto.symbol}</div>
               <div style={{ color: T.text2, fontSize: 13 }}>{selectedCrypto.network}</div>
             </div>
-
             <div style={{ background: '#0a0a1a', borderRadius: 14, padding: 20, textAlign: 'center', marginBottom: 20, border: `1px solid ${T.border}` }}>
               <div style={{ fontSize: 13, color: T.text2, marginBottom: 12 }}>Send only {selectedCrypto.symbol} to this address</div>
               <div style={{ width: 180, height: 180, margin: '0 auto 12px', background: '#111', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 70, color: '#444', border: '2px dashed rgba(255,255,255,0.15)' }}>QR</div>
               <div style={{ fontSize: 11.5, color: T.text2, wordBreak: 'break-all' }}>{selectedCrypto.address}</div>
             </div>
-
             <button onClick={() => copyAddress(selectedCrypto.address)} style={{ width: '100%', padding: '13px', background: T.blueDim, color: T.blue, border: 'none', borderRadius: 12, fontWeight: 600, marginBottom: 24, cursor: 'pointer' }}>📋 Copy Address</button>
-
             <div style={{ marginBottom: 20 }}>
               <div style={{ color: T.text2, fontSize: 13.5, marginBottom: 8 }}>Deposit Amount</div>
               <div style={{ display: 'flex', gap: 12 }}>
@@ -283,15 +275,91 @@ function DepositsPage() {
                 <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '16px 22px', color: T.text1, fontWeight: 700, fontSize: 18, display: 'flex', alignItems: 'center' }}>{selectedCrypto.symbol}</div>
               </div>
             </div>
-
             <button onClick={handleDeposit} disabled={depositing || !amount} style={{ width: '100%', padding: '17px', background: depositing ? T.blueDim : 'linear-gradient(135deg, #3b82f6, #6366f1)', color: '#fff', border: 'none', borderRadius: 14, fontSize: 16.5, fontWeight: 700, cursor: depositing || !amount ? 'not-allowed' : 'pointer', opacity: depositing || !amount ? 0.75 : 1 }}>
               {depositing ? 'Processing Deposit...' : `Confirm Deposit $${amount || '0.00'}`}
             </button>
-
             {depositSuccess && <div style={{ marginTop: 16, padding: 14, background: T.tealDim, color: T.teal, borderRadius: 12, textAlign: 'center', fontWeight: 600 }}>✅ Deposit Simulated Successfully</div>}
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── COPY TRADING PAGE (New Consistent Design) ──────────────────────────────
+function CopyTrading({ onClose }) {
+  const [copiedTrader, setCopiedTrader] = useState(null)
+
+  const topTraders = [
+    { name: "beachboy4", profit: "+$3,660,645", winRate: "87%", followers: "12.4K", color: T.teal },
+    { name: "HorizonSplendidView", profit: "+$4,016,108", winRate: "91%", followers: "8.9K", color: T.teal },
+    { name: "reachingthesky", profit: "+$3,742,635", winRate: "84%", followers: "6.2K", color: T.teal },
+    { name: "majorexploiter", profit: "+$2,416,975", winRate: "79%", followers: "4.1K", color: T.purple },
+    { name: "Theo4", profit: "+$2,053,953", winRate: "89%", followers: "15.7K", color: T.teal },
+    { name: "Fredi9999", profit: "+$1,983,898", winRate: "73%", followers: "9.3K", color: T.purple },
+  ]
+
+  const handleCopy = (trader) => {
+    setCopiedTrader(trader.name)
+    setTimeout(() => setCopiedTrader(null), 2000)
+    alert(`✅ You are now copying ${trader.name}! Their trades will be mirrored automatically.`)
+  }
+
+  return (
+    <div style={{ padding: '20px', flex: 1, overflowY: 'auto', background: T.bg0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ color: T.text0, margin: 0, fontSize: 22 }}>📋 Copy Trading</h2>
+          <p style={{ color: T.text2, fontSize: 14, marginTop: 4 }}>Follow top Polymarket crypto traders</p>
+        </div>
+        {onClose && (
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.text2, fontSize: 24, cursor: 'pointer' }}>✕</button>
+        )}
+      </div>
+
+      <div style={{ background: T.bgCard, borderRadius: 16, padding: '16px 20px', border: `1px solid ${T.border}`, marginBottom: 24 }}>
+        <div style={{ color: T.text1, fontSize: 13, marginBottom: 6 }}>How it works</div>
+        <div style={{ color: T.text2, fontSize: 13, lineHeight: 1.5 }}>
+          Automatically mirror the trades of the best Polymarket crypto traders. Choose your copy amount and risk level.
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 16, color: T.text0, fontSize: 15, fontWeight: 600 }}>🔥 Top Crypto Traders This Month</div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        {topTraders.map((trader, i) => (
+          <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: 20, transition: 'all 0.2s' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: T.text0 }}>{trader.name}</div>
+              <div style={{ fontSize: 13, color: trader.color, fontWeight: 600 }}>{trader.winRate} Win Rate</div>
+            </div>
+
+            <div style={{ color: T.teal, fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{trader.profit}</div>
+            <div style={{ color: T.text2, fontSize: 13, marginBottom: 20 }}>{trader.followers} followers</div>
+
+            <button
+              onClick={() => handleCopy(trader)}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: copiedTrader === trader.name ? T.tealDim : 'linear-gradient(135deg, #14b8a6, #0f766e)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 12,
+                fontWeight: 700,
+                fontSize: 15,
+                cursor: 'pointer'
+              }}
+            >
+              {copiedTrader === trader.name ? '✓ Copying Active' : 'Copy Trader'}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <p style={{ marginTop: 32, textAlign: 'center', fontSize: 12, color: T.text2 }}>
+        This is a simulation. Real copy trading will mirror trades automatically with your chosen allocation.
+      </p>
     </div>
   )
 }
@@ -367,7 +435,7 @@ export default function App() {
   const renderPage = () => {
     if (view === 'dashboard') return <DashboardPage user={user} prices={prices} />
     if (view === 'markets') return <MarketsPage prices={prices} selected={selected} setSelected={setSelected} analysis={analysis} setAnalysis={setAnalysis} analyzeMarket={analyzeMarket} analyzing={analyzing} />
-    if (view === 'copy') return <div style={{ flex: 1, overflow: 'hidden' }}><CopyTrading onClose={() => setView('dashboard')} /></div>
+    if (view === 'copy') return <CopyTrading onClose={() => setView('dashboard')} />
     if (view === 'deposits') return <DepositsPage />
     return null
   }
