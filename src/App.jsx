@@ -339,12 +339,9 @@ function DepositsPage() {
         ))}
       </div>
 
-      {/* Deposit Modal */}
       {selectedCrypto && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.border}`, width: '92%', maxWidth: 460, padding: 24, position: 'relative' }}>
-            
-            {/* X Close Button */}
             <button 
               onClick={() => { setSelectedCrypto(null); setAmount(''); setDepositSuccess(false); }}
               style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', fontSize: 28, color: T.text2, cursor: 'pointer' }}
@@ -456,7 +453,7 @@ function CopyTrading({ onClose }) {
   )
 }
 
-// Main App with Clickable Logo that toggles Sidebar
+// Main App - Logo always visible, clicking toggles menu items only
 export default function App() {
   const [user, setUser] = useState(null)
   const [view, setView] = useState('dashboard')
@@ -467,7 +464,7 @@ export default function App() {
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [pulse, setPulse] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  const [sidebarOpen, setSidebarOpen] = useState(true)   // Controls sidebar visibility
+  const [menuOpen, setMenuOpen] = useState(true)   // Controls visibility of nav items
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
@@ -541,18 +538,14 @@ export default function App() {
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
       `}</style>
 
-      {/* Sidebar - Toggleable */}
-      <div style={{ 
-        width: sidebarOpen ? 220 : 0, 
-        borderRight: sidebarOpen ? `1px solid ${T.border}` : 'none', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        background: 'rgba(10,10,26,0.9)', 
-        flexShrink: 0,
-        overflow: 'hidden',
-        transition: 'width 0.3s ease'
-      }}>
-        <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer' }} onClick={() => setSidebarOpen(!sidebarOpen)}>
+      {/* Left Sidebar - Logo always visible */}
+      <div style={{ width: 220, borderRight: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', background: 'rgba(10,10,26,0.9)', flexShrink: 0 }}>
+        
+        {/* Logo - Always Visible & Clickable */}
+        <div 
+          style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer' }} 
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff' }}>P</div>
             <div>
@@ -562,29 +555,34 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{ flex: 1, padding: '12px 10px' }}>
-          {NAV_ITEMS.map(item => (
-            <div key={item.id} 
-              onClick={() => { setView(item.id); if (isMobile) setSidebarOpen(false); }}
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 10, 
-                padding: '10px 12px', 
-                borderRadius: 10, 
-                marginBottom: 4, 
-                cursor: 'pointer', 
-                background: view === item.id ? T.bg3 : 'transparent', 
-                color: view === item.id ? T.text0 : T.text1, 
-                fontSize: 13, 
-                fontWeight: view === item.id ? 600 : 400, 
-                borderLeft: `3px solid ${view === item.id ? T.blue : 'transparent'}` 
-              }}>
-              <span style={{ fontSize: 16 }}>{item.icon}</span>
-              {item.label}
-            </div>
-          ))}
-        </div>
+        {/* Navigation Menu - Toggles */}
+        {menuOpen && (
+          <div style={{ flex: 1, padding: '12px 10px' }}>
+            {NAV_ITEMS.map(item => (
+              <div 
+                key={item.id} 
+                onClick={() => setView(item.id)} 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 10, 
+                  padding: '10px 12px', 
+                  borderRadius: 10, 
+                  marginBottom: 4, 
+                  cursor: 'pointer', 
+                  background: view === item.id ? T.bg3 : 'transparent', 
+                  color: view === item.id ? T.text0 : T.text1, 
+                  fontSize: 13, 
+                  fontWeight: view === item.id ? 600 : 400, 
+                  borderLeft: `3px solid ${view === item.id ? T.blue : 'transparent'}` 
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{item.icon}</span>
+                {item.label}
+              </div>
+            ))}
+          </div>
+        )}
 
         <div style={{ padding: '12px 16px', borderTop: `1px solid ${T.border}` }}>
           <div style={{ fontSize: 11, color: T.text2, marginBottom: 8 }}>{user.email}</div>
@@ -592,11 +590,11 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {isMobile && (
           <div style={{ padding: '12px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(10,10,26,0.9)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setMenuOpen(!menuOpen)}>
               <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff' }}>P</div>
               <span style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</span>
             </div>
