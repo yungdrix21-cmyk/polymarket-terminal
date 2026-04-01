@@ -36,67 +36,9 @@ const T = {
   sans: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
 }
 
-function Chart({ market }) {
-  const [candles, setCandles] = useState([])
-  useEffect(() => {
-    let price = parseFloat(market.outcomePrices[0])
-    const initial = Array.from({ length: 42 }, (_, i) => {
-      const open = price
-      const change = (Math.random() - 0.48) * 0.04
-      const close = Math.min(0.99, Math.max(0.01, open + change))
-      const high = Math.max(open, close) + Math.random() * 0.012
-      const low = Math.min(open, close) - Math.random() * 0.012
-      price = close
-      return { time: i, open, close, high, low, volume: Math.floor(Math.random() * 50000 + 10000) }
-    })
-    setCandles(initial)
-  }, [market])
-
-  if (!candles.length) return null
-
-  const W = 14, chartH = 160, volH = 36, pad = 6
-  const highs = candles.map(c => c.high), lows = candles.map(c => c.low)
-  const minP = Math.min(...lows), maxP = Math.max(...highs)
-  const maxVol = Math.max(...candles.map(c => c.volume))
-  const scaleP = v => chartH - ((v - minP) / (maxP - minP)) * (chartH - pad * 2) - pad
-  const scaleV = v => volH - (v / maxVol) * (volH - 3)
-  const totalW = candles.length * W + 52
-
-  return (
-    <div style={{ overflowX: 'auto', marginTop: 10 }}>
-      <svg width={totalW} height={chartH + volH + 20}>
-        {candles.map((c, i) => {
-          const isUp = c.close >= c.open
-          const color = isUp ? T.teal : T.red
-          const bodyTop = scaleP(Math.max(c.open, c.close))
-          const bodyH = Math.max(1, Math.abs(scaleP(c.open) - scaleP(c.close)))
-          const x = i * W + W / 2
-          return (
-            <g key={i}>
-              <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} opacity={0.6} />
-              <rect x={i * W + 2} y={bodyTop} width={W - 4} height={bodyH} fill={color} opacity={0.85} rx={1} />
-              <rect x={i * W + 2} y={chartH + scaleV(c.volume)} width={W - 4} height={volH - scaleV(c.volume)} fill={isUp ? T.teal : T.red} opacity={0.2} rx={1} />
-            </g>
-          )
-        })}
-      </svg>
-    </div>
-  )
-}
-
 function DashboardPage({ user }) {
   const totalPnL = PORTFOLIO.reduce((sum, p) => sum + (p.current - p.avgPrice) * p.shares, 0)
   const totalValue = PORTFOLIO.reduce((sum, p) => sum + p.current * p.shares, 0)
-
-  const [aiInsights, setAiInsights] = useState([
-    "BTC 5m market shows strong bullish momentum with rising YES probability.",
-    "ETH short-term volatility is increasing — watch closely.",
-    "SOL currently has the highest volume among short-term markets."
-  ])
-
-  const refreshInsights = () => {
-    setAiInsights(["BTC momentum building", "ETH leaning slightly bearish", "High activity in SOL 5m market"])
-  }
 
   return (
     <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
@@ -144,12 +86,6 @@ function DashboardPage({ user }) {
             </div>
           </div>
         ))}
-      </div>
-
-      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: 16 }}>
-        <div style={{ color: T.text0, fontWeight: 600, marginBottom: 12 }}>✦ AI Market Insights</div>
-        <button onClick={refreshInsights} style={{ background: T.blueDim, color: T.blue, border: 'none', padding: '6px 12px', borderRadius: 8, marginBottom: 12 }}>Refresh</button>
-        {aiInsights.map((insight, i) => <div key={i} style={{ color: T.text1, marginBottom: 8 }}>{insight}</div>)}
       </div>
     </div>
   )
@@ -268,7 +204,7 @@ function CopyTrading() {
 export default function App() {
   const [user, setUser] = useState(null)
   const [view, setView] = useState('dashboard')
-  const [showMenu, setShowMenu] = useState(false)   // controls collapsed/expanded state
+  const [showMenu, setShowMenu] = useState(false)
   const [selected, setSelected] = useState(null)
 
   useEffect(() => {
@@ -284,18 +220,27 @@ export default function App() {
     { id: 'deposits', label: 'Deposits', icon: '💰' },
   ]
 
+  const BOTTOM_ITEMS = [
+    { id: 'profile', label: 'Profile', icon: '👤' },
+    { id: 'settings', label: 'Settings', icon: '⚙️' },
+    { id: 'withdraw', label: 'Withdraw', icon: '💸' },
+  ]
+
   const renderPage = () => {
     if (view === 'dashboard') return <DashboardPage user={user} />
     if (view === 'markets') return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} />
     if (view === 'copy') return <CopyTrading />
     if (view === 'deposits') return <DepositsPage />
+    if (view === 'profile') return <div style={{ padding: '40px', color: T.text0, textAlign: 'center' }}>👤 Profile Page</div>
+    if (view === 'settings') return <div style={{ padding: '40px', color: T.text0, textAlign: 'center' }}>⚙️ Settings Page</div>
+    if (view === 'withdraw') return <div style={{ padding: '40px', color: T.text0, textAlign: 'center' }}>💸 Withdraw Page</div>
     return null
   }
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: T.bg0, color: T.text0, fontFamily: T.sans }}>
 
-      {/* Sidebar - Collapsible */}
+      {/* Sidebar */}
       <div style={{ 
         width: showMenu ? 220 : 72, 
         borderRight: `1px solid ${T.border}`, 
@@ -320,7 +265,7 @@ export default function App() {
           )}
         </div>
 
-        {/* Expanded Menu */}
+        {/* Main Navigation */}
         {showMenu && (
           <div style={{ flex: 1, padding: '12px 10px' }}>
             {NAV_ITEMS.map(item => (
@@ -328,7 +273,7 @@ export default function App() {
                 key={item.id}
                 onClick={() => {
                   setView(item.id)
-                  setShowMenu(false)   // Auto collapse after selecting
+                  setShowMenu(false)
                 }}
                 style={{ 
                   display: 'flex', 
@@ -339,9 +284,7 @@ export default function App() {
                   marginBottom: 4, 
                   cursor: 'pointer', 
                   background: view === item.id ? T.bg3 : 'transparent', 
-                  color: view === item.id ? T.text0 : T.text1, 
-                  fontSize: 13, 
-                  fontWeight: view === item.id ? 600 : 400 
+                  color: view === item.id ? T.text0 : T.text1 
                 }}
               >
                 <span style={{ fontSize: 16 }}>{item.icon}</span>
@@ -351,6 +294,35 @@ export default function App() {
           </div>
         )}
 
+        {/* Profile, Settings, Withdraw */}
+        {showMenu && (
+          <div style={{ padding: '0 10px 10px' }}>
+            {BOTTOM_ITEMS.map(item => (
+              <div 
+                key={item.id}
+                onClick={() => {
+                  setView(item.id)
+                  setShowMenu(false)
+                }}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 10, 
+                  padding: '10px 12px', 
+                  borderRadius: 10, 
+                  marginBottom: 4, 
+                  cursor: 'pointer', 
+                  color: T.text1 
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{item.icon}</span>
+                {item.label}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Logout */}
         <div style={{ padding: 16, borderTop: `1px solid ${T.border}` }}>
           <button onClick={async () => { await supabase.auth.signOut(); setUser(null) }} style={{ width: '100%', padding: 8, background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text1 }}>
             Log out
