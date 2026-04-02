@@ -435,12 +435,20 @@ export default function App() {
   const [recentDeposits, setRecentDeposits] = useState(RECENT_DEPOSITS)
 
   useEffect(() => {
+    // Timeout fallback so loading never hangs forever
+    const timeout = setTimeout(() => setLoading(false), 3000)
+
     supabase.auth.getSession().then(async ({ data }) => {
+      clearTimeout(timeout)
       const u = data.session?.user ?? null
       setUser(u)
       if (u) await fetchKYCStatus(u.id)
       setLoading(false)
+    }).catch(() => {
+      clearTimeout(timeout)
+      setLoading(false)
     })
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const u = session?.user ?? null
       setUser(u)
@@ -489,7 +497,6 @@ export default function App() {
     if (view === 'markets')   return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} />
     if (view === 'copy')      return <CopyTradingPage kycStatus={kycStatus} />
     if (view === 'deposits')  return <DepositsPage onDepositSuccess={d => setRecentDeposits(prev => [d, ...prev])} kycStatus={kycStatus} />
-    // ── Profile page — full featured with editable details + KYC upload
     if (view === 'profile')   return <Profile user={user} kycStatus={kycStatus} onKycUpdate={status => setKycStatus(status)} />
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
