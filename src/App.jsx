@@ -435,7 +435,6 @@ export default function App() {
   const [recentDeposits, setRecentDeposits] = useState(RECENT_DEPOSITS)
 
   useEffect(() => {
-    // Timeout fallback so loading never hangs forever
     const timeout = setTimeout(() => setLoading(false), 3000)
 
     supabase.auth.getSession().then(async ({ data }) => {
@@ -478,6 +477,8 @@ export default function App() {
     </div>
   )
 
+  // Auth.jsx owns the landing page — it shows the full marketing page,
+  // then lets the user navigate to sign in or sign up from within itself.
   if (!user) return <Auth onLogin={(u) => { setUser(u); fetchKYCStatus(u.id) }} />
 
   const NAV_ITEMS = [
