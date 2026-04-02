@@ -429,6 +429,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [kycStatus, setKycStatus] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showLanding, setShowLanding] = useState(true) // ← ADDED: always show landing first
   const [view, setView] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(null)
@@ -441,6 +442,8 @@ export default function App() {
       clearTimeout(timeout)
       const u = data.session?.user ?? null
       setUser(u)
+      // ← CHANGED: session found but we do NOT set showLanding=false here.
+      // The user must explicitly click in from the landing page.
       if (u) await fetchKYCStatus(u.id)
       setLoading(false)
     }).catch(() => {
@@ -465,10 +468,17 @@ export default function App() {
     setKycStatus('not_started')
   }
 
+  const handleLogin = async (u) => {
+    setUser(u)
+    await fetchKYCStatus(u.id)
+    setShowLanding(false) // ← ADDED: only enter the app after explicit login
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setUser(null)
     setKycStatus(null)
+    setShowLanding(true) // ← ADDED: go back to landing on logout
   }
 
   if (loading) return (
@@ -477,9 +487,8 @@ export default function App() {
     </div>
   )
 
-  // Auth.jsx owns the landing page — it shows the full marketing page,
-  // then lets the user navigate to sign in or sign up from within itself.
-  if (!user) return <Auth onLogin={(u) => { setUser(u); fetchKYCStatus(u.id) }} />
+  // ← CHANGED: show landing whenever showLanding is true (logged out OR new visitor)
+  if (showLanding) return <Auth onLogin={handleLogin} />
 
   const NAV_ITEMS = [
     { id: 'dashboard', label: 'Dashboard',   icon: 'dashboard' },
