@@ -1,6 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://njodnertiscjcxdssyat.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qb2RuZXJ0aXNjamN4ZHNzeWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjc1ODYsImV4cCI6MjA5MDY0MzU4Nn0.VPaBdBnHvW-yGth-U7SSIpywnJGiQVZtP6E3WRUaQJg'
-
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export const supabase = createClient(
+  import.meta.envhttps://njodnertiscjcxdssyat.supabase.co,
+  import.meta.env.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+  {
+    auth: {
+      persistSession: true,
+      storageKey: 'polytrader-auth',  // unique key prevents lock conflicts
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    }
+  }
+)
