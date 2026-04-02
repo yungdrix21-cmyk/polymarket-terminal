@@ -133,7 +133,6 @@ function Chart({ market }) {
   )
 }
 
-// ── KYC Banner shown inside dashboard when pending ──────────────────────────
 function KYCBanner({ kycStatus }) {
   if (kycStatus === 'approved') return null
   return (
@@ -154,7 +153,6 @@ function KYCBanner({ kycStatus }) {
   )
 }
 
-// ── Locked overlay for blocked pages ───────────────────────────────────────
 function LockedPage({ title }) {
   return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: T.text2, padding: 40, textAlign: 'center' }}>
@@ -431,7 +429,7 @@ function CopyTrading({ kycStatus }) {
 // ── MAIN APP ────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null)
-  const [kycStatus, setKycStatus] = useState(null)  // null | not_started | pending | approved | rejected
+  const [kycStatus, setKycStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(false)
@@ -453,9 +451,19 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchKYCStatus = async (userId) => {
-    const { data } = await supabase.from('profiles').select('kyc_status').eq('id', userId).single()
-    setKycStatus(data?.kyc_status ?? 'not_started')
+  // ── FIXED: retry until profile row exists so app never stays on Loading... ──
+  const fetchKYCStatus = async (userId, retries = 5) => {
+    for (let i = 0; i < retries; i++) {
+      const { data } = await supabase.from('profiles').select('kyc_status').eq('id', userId).single()
+      if (data) {
+        setKycStatus(data.kyc_status ?? 'not_started')
+        return
+      }
+      // Profile row not ready yet — wait 800ms and retry
+      await new Promise(res => setTimeout(res, 800))
+    }
+    // After all retries, default so app doesn't stay stuck
+    setKycStatus('not_started')
   }
 
   const handleLogout = async () => {
@@ -532,7 +540,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* KYC status pill in sidebar */}
         {!collapsed && kycStatus && kycStatus !== 'approved' && (
           <div style={{ margin: '10px 10px 0', background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Icon name="shield" size={12} color={T.yellow} />
