@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
-import Auth, { KYCPending } from './components/Auth'
+import Auth from './components/Auth'
+import Profile from './components/Profile'
 
 const T = {
   bg0: '#0d0e14', bg1: '#12131c', bg2: '#181922', bg3: '#1e2030', bgCard: '#14151f',
@@ -320,7 +321,6 @@ function MarketsPage({ prices, selected, setSelected }) {
 
 function DepositsPage({ onDepositSuccess, kycStatus }) {
   if (kycStatus !== 'approved') return <LockedPage title="Deposits" />
-
   const [selectedCrypto, setSelectedCrypto] = useState(null)
   const [amount, setAmount] = useState('')
   const cryptos = [
@@ -374,9 +374,8 @@ function DepositsPage({ onDepositSuccess, kycStatus }) {
   )
 }
 
-function CopyTrading({ kycStatus }) {
+function CopyTradingPage({ kycStatus }) {
   if (kycStatus !== 'approved') return <LockedPage title="Copy Trading" />
-
   const [searchTerm, setSearchTerm] = useState('')
   const traders = [
     { name: "beachboy4", profit: "+$3,660,645", winRate: "87%", followers: "12.4K", rank: 1 },
@@ -426,7 +425,6 @@ function CopyTrading({ kycStatus }) {
   )
 }
 
-// ── MAIN APP ────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null)
   const [kycStatus, setKycStatus] = useState(null)
@@ -451,18 +449,12 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // ── FIXED: retry until profile row exists so app never stays on Loading... ──
   const fetchKYCStatus = async (userId, retries = 5) => {
     for (let i = 0; i < retries; i++) {
       const { data } = await supabase.from('profiles').select('kyc_status').eq('id', userId).single()
-      if (data) {
-        setKycStatus(data.kyc_status ?? 'not_started')
-        return
-      }
-      // Profile row not ready yet — wait 800ms and retry
+      if (data) { setKycStatus(data.kyc_status ?? 'not_started'); return }
       await new Promise(res => setTimeout(res, 800))
     }
-    // After all retries, default so app doesn't stay stuck
     setKycStatus('not_started')
   }
 
@@ -472,21 +464,19 @@ export default function App() {
     setKycStatus(null)
   }
 
-  if (loading) {
-    return (
-      <div style={{ height: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: T.text2, fontSize: 13, fontFamily: T.font }}>Loading...</div>
-      </div>
-    )
-  }
+  if (loading) return (
+    <div style={{ height: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: T.text2, fontSize: 13, fontFamily: T.font }}>Loading...</div>
+    </div>
+  )
 
   if (!user) return <Auth onLogin={(u) => { setUser(u); fetchKYCStatus(u.id) }} />
 
   const NAV_ITEMS = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { id: 'markets',   label: 'Markets',   icon: 'markets'   },
-    { id: 'copy',      label: 'Copy Trade', icon: 'users', locked: kycStatus !== 'approved' },
-    { id: 'deposits',  label: 'Deposits',  icon: 'deposit', locked: kycStatus !== 'approved' },
+    { id: 'dashboard', label: 'Dashboard',   icon: 'dashboard' },
+    { id: 'markets',   label: 'Markets',     icon: 'markets'   },
+    { id: 'copy',      label: 'Copy Trade',  icon: 'users',    locked: kycStatus !== 'approved' },
+    { id: 'deposits',  label: 'Deposits',    icon: 'deposit',  locked: kycStatus !== 'approved' },
   ]
   const BOTTOM_ITEMS = [
     { id: 'profile',  label: 'Profile',  icon: 'profile'  },
@@ -497,8 +487,10 @@ export default function App() {
   const renderPage = () => {
     if (view === 'dashboard') return <DashboardPage user={user} recentDeposits={recentDeposits} kycStatus={kycStatus} />
     if (view === 'markets')   return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} />
-    if (view === 'copy')      return <CopyTrading kycStatus={kycStatus} />
+    if (view === 'copy')      return <CopyTradingPage kycStatus={kycStatus} />
     if (view === 'deposits')  return <DepositsPage onDepositSuccess={d => setRecentDeposits(prev => [d, ...prev])} kycStatus={kycStatus} />
+    // ── Profile page — full featured with editable details + KYC upload
+    if (view === 'profile')   return <Profile user={user} kycStatus={kycStatus} onKycUpdate={status => setKycStatus(status)} />
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
         <Icon name={BOTTOM_ITEMS.find(i => i.id === view)?.icon || 'dashboard'} size={40} color={T.text2} />
@@ -541,9 +533,9 @@ export default function App() {
         </div>
 
         {!collapsed && kycStatus && kycStatus !== 'approved' && (
-          <div style={{ margin: '10px 10px 0', background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div onClick={() => setView('profile')} style={{ margin: '10px 10px 0', background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
             <Icon name="shield" size={12} color={T.yellow} />
-            <span style={{ fontSize: 11, color: T.yellow, fontWeight: 600 }}>KYC {kycStatus === 'pending' ? 'Pending' : 'Required'}</span>
+            <span style={{ fontSize: 11, color: T.yellow, fontWeight: 600 }}>KYC {kycStatus === 'pending' ? 'Pending' : 'Required'} →</span>
           </div>
         )}
         {!collapsed && kycStatus === 'approved' && (
@@ -580,7 +572,7 @@ export default function App() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Icon name="bell" size={16} color={T.text2} />
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: `${T.purple}20`, border: `1px solid ${T.purple}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div onClick={() => setView('profile')} style={{ width: 30, height: 30, borderRadius: 8, background: `${T.purple}20`, border: `1px solid ${T.purple}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <Icon name="profile" size={14} color={T.purple} />
             </div>
           </div>
