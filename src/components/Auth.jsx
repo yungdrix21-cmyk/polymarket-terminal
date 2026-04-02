@@ -318,12 +318,18 @@ export default function Auth({ onLogin }) {
     } catch (e) { setError(e.message) } finally { setLoading(false) }
   }
 
+  // ── FIXED: Sign in first so auth.uid() is active, then upsert profile ──
   const handleDetailsStep = async () => {
     if (!firstName || !lastName || !phone || !address || !city || !country) { setError('Please fill in all required fields.'); return }
     setLoading(true); setError('')
     try {
-      const { error } = await supabase.from('profiles').insert({
-        id: newUserId,
+      // Sign in to establish an active session before writing to profiles
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) throw signInError
+
+      // Now auth.uid() matches the row id — upsert works with your INSERT policy
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: signInData.user.id,
         first_name: firstName,
         last_name: lastName,
         phone,
@@ -331,7 +337,8 @@ export default function Auth({ onLogin }) {
         city,
         country,
       })
-      if (error) throw error
+      if (profileError) throw profileError
+
       setStep(2)
     } catch (e) { setError(e.message) } finally { setLoading(false) }
   }
