@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
-import Auth from './components/Auth'
+import Auth, { KYCPending } from './components/Auth'
 
 const T = {
   bg0: '#0d0e14', bg1: '#12131c', bg2: '#181922', bg3: '#1e2030', bgCard: '#14151f',
@@ -19,26 +19,28 @@ const T = {
 const Icon = ({ name, size = 16, color = 'currentColor', strokeWidth = 1.6 }) => {
   const paths = {
     dashboard: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
-    markets: <><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>,
-    users: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
-    deposit: <><path d="M12 2v10"/><path d="m8 8 4 4 4-4"/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></>,
-    profile: <><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></>,
-    settings: <><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></>,
-    withdraw: <><path d="M12 14v-10"/><path d="m8 8 4-4 4 4"/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></>,
-    logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
-    menu: <><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></>,
-    close: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
-    arrowUp: <><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></>,
-    chart: <><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>,
-    wallet: <><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 7v13a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></>,
-    copy: <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
-    star: <><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></>,
-    bell: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>,
-    search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
-    trending: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>,
-    clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+    markets:   <><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>,
+    users:     <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+    deposit:   <><path d="M12 2v10"/><path d="m8 8 4 4 4-4"/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></>,
+    profile:   <><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></>,
+    settings:  <><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></>,
+    withdraw:  <><path d="M12 14v-10"/><path d="m8 8 4-4 4 4"/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></>,
+    logout:    <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
+    menu:      <><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></>,
+    close:     <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+    arrowUp:   <><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></>,
+    chart:     <><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>,
+    wallet:    <><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 7v13a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></>,
+    copy:      <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
+    star:      <><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></>,
+    bell:      <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>,
+    search:    <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+    trending:  <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>,
+    clock:     <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
     clipboard: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></>,
-    zap: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></>,
+    zap:       <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></>,
+    lock:      <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
+    shield:    <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>,
   }
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
@@ -71,22 +73,18 @@ const RECENT_DEPOSITS = [
 ]
 
 function Badge({ children, color = T.blue }) {
-  return (
-    <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', color, background: `${color}18`, padding: '3px 8px', borderRadius: 20, border: `1px solid ${color}28` }}>
-      {children}
-    </span>
-  )
+  return <span style={{ fontSize: 10, fontWeight: 600, color, background: `${color}18`, padding: '3px 8px', borderRadius: 20, border: `1px solid ${color}28` }}>{children}</span>
 }
 
 function StatCard({ label, value, color, icon, sub }) {
   return (
     <div style={{ background: T.bgCard, borderRadius: 14, padding: '18px 20px', border: `1px solid ${T.border}`, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: 0, right: 0, width: 80, height: 80, borderRadius: '0 14px 0 80px', background: `${color}08` }} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
         <div style={{ color: T.text1, fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{label}</div>
         <div style={{ color, opacity: 0.8 }}>{icon}</div>
       </div>
-      <div style={{ color, fontSize: 22, fontWeight: 700, fontFamily: T.mono, letterSpacing: '-0.5px' }}>{value}</div>
+      <div style={{ color, fontSize: 22, fontWeight: 700, fontFamily: T.mono }}>{value}</div>
       {sub && <div style={{ color: T.text2, fontSize: 11, marginTop: 4 }}>{sub}</div>}
     </div>
   )
@@ -96,58 +94,95 @@ function Chart({ market }) {
   const [candles, setCandles] = useState([])
   useEffect(() => {
     let price = parseFloat(market.outcomePrices[0])
-    const initial = Array.from({ length: 42 }, (_, i) => {
+    const initial = Array.from({ length: 42 }, () => {
       const open = price
       const change = (Math.random() - 0.48) * 0.04
       const close = Math.min(0.99, Math.max(0.01, open + change))
       const high = Math.max(open, close) + Math.random() * 0.012
       const low = Math.min(open, close) - Math.random() * 0.012
       price = close
-      return { time: i, open, close, high, low, volume: Math.floor(Math.random() * 50000 + 10000) }
+      return { open, close, high, low, volume: Math.floor(Math.random() * 50000 + 10000) }
     })
     setCandles(initial)
   }, [market])
   if (!candles.length) return null
   const W = 14, chartH = 180, volH = 40, pad = 6
-  const highs = candles.map(c => c.high), lows = candles.map(c => c.low)
-  const minP = Math.min(...lows), maxP = Math.max(...highs)
+  const minP = Math.min(...candles.map(c => c.low)), maxP = Math.max(...candles.map(c => c.high))
   const maxVol = Math.max(...candles.map(c => c.volume))
   const scaleP = v => chartH - ((v - minP) / (maxP - minP)) * (chartH - pad * 2) - pad
   const scaleV = v => volH - (v / maxVol) * (volH - 3)
   const totalW = candles.length * W + 20
   return (
-    <div style={{ overflowX: 'auto', marginTop: 12, borderRadius: 8 }}>
+    <div style={{ overflowX: 'auto', marginTop: 12 }}>
       <svg width={totalW} height={chartH + volH + 20}>
-        {[0.25, 0.5, 0.75].map((v, i) => (
-          <line key={i} x1={0} y1={scaleP(minP + (maxP - minP) * v)} x2={totalW} y2={scaleP(minP + (maxP - minP) * v)} stroke="rgba(255,255,255,0.04)" strokeWidth={1} strokeDasharray="4,4" />
-        ))}
+        {[0.25, 0.5, 0.75].map((v, i) => <line key={i} x1={0} y1={scaleP(minP + (maxP - minP) * v)} x2={totalW} y2={scaleP(minP + (maxP - minP) * v)} stroke="rgba(255,255,255,0.04)" strokeWidth={1} strokeDasharray="4,4" />)}
         {candles.map((c, i) => {
           const isUp = c.close >= c.open
           const color = isUp ? T.teal : T.red
           const bodyTop = scaleP(Math.max(c.open, c.close))
           const bodyH = Math.max(1.5, Math.abs(scaleP(c.open) - scaleP(c.close)))
           const x = i * W + W / 2
-          return (
-            <g key={i}>
-              <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} opacity={0.5} />
-              <rect x={i * W + 2} y={bodyTop} width={W - 4} height={bodyH} fill={color} opacity={0.9} rx={1.5} />
-              <rect x={i * W + 2} y={chartH + scaleV(c.volume)} width={W - 4} height={volH - scaleV(c.volume)} fill={isUp ? T.teal : T.red} opacity={0.18} rx={1} />
-            </g>
-          )
+          return <g key={i}>
+            <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} opacity={0.5} />
+            <rect x={i * W + 2} y={bodyTop} width={W - 4} height={bodyH} fill={color} opacity={0.9} rx={1.5} />
+            <rect x={i * W + 2} y={chartH + scaleV(c.volume)} width={W - 4} height={volH - scaleV(c.volume)} fill={color} opacity={0.18} rx={1} />
+          </g>
         })}
       </svg>
     </div>
   )
 }
 
-function DashboardPage({ user, recentDeposits }) {
+// ── KYC Banner shown inside dashboard when pending ──────────────────────────
+function KYCBanner({ kycStatus }) {
+  if (kycStatus === 'approved') return null
+  return (
+    <div style={{ margin: '0 0 20px', background: T.yellowDim, border: `1px solid ${T.yellow}40`, borderRadius: 14, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+      <Icon name="shield" size={20} color={T.yellow} />
+      <div style={{ flex: 1 }}>
+        <div style={{ color: T.yellow, fontWeight: 600, fontSize: 13 }}>
+          {kycStatus === 'pending' ? '⏳ KYC Verification Pending' : '⚠ KYC Required'}
+        </div>
+        <div style={{ color: T.text1, fontSize: 12, marginTop: 2 }}>
+          {kycStatus === 'pending'
+            ? 'Your documents are under review (1–2 business days). Deposits and trading are locked until approved.'
+            : 'Complete KYC verification to unlock deposits and trading.'}
+        </div>
+      </div>
+      <Badge color={T.yellow}>{kycStatus === 'pending' ? 'Under Review' : 'Action Required'}</Badge>
+    </div>
+  )
+}
+
+// ── Locked overlay for blocked pages ───────────────────────────────────────
+function LockedPage({ title }) {
+  return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: T.text2, padding: 40, textAlign: 'center' }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', background: T.yellowDim, border: `1px solid ${T.yellow}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name="lock" size={28} color={T.yellow} />
+      </div>
+      <div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: T.text0, marginBottom: 6 }}>{title} Locked</div>
+        <div style={{ fontSize: 13, color: T.text1, maxWidth: 300, lineHeight: 1.6 }}>
+          Your KYC verification is pending review. This feature will be unlocked once your identity is approved.
+        </div>
+      </div>
+      <div style={{ background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 10, padding: '10px 20px' }}>
+        <span style={{ fontSize: 12, color: T.yellow, fontWeight: 600 }}>⏳ Review takes 1–2 business days</span>
+      </div>
+    </div>
+  )
+}
+
+function DashboardPage({ user, recentDeposits, kycStatus }) {
   const totalPnL = PORTFOLIO.reduce((sum, p) => sum + (p.current - p.avgPrice) * p.shares, 0)
   const totalValue = PORTFOLIO.reduce((sum, p) => sum + p.current * p.shares, 0)
   return (
     <div style={{ padding: '28px 28px 40px', overflowY: 'auto', flex: 1 }}>
+      <KYCBanner kycStatus={kycStatus} />
       <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2 style={{ color: T.text0, margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: '-0.3px' }}>Welcome back 👋</h2>
+          <h2 style={{ color: T.text0, margin: 0, fontSize: 20, fontWeight: 700 }}>Welcome back 👋</h2>
           <p style={{ color: T.text2, margin: '4px 0 0', fontSize: 13 }}>{user?.email}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -195,7 +230,7 @@ function DashboardPage({ user, recentDeposits }) {
             onMouseEnter={e => e.currentTarget.style.background = T.bgHover}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: T.yellowDim, border: `1px solid ${T.yellow}28`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: T.yellowDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name="deposit" size={15} color={T.yellow} />
               </div>
               <div>
@@ -236,17 +271,15 @@ function MarketsPage({ prices, selected, setSelected }) {
                 style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer', background: isSelected ? T.bg3 : 'transparent', borderLeft: `3px solid ${isSelected ? T.blue : 'transparent'}`, transition: 'background 0.15s' }}
                 onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = T.bgHover }}
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ fontSize: 12.5, lineHeight: 1.4, color: isSelected ? T.text0 : T.text1, flex: 1, paddingRight: 8 }}>{market.question}</div>
                   <Badge color={T.blue}>{market.timeframe}</Badge>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 18, fontWeight: 700, color: parseFloat(yes) > 50 ? T.teal : T.red, fontFamily: T.mono }}>{yes}%</span>
-                  <span style={{ fontSize: 11, color: isUp ? T.teal : T.red, background: isUp ? T.tealDim : T.redDim, padding: '3px 8px', borderRadius: 6, border: `1px solid ${isUp ? T.teal : T.red}28` }}>{market.change}</span>
+                  <span style={{ fontSize: 11, color: isUp ? T.teal : T.red, background: isUp ? T.tealDim : T.redDim, padding: '3px 8px', borderRadius: 6 }}>{market.change}</span>
                 </div>
-                <div style={{ marginTop: 6, fontSize: 11, color: T.text2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Icon name="chart" size={10} color={T.text2} /> Vol ${(market.volume / 1000).toFixed(0)}K
-                </div>
+                <div style={{ marginTop: 6, fontSize: 11, color: T.text2 }}>Vol ${(market.volume / 1000).toFixed(0)}K</div>
               </div>
             )
           })}
@@ -265,16 +298,14 @@ function MarketsPage({ prices, selected, setSelected }) {
               <div style={{ display: 'flex', gap: 10 }}>
                 {[{ label: 'YES', val: selectedLive.outcomePrices[0], color: T.teal }, { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red }].map(item => (
                   <div key={item.label} style={{ textAlign: 'center', background: `${item.color}10`, border: `1px solid ${item.color}30`, padding: '10px 22px', borderRadius: 12, minWidth: 88 }}>
-                    <div style={{ fontSize: 10, color: item.color, fontWeight: 700, letterSpacing: '0.08em' }}>{item.label}</div>
+                    <div style={{ fontSize: 10, color: item.color, fontWeight: 700 }}>{item.label}</div>
                     <div style={{ fontSize: 22, fontWeight: 700, color: item.color, fontFamily: T.mono }}>{(parseFloat(item.val) * 100).toFixed(0)}%</div>
                   </div>
                 ))}
               </div>
             </div>
             <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
-              <div style={{ fontSize: 10, color: T.text2, marginBottom: 8, letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icon name="chart" size={12} color={T.text2} /> LIVE PROBABILITY CHART
-              </div>
+              <div style={{ fontSize: 10, color: T.text2, marginBottom: 8, letterSpacing: '0.08em' }}>LIVE PROBABILITY CHART</div>
               <Chart market={selectedLive} />
             </div>
           </>
@@ -289,7 +320,9 @@ function MarketsPage({ prices, selected, setSelected }) {
   )
 }
 
-function DepositsPage({ onDepositSuccess }) {
+function DepositsPage({ onDepositSuccess, kycStatus }) {
+  if (kycStatus !== 'approved') return <LockedPage title="Deposits" />
+
   const [selectedCrypto, setSelectedCrypto] = useState(null)
   const [amount, setAmount] = useState('')
   const cryptos = [
@@ -298,18 +331,10 @@ function DepositsPage({ onDepositSuccess }) {
     { symbol: 'USDT', name: 'Tether', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', color: '#26a17b' },
     { symbol: 'USDC', name: 'USD Coin', logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', color: '#2775ca' },
   ]
-  const handleConfirmDeposit = () => {
-    if (!amount || !selectedCrypto) return
-    onDepositSuccess({ id: Date.now(), crypto: selectedCrypto.symbol, amount: parseFloat(amount), date: 'Just now', status: 'Pending' })
-    alert(`Deposit of ${amount} ${selectedCrypto.symbol} submitted.`)
-    setSelectedCrypto(null); setAmount('')
-  }
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Deposit Funds</h2>
-        <p style={{ color: T.text2, margin: 0, fontSize: 13 }}>Choose a crypto asset to deposit</p>
-      </div>
+      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Deposit Funds</h2>
+      <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Choose a crypto asset to deposit</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {cryptos.map(c => (
           <div key={c.symbol} onClick={() => setSelectedCrypto(c)}
@@ -319,7 +344,6 @@ function DepositsPage({ onDepositSuccess }) {
             <img src={c.logo} alt={c.symbol} style={{ width: 56, height: 56, objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
             <div style={{ marginTop: 14, fontWeight: 700, color: T.text0, fontSize: 15 }}>{c.symbol}</div>
             <div style={{ color: T.text2, fontSize: 12, marginTop: 3 }}>{c.name}</div>
-            <div style={{ marginTop: 12, display: 'inline-block', padding: '4px 14px', borderRadius: 20, background: `${c.color}15`, color: c.color, fontSize: 11, fontWeight: 600 }}>Deposit</div>
           </div>
         ))}
       </div>
@@ -329,29 +353,20 @@ function DepositsPage({ onDepositSuccess }) {
             <button onClick={() => { setSelectedCrypto(null); setAmount('') }} style={{ position: 'absolute', top: 20, right: 20, background: T.bg3, border: 'none', color: T.text1, borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="close" size={14} />
             </button>
-            <div style={{ textAlign: 'center', marginBottom: 24 }}>
-              <img src={selectedCrypto.logo} alt={selectedCrypto.symbol} style={{ width: 64, height: 64, objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-              <h3 style={{ color: T.text0, margin: '12px 0 0', fontSize: 18 }}>Deposit {selectedCrypto.name}</h3>
-            </div>
-            <div style={{ background: T.bg3, borderRadius: 14, padding: 20, textAlign: 'center', marginBottom: 20, border: `1px solid ${T.border}` }}>
-              <div style={{ fontSize: 12, color: T.text2, marginBottom: 12 }}>Send only {selectedCrypto.symbol} to this address</div>
-              <div style={{ width: 160, height: 160, margin: '0 auto 14px', background: '#fff', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#333', fontWeight: 600 }}>QR Code</div>
+            <h3 style={{ color: T.text0, margin: '0 0 20px', fontSize: 18 }}>Deposit {selectedCrypto.name}</h3>
+            <div style={{ background: T.bg3, borderRadius: 14, padding: 20, textAlign: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: 12, color: T.text2, marginBottom: 8 }}>Send only {selectedCrypto.symbol} to this address</div>
+              <div style={{ width: 140, height: 140, margin: '0 auto 12px', background: '#fff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#333', fontWeight: 600 }}>QR Code</div>
               <div style={{ fontSize: 11, color: T.text1, wordBreak: 'break-all', fontFamily: T.mono }}>{selectedCrypto.address}</div>
             </div>
-            <button onClick={() => navigator.clipboard.writeText(selectedCrypto.address)}
-              style={{ width: '100%', padding: '12px', background: T.blueDim, color: T.blue, border: `1px solid ${T.blue}30`, borderRadius: 12, fontWeight: 600, marginBottom: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: T.font }}>
-              <Icon name="clipboard" size={14} color={T.blue} /> Copy Address
-            </button>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ color: T.text1, fontSize: 13, marginBottom: 8, fontWeight: 500 }}>Amount</div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <input type="number" step="0.000001" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00"
-                  style={{ flex: 1, background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 12, padding: '14px 16px', color: T.text0, fontSize: 18, fontFamily: T.mono, outline: 'none' }} />
-                <div style={{ background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 12, padding: '14px 18px', color: T.text1, fontWeight: 700 }}>{selectedCrypto.symbol}</div>
-              </div>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00"
+                style={{ flex: 1, background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, padding: '13px 14px', color: T.text0, fontSize: 16, fontFamily: T.mono, outline: 'none' }} />
+              <div style={{ background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, padding: '13px 16px', color: T.text1, fontWeight: 700 }}>{selectedCrypto.symbol}</div>
             </div>
-            <button onClick={handleConfirmDeposit} disabled={!amount}
-              style={{ width: '100%', padding: '15px', background: amount ? T.teal : T.bg3, color: amount ? '#0d0e14' : T.text2, border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 700, cursor: amount ? 'pointer' : 'not-allowed', transition: 'all 0.2s', fontFamily: T.font }}>
+            <button onClick={() => { if (amount) { onDepositSuccess({ id: Date.now(), crypto: selectedCrypto.symbol, amount: parseFloat(amount), date: 'Just now', status: 'Pending' }); setSelectedCrypto(null); setAmount('') } }}
+              disabled={!amount}
+              style={{ width: '100%', padding: '14px', background: amount ? T.teal : T.bg3, color: amount ? '#0d0e14' : T.text2, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: amount ? 'pointer' : 'not-allowed', fontFamily: T.font }}>
               Confirm Deposit
             </button>
           </div>
@@ -361,7 +376,9 @@ function DepositsPage({ onDepositSuccess }) {
   )
 }
 
-function CopyTrading() {
+function CopyTrading({ kycStatus }) {
+  if (kycStatus !== 'approved') return <LockedPage title="Copy Trading" />
+
   const [searchTerm, setSearchTerm] = useState('')
   const traders = [
     { name: "beachboy4", profit: "+$3,660,645", winRate: "87%", followers: "12.4K", rank: 1 },
@@ -374,27 +391,19 @@ function CopyTrading() {
   const filtered = traders.filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()))
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Copy Trading</h2>
-        <p style={{ color: T.text2, margin: 0, fontSize: 13 }}>Follow successful Polymarket crypto traders</p>
-      </div>
+      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Copy Trading</h2>
+      <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Follow successful Polymarket crypto traders</p>
       <div style={{ position: 'relative', marginBottom: 24 }}>
-        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>
-          <Icon name="search" size={15} color={T.text2} />
-        </div>
+        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}><Icon name="search" size={15} color={T.text2} /></div>
         <input type="text" placeholder="Search traders..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
           style={{ width: '100%', padding: '12px 16px 12px 42px', background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 12, color: T.text0, fontSize: 13, outline: 'none', boxSizing: 'border-box', fontFamily: T.font }} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-        {filtered.length > 0 ? filtered.map((trader, i) => (
-          <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: '20px 22px', transition: 'border-color 0.2s' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = T.borderHi}
-            onMouseLeave={e => e.currentTarget.style.borderColor = T.border}>
+        {filtered.map((trader, i) => (
+          <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: '20px 22px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: `${T.purple}20`, border: `1px solid ${T.purple}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: T.purple }}>
-                  {trader.name[0].toUpperCase()}
-                </div>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: `${T.purple}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: T.purple }}>{trader.name[0].toUpperCase()}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: T.text0 }}>{trader.name}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -413,40 +422,48 @@ function CopyTrading() {
               <Icon name="copy" size={13} /> Copy Trader
             </button>
           </div>
-        )) : <div style={{ color: T.text2, gridColumn: '1/-1', textAlign: 'center', padding: 40 }}>No traders found</div>}
+        ))}
       </div>
     </div>
   )
 }
 
-// ─── MAIN APP ───────────────────────────────────────────────────────────────
+// ── MAIN APP ────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true) // ← prevents flash of wrong page
+  const [kycStatus, setKycStatus] = useState(null)  // null | not_started | pending | approved | rejected
+  const [loading, setLoading] = useState(true)
   const [view, setView] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(null)
   const [recentDeposits, setRecentDeposits] = useState(RECENT_DEPOSITS)
 
   useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null)
+    supabase.auth.getSession().then(async ({ data }) => {
+      const u = data.session?.user ?? null
+      setUser(u)
+      if (u) await fetchKYCStatus(u.id)
       setLoading(false)
     })
-    // Listen for login/logout events
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const u = session?.user ?? null
+      setUser(u)
+      if (u) await fetchKYCStatus(u.id)
     })
     return () => subscription.unsubscribe()
   }, [])
 
+  const fetchKYCStatus = async (userId) => {
+    const { data } = await supabase.from('profiles').select('kyc_status').eq('id', userId).single()
+    setKycStatus(data?.kyc_status ?? 'not_started')
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setUser(null)
+    setKycStatus(null)
   }
 
-  // Show blank screen while checking auth (prevents flash)
   if (loading) {
     return (
       <div style={{ height: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -455,26 +472,25 @@ export default function App() {
     )
   }
 
-  // ← Show landing page / auth if not logged in
-  if (!user) return <Auth onLogin={setUser} />
+  if (!user) return <Auth onLogin={(u) => { setUser(u); fetchKYCStatus(u.id) }} />
 
   const NAV_ITEMS = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
     { id: 'markets',   label: 'Markets',   icon: 'markets'   },
-    { id: 'copy',      label: 'Copy Trade', icon: 'users'    },
-    { id: 'deposits',  label: 'Deposits',  icon: 'deposit'   },
+    { id: 'copy',      label: 'Copy Trade', icon: 'users', locked: kycStatus !== 'approved' },
+    { id: 'deposits',  label: 'Deposits',  icon: 'deposit', locked: kycStatus !== 'approved' },
   ]
   const BOTTOM_ITEMS = [
     { id: 'profile',  label: 'Profile',  icon: 'profile'  },
     { id: 'settings', label: 'Settings', icon: 'settings' },
-    { id: 'withdraw', label: 'Withdraw', icon: 'withdraw' },
+    { id: 'withdraw', label: 'Withdraw', icon: 'withdraw', locked: kycStatus !== 'approved' },
   ]
 
   const renderPage = () => {
-    if (view === 'dashboard') return <DashboardPage user={user} recentDeposits={recentDeposits} />
+    if (view === 'dashboard') return <DashboardPage user={user} recentDeposits={recentDeposits} kycStatus={kycStatus} />
     if (view === 'markets')   return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} />
-    if (view === 'copy')      return <CopyTrading />
-    if (view === 'deposits')  return <DepositsPage onDepositSuccess={d => setRecentDeposits(prev => [d, ...prev])} />
+    if (view === 'copy')      return <CopyTrading kycStatus={kycStatus} />
+    if (view === 'deposits')  return <DepositsPage onDepositSuccess={d => setRecentDeposits(prev => [d, ...prev])} kycStatus={kycStatus} />
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
         <Icon name={BOTTOM_ITEMS.find(i => i.id === view)?.icon || 'dashboard'} size={40} color={T.text2} />
@@ -487,18 +503,18 @@ export default function App() {
     const active = view === item.id
     return (
       <div onClick={() => setView(item.id)} title={collapsed ? item.label : ''}
-        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, marginBottom: 2, cursor: 'pointer', background: active ? T.bg3 : 'transparent', color: active ? T.text0 : T.text1, borderLeft: active && !collapsed ? `2px solid ${T.blue}` : '2px solid transparent', transition: 'all 0.15s' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, marginBottom: 2, cursor: 'pointer', background: active ? T.bg3 : 'transparent', borderLeft: active && !collapsed ? `2px solid ${T.blue}` : '2px solid transparent', transition: 'all 0.15s', position: 'relative' }}
         onMouseEnter={e => { if (!active) e.currentTarget.style.background = T.bgHover }}
         onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
-        <Icon name={item.icon} size={16} color={active ? T.blue : T.text1} />
-        {!collapsed && <span style={{ fontSize: 13, fontWeight: active ? 600 : 400 }}>{item.label}</span>}
+        <Icon name={item.icon} size={16} color={active ? T.blue : item.locked ? T.text2 : T.text1} />
+        {!collapsed && <span style={{ fontSize: 13, fontWeight: active ? 600 : 400, color: active ? T.text0 : item.locked ? T.text2 : T.text1, flex: 1 }}>{item.label}</span>}
+        {!collapsed && item.locked && <Icon name="lock" size={11} color={T.yellow} />}
       </div>
     )
   }
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: T.bg0, color: T.text0, fontFamily: T.font, overflow: 'hidden' }}>
-      {/* Sidebar */}
       <div style={{ width: collapsed ? 60 : 220, borderRight: `1px solid ${T.border}`, background: T.bg1, display: 'flex', flexDirection: 'column', transition: 'width 0.25s ease', flexShrink: 0 }}>
         <div style={{ padding: collapsed ? '18px 12px' : '18px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10, justifyContent: collapsed ? 'center' : 'space-between' }}>
           {!collapsed && (
@@ -511,19 +527,36 @@ export default function App() {
             </div>
           )}
           {collapsed && <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>P</div>}
-          <div onClick={() => setCollapsed(!collapsed)} style={{ cursor: 'pointer', color: T.text2, padding: 4, borderRadius: 6 }}>
+          <div onClick={() => setCollapsed(!collapsed)} style={{ cursor: 'pointer', padding: 4, borderRadius: 6 }}>
             <Icon name="menu" size={16} color={T.text2} />
           </div>
         </div>
+
+        {/* KYC status pill in sidebar */}
+        {!collapsed && kycStatus && kycStatus !== 'approved' && (
+          <div style={{ margin: '10px 10px 0', background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icon name="shield" size={12} color={T.yellow} />
+            <span style={{ fontSize: 11, color: T.yellow, fontWeight: 600 }}>KYC {kycStatus === 'pending' ? 'Pending' : 'Required'}</span>
+          </div>
+        )}
+        {!collapsed && kycStatus === 'approved' && (
+          <div style={{ margin: '10px 10px 0', background: T.tealDim, border: `1px solid ${T.teal}30`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icon name="shield" size={12} color={T.teal} />
+            <span style={{ fontSize: 11, color: T.teal, fontWeight: 600 }}>KYC Verified ✓</span>
+          </div>
+        )}
+
         <div style={{ flex: 1, padding: '12px 8px', overflowY: 'auto' }}>
-          {!collapsed && <div style={{ fontSize: 9, color: T.text2, letterSpacing: '0.1em', padding: '4px 8px 8px', textTransform: 'uppercase' }}>Main</div>}
+          {!collapsed && <div style={{ fontSize: 9, color: T.text2, letterSpacing: '0.1em', padding: '8px 8px 6px', textTransform: 'uppercase' }}>Main</div>}
           {NAV_ITEMS.map(item => <NavItem key={item.id} item={item} />)}
           <div style={{ height: 1, background: T.border, margin: '10px 8px' }} />
-          {!collapsed && <div style={{ fontSize: 9, color: T.text2, letterSpacing: '0.1em', padding: '4px 8px 8px', textTransform: 'uppercase' }}>Account</div>}
+          {!collapsed && <div style={{ fontSize: 9, color: T.text2, letterSpacing: '0.1em', padding: '4px 8px 6px', textTransform: 'uppercase' }}>Account</div>}
           {BOTTOM_ITEMS.map(item => <NavItem key={item.id} item={item} />)}
         </div>
+
         <div style={{ padding: '12px 8px', borderTop: `1px solid ${T.border}` }}>
-          <div onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, cursor: 'pointer', color: T.text2, transition: 'all 0.15s' }}
+          <div onClick={handleLogout}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, cursor: 'pointer', color: T.text2, transition: 'all 0.15s' }}
             onMouseEnter={e => { e.currentTarget.style.background = T.redDim; e.currentTarget.style.color = T.red }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = T.text2 }}>
             <Icon name="logout" size={16} />
@@ -532,7 +565,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '0 24px', height: 52, borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: T.bg1, flexShrink: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: T.text0, textTransform: 'capitalize', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -540,7 +572,7 @@ export default function App() {
             {view}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ color: T.text2, cursor: 'pointer' }}><Icon name="bell" size={16} color={T.text2} /></div>
+            <Icon name="bell" size={16} color={T.text2} />
             <div style={{ width: 30, height: 30, borderRadius: 8, background: `${T.purple}20`, border: `1px solid ${T.purple}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="profile" size={14} color={T.purple} />
             </div>
