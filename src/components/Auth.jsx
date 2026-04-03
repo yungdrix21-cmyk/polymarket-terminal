@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const T = {
@@ -30,7 +30,7 @@ const SOLUTIONS = [
 ]
 const FEATURES = [
   { icon: '🌐', title: 'Web Interface', color: T.teal, points: ['Dashboard overview', 'AI + MCP', 'Probability on demand', 'Live import'] },
-  { icon: '🤖', title: 'Directed Bot Trading', color: T.blue, points: ['Utilize live RLHF/LLM', 'Train on your market', 'Learn from preferences', 'None-stop improvement'] },
+  { icon: '🤖', title: 'Directed Bot Trading', color: T.blue, points: ['Utilize live RLHF/LLM', 'Train on your market', 'Learn from preferences', 'Non-stop improvement'] },
   { icon: '⚡', title: 'AI-Powered Analysis', color: T.purple, points: ['Real-time market event alerts', 'Smart QA on current P&L', 'Optimal win analysis', 'Probability simulation'] },
   { icon: '🛡️', title: 'Risk Protection', color: T.yellow, points: ['Automatic hedging up to 85%', 'Automatic hedge badge', 'Loss limit at 20%'] },
 ]
@@ -53,7 +53,7 @@ function Field({ label, type = 'text', value, onChange, placeholder, required })
         {label}{required && <span style={{ color: T.red }}> *</span>}
       </label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ width: '100%', padding: '12px 14px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text0, fontSize: 13, outline: 'none', boxSizing: 'border-box', fontFamily: T.font, transition: 'border 0.2s' }}
+        style={{ width: '100%', padding: '12px 14px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text0, fontSize: 13, outline: 'none', boxSizing: 'border-box', fontFamily: T.font }}
         onFocus={e => e.target.style.borderColor = T.blue}
         onBlur={e => e.target.style.borderColor = T.border} />
     </div>
@@ -73,14 +73,13 @@ function Steps({ current }) {
               border: `2px solid ${i < current ? T.teal : i === current ? T.blue : T.border}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 11, fontWeight: 700, color: i <= current ? '#fff' : T.text2,
-              transition: 'all 0.3s',
             }}>
               {i < current ? '✓' : i + 1}
             </div>
-            <span style={{ fontSize: 9, color: i === current ? T.text0 : T.text2, fontWeight: i === current ? 600 : 400, letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{s}</span>
+            <span style={{ fontSize: 9, color: i === current ? T.text0 : T.text2, fontWeight: i === current ? 600 : 400, whiteSpace: 'nowrap' }}>{s}</span>
           </div>
           {i < steps.length - 1 && (
-            <div style={{ flex: 1, height: 2, background: i < current ? T.teal : T.border, margin: '0 8px', marginBottom: 18, transition: 'background 0.3s' }} />
+            <div style={{ flex: 1, height: 2, background: i < current ? T.teal : T.border, margin: '0 8px', marginBottom: 18 }} />
           )}
         </div>
       ))}
@@ -88,155 +87,70 @@ function Steps({ current }) {
   )
 }
 
-export function KYCPending({ user, kycStatus, onKYCSubmit }) {
-  const [file, setFile] = useState(null)
-  const [docType, setDocType] = useState('passport')
-  const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState('')
-  const [dragOver, setDragOver] = useState(false)
-
-  const handleUpload = async () => {
-    if (!file) { setError('Please select a document to upload.'); return }
-    setUploading(true); setError('')
-    try {
-      const ext = file.name.split('.').pop()
-      const path = `${user.id}/government_id.${ext}`
-      const { error: uploadError } = await supabase.storage.from('kyc-documents').upload(path, file, { upsert: true })
-      if (uploadError) throw uploadError
-      const { error: kycError } = await supabase.from('kyc').upsert({
-        user_id: user.id,
-        status: 'pending',
-        document_type: docType,
-        document_url: path,
-        submitted_at: new Date().toISOString(),
-      })
-      if (kycError) throw kycError
-      onKYCSubmit()
-    } catch (e) {
-      setError(e.message || 'Upload failed. Please try again.')
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  const handleDrop = (e) => {
-    e.preventDefault(); setDragOver(false)
-    const dropped = e.dataTransfer.files[0]
-    if (dropped) setFile(dropped)
-  }
-
-  if (kycStatus === 'pending') {
-    return (
-      <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
-        <div style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}>
-          <div style={{ width: 72, height: 72, borderRadius: '50%', background: T.yellowDim, border: `2px solid ${T.yellow}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 24px' }}>⏳</div>
-          <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 800, margin: '0 0 10px' }}>KYC Under Review</h2>
-          <p style={{ color: T.text1, fontSize: 14, lineHeight: 1.7, margin: '0 0 28px' }}>
-            Your identity documents are being reviewed by our team. This usually takes <strong style={{ color: T.yellow }}>1–2 business days</strong>. You can browse markets but deposits and trading are locked until approved.
-          </p>
-          <div style={{ background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 14, padding: '16px 20px', marginBottom: 24, textAlign: 'left' }}>
-            {[
-              { label: 'Account', value: user.email, color: T.teal },
-              { label: 'KYC Status', value: '🟡 Pending Review', color: T.yellow },
-              { label: 'Submitted', value: 'Just now', color: T.text1 },
-            ].map((r, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < 2 ? `1px solid ${T.border}` : 'none' }}>
-                <span style={{ color: T.text2, fontSize: 13 }}>{r.label}</span>
-                <span style={{ color: r.color, fontSize: 13, fontWeight: 600 }}>{r.value}</span>
-              </div>
-            ))}
-          </div>
-          <button onClick={() => window.location.reload()}
-            style={{ padding: '12px 32px', background: T.blueDim, color: T.blue, border: `1px solid ${T.blue}30`, borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: T.font }}>
-            Refresh Status
-          </button>
-        </div>
+function Logo() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+      <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#fff' }}>P</div>
+      <div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</div>
+        <div style={{ fontSize: 10, color: T.text2, letterSpacing: '0.05em' }}>PREDICTION MARKETS</div>
       </div>
-    )
-  }
+    </div>
+  )
+}
 
-  if (kycStatus === 'rejected') {
-    return (
-      <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
-        <div style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}>
-          <div style={{ width: 72, height: 72, borderRadius: '50%', background: T.redDim, border: `2px solid ${T.red}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 24px' }}>❌</div>
-          <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 800, margin: '0 0 10px' }}>KYC Rejected</h2>
-          <p style={{ color: T.text1, fontSize: 14, lineHeight: 1.7, margin: '0 0 28px' }}>
-            Your documents were rejected. Please re-upload a clearer image of your government ID.
-          </p>
-          <button onClick={() => onKYCSubmit('resubmit')}
-            style={{ padding: '12px 32px', background: T.blue, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: T.font }}>
-            Re-submit Documents
-          </button>
-        </div>
-      </div>
-    )
-  }
+function ErrorBox({ msg }) {
+  if (!msg) return null
+  return <div style={{ background: T.redDim, border: `1px solid ${T.red}30`, borderRadius: 10, padding: '10px 14px', color: T.red, fontSize: 13, marginBottom: 16, lineHeight: 1.5 }}>{msg}</div>
+}
 
+function SuccessBox({ msg }) {
+  if (!msg) return null
+  return <div style={{ background: T.tealDim, border: `1px solid ${T.teal}30`, borderRadius: 10, padding: '10px 14px', color: T.teal, fontSize: 13, marginBottom: 16 }}>{msg}</div>
+}
+
+function PrimaryBtn({ onClick, disabled, loading, children }) {
+  return (
+    <button onClick={onClick} disabled={disabled || loading}
+      style={{ width: '100%', padding: '14px', background: disabled || loading ? T.bg3 : 'linear-gradient(135deg, #4f8eff, #9b7dff)', color: disabled || loading ? T.text2 : '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: disabled || loading ? 'not-allowed' : 'pointer', fontFamily: T.font, transition: 'all 0.2s' }}>
+      {children}
+    </button>
+  )
+}
+
+// ── KYC Pending export (used from App.jsx) ─────────────────────────────────
+export function KYCPending({ user, kycStatus, onLogout }) {
   return (
     <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
-      <div style={{ maxWidth: 500, width: '100%' }}>
-        <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.borderHi}`, padding: '36px', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#fff' }}>P</div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</div>
-              <div style={{ fontSize: 10, color: T.text2, letterSpacing: '0.05em' }}>IDENTITY VERIFICATION</div>
-            </div>
-          </div>
-          <Steps current={2} />
-          <h2 style={{ color: T.text0, margin: '0 0 6px', fontSize: 20, fontWeight: 800 }}>Verify Your Identity</h2>
-          <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13, lineHeight: 1.6 }}>
-            Upload a government-issued ID to unlock deposits & trading. Your data is encrypted and secure.
+      <div style={{ maxWidth: 460, width: '100%', textAlign: 'center' }}>
+        <Logo />
+        <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.borderHi}`, padding: '40px 36px' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>{kycStatus === 'rejected' ? '❌' : '⏳'}</div>
+          <h2 style={{ color: kycStatus === 'rejected' ? T.red : T.text0, fontSize: 22, fontWeight: 800, margin: '0 0 12px' }}>
+            {kycStatus === 'rejected' ? 'KYC Rejected' : 'KYC Under Review'}
+          </h2>
+          <p style={{ color: T.text1, fontSize: 14, lineHeight: 1.7, margin: '0 0 24px' }}>
+            {kycStatus === 'rejected'
+              ? 'Your documents were rejected. Please contact support to resubmit.'
+              : <>Your documents are under review. Usually takes <strong style={{ color: T.yellow }}>1–2 business days</strong>. You can browse markets while pending.</>}
           </p>
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ color: T.text1, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', display: 'block', marginBottom: 8, textTransform: 'uppercase' }}>Document Type</label>
-            <div style={{ display: 'flex', gap: 10 }}>
-              {[{ id: 'passport', label: '🛂 Passport' }, { id: 'national_id', label: '🪪 National ID' }, { id: 'drivers_license', label: '🚗 Driver\'s License' }].map(d => (
-                <div key={d.id} onClick={() => setDocType(d.id)}
-                  style={{ flex: 1, padding: '10px 8px', textAlign: 'center', borderRadius: 10, border: `1px solid ${docType === d.id ? T.blue : T.border}`, background: docType === d.id ? T.blueDim : 'transparent', cursor: 'pointer', fontSize: 11, color: docType === d.id ? T.blue : T.text1, fontWeight: docType === d.id ? 600 : 400, transition: 'all 0.15s' }}>
-                  {d.label}
-                </div>
-              ))}
+          <div style={{ background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 12, padding: '14px 18px', marginBottom: 24, textAlign: 'left' }}>
+            <div style={{ fontSize: 12, color: T.yellow, fontWeight: 600, marginBottom: 8 }}>While pending you can:</div>
+            <div style={{ fontSize: 13, color: T.text1, lineHeight: 1.9 }}>
+              ✓ Browse all live markets<br />
+              ✗ Deposits locked<br />
+              ✗ Trading locked
             </div>
           </div>
-          <div
-            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => document.getElementById('kyc-file-input').click()}
-            style={{ border: `2px dashed ${dragOver ? T.blue : file ? T.teal : T.border}`, borderRadius: 14, padding: '32px 20px', textAlign: 'center', cursor: 'pointer', background: dragOver ? T.blueDim : file ? T.tealDim : 'rgba(255,255,255,0.02)', transition: 'all 0.2s', marginBottom: 20 }}>
-            <input id="kyc-file-input" type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => setFile(e.target.files[0])} />
-            {file ? (
-              <>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-                <div style={{ color: T.teal, fontWeight: 600, fontSize: 14 }}>{file.name}</div>
-                <div style={{ color: T.text2, fontSize: 12, marginTop: 4 }}>{(file.size / 1024 / 1024).toFixed(2)} MB · Click to change</div>
-              </>
-            ) : (
-              <>
-                <div style={{ fontSize: 36, marginBottom: 10 }}>📄</div>
-                <div style={{ color: T.text1, fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Drop your document here</div>
-                <div style={{ color: T.text2, fontSize: 12 }}>or click to browse · JPG, PNG, PDF up to 10MB</div>
-              </>
-            )}
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
-            <div style={{ color: T.text2, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', marginBottom: 10, textTransform: 'uppercase' }}>Document Requirements</div>
-            {['All 4 corners visible', 'Clear and readable text', 'Not expired', 'No black & white copies'].map((r, i) => (
-              <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-                <span style={{ color: T.teal, fontSize: 12 }}>✓</span>
-                <span style={{ color: T.text1, fontSize: 12 }}>{r}</span>
-              </div>
-            ))}
-          </div>
-          {error && <div style={{ background: T.redDim, border: `1px solid ${T.red}30`, borderRadius: 10, padding: '10px 14px', color: T.red, fontSize: 13, marginBottom: 16 }}>{error}</div>}
-          <button onClick={handleUpload} disabled={uploading || !file}
-            style={{ width: '100%', padding: '14px', background: file && !uploading ? 'linear-gradient(135deg, #4f8eff, #9b7dff)' : T.bg3, color: file && !uploading ? '#fff' : T.text2, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: file && !uploading ? 'pointer' : 'not-allowed', fontFamily: T.font, transition: 'all 0.2s' }}>
-            {uploading ? '⏳ Uploading...' : '🔐 Submit for Verification'}
-          </button>
-          <div style={{ textAlign: 'center', marginTop: 14, fontSize: 12, color: T.text2 }}>
-            🔒 Your documents are encrypted and only used for identity verification
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => window.location.reload()}
+              style={{ flex: 1, padding: '12px', background: T.blueDim, color: T.blue, border: `1px solid ${T.blue}30`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: T.font }}>
+              Refresh Status
+            </button>
+            <button onClick={onLogout}
+              style={{ flex: 1, padding: '12px', background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: T.font }}>
+              Log Out
+            </button>
           </div>
         </div>
       </div>
@@ -244,181 +158,238 @@ export function KYCPending({ user, kycStatus, onKYCSubmit }) {
   )
 }
 
+// ── Main Auth ──────────────────────────────────────────────────────────────
 export default function Auth({ onLogin }) {
   const [mode, setMode] = useState('landing') // landing | signin | signup | check_email
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(0)         // 0=account 1=details 2=kyc
 
+  // Step 0
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+
+  // Step 1
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
   const [country, setCountry] = useState('')
-  const [dob, setDob] = useState('')
+
+  // Step 2
   const [kycFile, setKycFile] = useState(null)
   const [docType, setDocType] = useState('passport')
   const [dragOver, setDragOver] = useState(false)
+  const fileRef = useRef()
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [newUserId, setNewUserId] = useState(null)
 
-  // ── FIX 1: Sign in — show email not confirmed AFTER clicking, as a clear message ──
+  // We store the authed user object throughout signup flow
+  const [signupUser, setSignupUser] = useState(null)
+
+  const reset = () => { setError(''); setSuccess('') }
+
+  // ── SIGN IN ──────────────────────────────────────────────────────────────
   const handleSignIn = async () => {
     if (!email || !password) { setError('Please fill in all fields.'); return }
-    setLoading(true); setError('')
+    setLoading(true); reset()
     try {
       const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
       if (err) {
         if (err.message.toLowerCase().includes('email not confirmed')) {
-          setError('Your email has not been confirmed yet. Please check your inbox and click the confirmation link before signing in.')
-        } else if (err.message.toLowerCase().includes('invalid login') || err.message.toLowerCase().includes('invalid credentials')) {
-          setError('Incorrect email or password. Please try again.')
+          setError('Please confirm your email first. Check your inbox for the confirmation link, then try again.')
+        } else if (err.message.toLowerCase().includes('invalid') || err.message.toLowerCase().includes('credentials')) {
+          setError('Wrong email or password. Please try again.')
         } else {
           setError(err.message)
         }
         return
       }
-      if (!data?.user) { setError('Sign in failed. Please try again.'); return }
       onLogin(data.user)
     } catch (e) {
-      setError(e.message || 'Something went wrong. Please try again.')
+      setError(e.message || 'Something went wrong.')
     } finally {
       setLoading(false)
     }
   }
 
-  // ── FIX 2: After signup, if email confirmation needed show check_email screen ──
+  // ── STEP 0: Create account ────────────────────────────────────────────────
+  // KEY FIX: We do NOT try to sign in mid-flow. We use the session returned
+  // by signUp directly (works when email confirmation is OFF). If confirmation
+  // is required, we show the check_email screen and stop there.
   const handleAccountStep = async () => {
     if (!email || !password || !confirmPassword) { setError('Please fill in all fields.'); return }
     if (password !== confirmPassword) { setError('Passwords do not match.'); return }
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
-    setLoading(true); setError('')
+    setLoading(true); reset()
     try {
       const { data, error: err } = await supabase.auth.signUp({ email, password })
-      if (err) throw err
-      if (data?.user?.identities?.length === 0) { setError('An account with this email already exists.'); return }
-      setNewUserId(data.user?.id)
-      // If Supabase requires email confirmation, session will be null
+      if (err) {
+        // Handle duplicate email
+        if (err.message.toLowerCase().includes('already') || err.message.toLowerCase().includes('registered')) {
+          setError('An account with this email already exists. Please sign in instead.')
+        } else {
+          setError(err.message)
+        }
+        return
+      }
+
+      const user = data?.user
+      if (!user) { setError('Signup failed. Please try again.'); return }
+
+      // Duplicate check: Supabase returns user but with no identities if already registered
+      if (user.identities && user.identities.length === 0) {
+        setError('An account with this email already exists. Please sign in instead.')
+        return
+      }
+
+      setSignupUser(user)
+
       if (data.session) {
-        // Auto-confirmed — continue to details step
+        // Email confirmation is OFF — user is immediately logged in, proceed to details
         setStep(1)
       } else {
-        // Email confirmation required — show check email screen
+        // Email confirmation is ON — tell user to check inbox
         setMode('check_email')
       }
-    } catch (e) { setError(e.message) } finally { setLoading(false) }
+    } catch (e) {
+      setError(e.message || 'Signup failed.')
+    } finally {
+      setLoading(false)
+    }
   }
 
+  // ── STEP 1: Save personal details ────────────────────────────────────────
+  // KEY FIX: We use signupUser from state (set during step 0), NOT a new signIn call.
+  // If signupUser is somehow missing, we try getUser() from the active session.
   const handleDetailsStep = async () => {
-    if (!firstName || !lastName || !phone || !address || !city || !country) { setError('Please fill in all required fields.'); return }
-    setLoading(true); setError('')
+    if (!firstName || !lastName || !phone || !address || !city || !country) {
+      setError('Please fill in all required fields.')
+      return
+    }
+    setLoading(true); reset()
     try {
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-      if (signInError) throw signInError
+      // Get current user from active session
+      const { data: { user } } = await supabase.auth.getUser()
+      const uid = user?.id || signupUser?.id
+      if (!uid) { setError('Session expired. Please go back and sign in again.'); return }
+
       const { error: profileError } = await supabase.from('profiles').upsert({
-        id: signInData.user.id,
+        id: uid,
         first_name: firstName,
         last_name: lastName,
         phone,
         address,
         city,
         country,
+        kyc_status: 'not_started',
+        updated_at: new Date().toISOString(),
       })
       if (profileError) throw profileError
       setStep(2)
-    } catch (e) { setError(e.message) } finally { setLoading(false) }
+    } catch (e) {
+      setError(e.message || 'Failed to save details.')
+    } finally {
+      setLoading(false)
+    }
   }
 
+  // ── STEP 2: Upload KYC ───────────────────────────────────────────────────
+  // KEY FIX: Uses getUser() for the UID, not newUserId from state.
   const handleKYCStep = async () => {
     if (!kycFile) { setError('Please upload your government ID.'); return }
-    setLoading(true); setError('')
+    setLoading(true); reset()
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const uid = user?.id || signupUser?.id
+      if (!uid) { setError('Session expired. Please sign in again.'); return }
+
       const ext = kycFile.name.split('.').pop()
-      const path = `${newUserId}/government_id.${ext}`
-      const { error: uploadError } = await supabase.storage.from('kyc-documents').upload(path, kycFile, { upsert: true })
+      const path = `${uid}/government_id.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('kyc-documents')
+        .upload(path, kycFile, { upsert: true })
       if (uploadError) throw uploadError
-      const { error: kycError } = await supabase.from('kyc').insert({
-        user_id: newUserId,
-        status: 'pending',
-        document_type: docType,
-        document_url: path,
+
+      // Update profile with KYC status pending
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: uid,
+        kyc_status: 'pending',
+        kyc_id_type: docType,
+        kyc_submitted_at: new Date().toISOString(),
       })
-      if (kycError) throw kycError
-      setSuccess('Account created! Please sign in to continue.')
-      setTimeout(() => { setMode('signin'); setStep(0) }, 2500)
-    } catch (e) { setError(e.message) } finally { setLoading(false) }
+      if (profileError) throw profileError
+
+      setSuccess('✅ KYC submitted! Redirecting to your dashboard...')
+      setTimeout(() => onLogin(user), 1800)
+    } catch (e) {
+      setError(e.message || 'Upload failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const goBack = () => {
-    if (step > 0) { setStep(step - 1); setError('') }
-    else { setMode('landing'); setError('') }
-  }
-
-  // ── FIX 3: Check email screen shown after signup when confirmation is required ──
+  // ── CHECK EMAIL SCREEN ───────────────────────────────────────────────────
   if (mode === 'check_email') {
     return (
       <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
         <div style={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
           <div style={{ width: 72, height: 72, borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.teal}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 24px' }}>✉️</div>
-          <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 800, margin: '0 0 10px' }}>Check your email</h2>
+          <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 800, margin: '0 0 12px' }}>Check your email</h2>
           <p style={{ color: T.text1, fontSize: 14, lineHeight: 1.7, margin: '0 0 28px' }}>
             We sent a confirmation link to <strong style={{ color: T.text0 }}>{email}</strong>.<br />
-            Click the link in your inbox to activate your account, then come back to sign in.
+            Click the link to activate your account, then sign in to continue setting up your profile.
           </p>
           <div style={{ background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 14, padding: '16px 20px', marginBottom: 24, textAlign: 'left' }}>
             {[
               { label: 'Email', value: email, color: T.teal },
-              { label: 'Status', value: '📧 Confirmation sent', color: T.yellow },
-              { label: 'Balance', value: '$0.00', color: T.text1 },
+              { label: 'Next step', value: 'Confirm email → Sign in', color: T.blue },
+              { label: 'Status', value: '📧 Awaiting confirmation', color: T.yellow },
             ].map((r, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < 2 ? `1px solid ${T.border}` : 'none' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: i < 2 ? `1px solid ${T.border}` : 'none' }}>
                 <span style={{ color: T.text2, fontSize: 13 }}>{r.label}</span>
                 <span style={{ color: r.color, fontSize: 13, fontWeight: 600 }}>{r.value}</span>
               </div>
             ))}
           </div>
-          <button onClick={() => { setMode('signin'); setError('') }}
+          <button onClick={() => { setMode('signin'); reset() }}
             style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, marginBottom: 14 }}>
-            Go to Sign In
+            Go to Sign In →
           </button>
           <p style={{ color: T.text2, fontSize: 12 }}>
-            Didn't receive it? Check your spam folder or{' '}
-            <span onClick={() => { setMode('signup'); setStep(0); setError('') }} style={{ color: T.blue, cursor: 'pointer' }}>try again</span>
+            Didn't receive it? Check spam or{' '}
+            <span onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ color: T.blue, cursor: 'pointer' }}>try again</span>
           </p>
         </div>
       </div>
     )
   }
 
+  // ── SIGN IN SCREEN ───────────────────────────────────────────────────────
   if (mode === 'signin') {
     return (
       <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
-        <div style={{ width: '100%', maxWidth: 420 }}>
-          <button onClick={() => setMode('landing')} style={{ background: 'none', border: 'none', color: T.text2, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0, fontFamily: T.font }}>← Back to home</button>
+        <div style={{ position: 'fixed', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 600, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(79,142,255,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ width: '100%', maxWidth: 420, position: 'relative' }}>
+          <button onClick={() => { setMode('landing'); reset() }} style={{ background: 'none', border: 'none', color: T.text2, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0, fontFamily: T.font }}>
+            ← Back to home
+          </button>
           <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.borderHi}`, padding: '36px', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#fff' }}>P</div>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</div>
-                <div style={{ fontSize: 10, color: T.text2, letterSpacing: '0.05em' }}>PREDICTION MARKETS</div>
-              </div>
-            </div>
+            <Logo />
             <h2 style={{ color: T.text0, margin: '0 0 6px', fontSize: 22, fontWeight: 800 }}>Welcome back</h2>
             <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Sign in to your PolyTrader account</p>
-            <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" required />
-            <Field label="Password" type="password" value={password} onChange={setPassword} placeholder="••••••••" required />
-            {error && <div style={{ background: T.redDim, border: `1px solid ${T.red}30`, borderRadius: 10, padding: '10px 14px', color: T.red, fontSize: 13, marginBottom: 16, lineHeight: 1.5 }}>{error}</div>}
-            <button onClick={handleSignIn} disabled={loading}
-              style={{ width: '100%', padding: '14px', background: loading ? T.bg2 : 'linear-gradient(135deg, #4f8eff, #9b7dff)', color: loading ? T.text2 : '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 16, fontFamily: T.font }}>
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-            <div style={{ textAlign: 'center', fontSize: 13, color: T.text2 }}>
+            <Field label="Email" type="email" value={email} onChange={v => { setEmail(v); reset() }} placeholder="you@example.com" required />
+            <Field label="Password" type="password" value={password} onChange={v => { setPassword(v); reset() }} placeholder="••••••••" required />
+            <ErrorBox msg={error} />
+            <PrimaryBtn onClick={handleSignIn} loading={loading}>
+              {loading ? 'Signing in...' : 'Sign In →'}
+            </PrimaryBtn>
+            <div style={{ textAlign: 'center', fontSize: 13, color: T.text2, marginTop: 16 }}>
               Don't have an account?{' '}
-              <span onClick={() => { setMode('signup'); setStep(0); setError('') }} style={{ color: T.blue, cursor: 'pointer', fontWeight: 600 }}>Sign Up</span>
+              <span onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ color: T.blue, cursor: 'pointer', fontWeight: 600 }}>Sign Up</span>
             </div>
           </div>
         </div>
@@ -426,47 +397,45 @@ export default function Auth({ onLogin }) {
     )
   }
 
+  // ── SIGNUP FLOW (3 steps) ────────────────────────────────────────────────
   if (mode === 'signup') {
     return (
-      <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
-        <div style={{ width: '100%', maxWidth: step === 2 ? 500 : 460 }}>
-          <button onClick={goBack} style={{ background: 'none', border: 'none', color: T.text2, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0, fontFamily: T.font }}>
+      <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20, overflowY: 'auto' }}>
+        <div style={{ width: '100%', maxWidth: 480, paddingTop: 20 }}>
+          <button
+            onClick={() => { if (step === 0) { setMode('landing'); reset() } else { setStep(s => s - 1); reset() } }}
+            style={{ background: 'none', border: 'none', color: T.text2, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0, fontFamily: T.font }}>
             ← {step === 0 ? 'Back to home' : 'Back'}
           </button>
-          <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.borderHi}`, padding: '36px', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#fff' }}>P</div>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</div>
-                <div style={{ fontSize: 10, color: T.text2, letterSpacing: '0.05em' }}>PREDICTION MARKETS</div>
-              </div>
-            </div>
 
+          <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.borderHi}`, padding: '36px', boxShadow: '0 24px 80px rgba(0,0,0,0.4)' }}>
+            <Logo />
             <Steps current={step} />
 
+            {/* ── STEP 0: Account ── */}
             {step === 0 && (
               <>
-                <h2 style={{ color: T.text0, margin: '0 0 6px', fontSize: 20, fontWeight: 800 }}>Create your account</h2>
+                <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 800 }}>Create your account</h2>
                 <p style={{ color: T.text2, margin: '0 0 22px', fontSize: 13 }}>Your unfair advantage starts here</p>
-                <Field label="Email Address" type="email" value={email} onChange={setEmail} placeholder="you@example.com" required />
-                <Field label="Password" type="password" value={password} onChange={setPassword} placeholder="Min. 6 characters" required />
-                <Field label="Confirm Password" type="password" value={confirmPassword} onChange={setConfirmPassword} placeholder="Repeat password" required />
-                {error && <div style={{ background: T.redDim, border: `1px solid ${T.red}30`, borderRadius: 10, padding: '10px 14px', color: T.red, fontSize: 13, marginBottom: 16 }}>{error}</div>}
-                <button onClick={handleAccountStep} disabled={loading}
-                  style={{ width: '100%', padding: '14px', background: loading ? T.bg2 : 'linear-gradient(135deg, #4f8eff, #9b7dff)', color: loading ? T.text2 : '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 16, fontFamily: T.font }}>
+                <Field label="Email Address" type="email" value={email} onChange={v => { setEmail(v); reset() }} placeholder="you@example.com" required />
+                <Field label="Password" type="password" value={password} onChange={v => { setPassword(v); reset() }} placeholder="Min. 6 characters" required />
+                <Field label="Confirm Password" type="password" value={confirmPassword} onChange={v => { setConfirmPassword(v); reset() }} placeholder="Repeat password" required />
+                <ErrorBox msg={error} />
+                <PrimaryBtn onClick={handleAccountStep} loading={loading}>
                   {loading ? 'Creating account...' : 'Continue →'}
-                </button>
-                <div style={{ textAlign: 'center', fontSize: 13, color: T.text2 }}>
+                </PrimaryBtn>
+                <div style={{ textAlign: 'center', fontSize: 13, color: T.text2, marginTop: 16 }}>
                   Already have an account?{' '}
-                  <span onClick={() => { setMode('signin'); setError('') }} style={{ color: T.blue, cursor: 'pointer', fontWeight: 600 }}>Sign In</span>
+                  <span onClick={() => { setMode('signin'); reset() }} style={{ color: T.blue, cursor: 'pointer', fontWeight: 600 }}>Sign In</span>
                 </div>
               </>
             )}
 
+            {/* ── STEP 1: Personal Details ── */}
             {step === 1 && (
               <>
-                <h2 style={{ color: T.text0, margin: '0 0 6px', fontSize: 20, fontWeight: 800 }}>Personal Details</h2>
-                <p style={{ color: T.text2, margin: '0 0 22px', fontSize: 13 }}>We need this to comply with regulations</p>
+                <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 800 }}>Personal Details</h2>
+                <p style={{ color: T.text2, margin: '0 0 22px', fontSize: 13 }}>Required for regulatory compliance</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
                   <Field label="First Name" value={firstName} onChange={setFirstName} placeholder="John" required />
                   <Field label="Last Name" value={lastName} onChange={setLastName} placeholder="Smith" required />
@@ -475,20 +444,29 @@ export default function Auth({ onLogin }) {
                 <Field label="Home Address" value={address} onChange={setAddress} placeholder="123 Main Street" required />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
                   <Field label="City" value={city} onChange={setCity} placeholder="New York" required />
-                  <Field label="Country" value={country} onChange={setCountry} placeholder="United States" required />
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ color: T.text1, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Country <span style={{ color: T.red }}>*</span></label>
+                    <select value={country} onChange={e => setCountry(e.target.value)}
+                      style={{ width: '100%', padding: '12px 14px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 10, color: country ? T.text0 : T.text2, fontSize: 13, outline: 'none', fontFamily: T.font }}>
+                      <option value="">Select...</option>
+                      {['United States','United Kingdom','Turkey','Germany','France','Canada','Australia','Netherlands','Spain','Italy','Brazil','South Africa','Nigeria','Kenya','UAE','Singapore','Japan','South Korea','India','Other'].map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
                 </div>
-                {error && <div style={{ background: T.redDim, border: `1px solid ${T.red}30`, borderRadius: 10, padding: '10px 14px', color: T.red, fontSize: 13, marginBottom: 16 }}>{error}</div>}
-                <button onClick={handleDetailsStep} disabled={loading}
-                  style={{ width: '100%', padding: '14px', background: loading ? T.bg2 : 'linear-gradient(135deg, #4f8eff, #9b7dff)', color: loading ? T.text2 : '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: T.font }}>
+                <ErrorBox msg={error} />
+                <PrimaryBtn onClick={handleDetailsStep} loading={loading}>
                   {loading ? 'Saving...' : 'Continue →'}
-                </button>
+                </PrimaryBtn>
               </>
             )}
 
+            {/* ── STEP 2: KYC ── */}
             {step === 2 && (
               <>
-                <h2 style={{ color: T.text0, margin: '0 0 6px', fontSize: 20, fontWeight: 800 }}>Verify Your Identity</h2>
-                <p style={{ color: T.text2, margin: '0 0 20px', fontSize: 13, lineHeight: 1.6 }}>Upload a government ID to unlock deposits & trading. Encrypted and secure.</p>
+                <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 800 }}>Verify Your Identity</h2>
+                <p style={{ color: T.text2, margin: '0 0 20px', fontSize: 13, lineHeight: 1.6 }}>Upload a government-issued ID to unlock deposits & trading. Encrypted and secure.</p>
+
+                {/* Doc type selector */}
                 <div style={{ marginBottom: 18 }}>
                   <label style={{ color: T.text1, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', display: 'block', marginBottom: 8, textTransform: 'uppercase' }}>Document Type</label>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -500,18 +478,20 @@ export default function Auth({ onLogin }) {
                     ))}
                   </div>
                 </div>
+
+                {/* Drop zone */}
                 <div
                   onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) setKycFile(f) }}
-                  onClick={() => document.getElementById('kyc-input').click()}
+                  onClick={() => fileRef.current.click()}
                   style={{ border: `2px dashed ${dragOver ? T.blue : kycFile ? T.teal : T.border}`, borderRadius: 14, padding: '28px 20px', textAlign: 'center', cursor: 'pointer', background: dragOver ? T.blueDim : kycFile ? T.tealDim : 'rgba(255,255,255,0.02)', transition: 'all 0.2s', marginBottom: 16 }}>
-                  <input id="kyc-input" type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => setKycFile(e.target.files[0])} />
+                  <input ref={fileRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => setKycFile(e.target.files[0])} />
                   {kycFile ? (
                     <>
                       <div style={{ fontSize: 28, marginBottom: 6 }}>✅</div>
                       <div style={{ color: T.teal, fontWeight: 600, fontSize: 13 }}>{kycFile.name}</div>
-                      <div style={{ color: T.text2, fontSize: 11, marginTop: 3 }}>Click to change</div>
+                      <div style={{ color: T.text2, fontSize: 11, marginTop: 3 }}>{(kycFile.size / 1024 / 1024).toFixed(2)} MB · Click to change</div>
                     </>
                   ) : (
                     <>
@@ -521,21 +501,26 @@ export default function Auth({ onLogin }) {
                     </>
                   )}
                 </div>
+
+                {/* Requirements */}
                 <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '12px 14px', marginBottom: 18 }}>
-                  {['All 4 corners visible', 'Clear and readable text', 'Document not expired'].map((r, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: i < 2 ? 6 : 0 }}>
+                  {['All 4 corners visible', 'Clear and readable text', 'Document not expired', 'No black & white copies'].map((r, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: i < 3 ? 6 : 0 }}>
                       <span style={{ color: T.teal, fontSize: 11 }}>✓</span>
                       <span style={{ color: T.text1, fontSize: 12 }}>{r}</span>
                     </div>
                   ))}
                 </div>
-                {error && <div style={{ background: T.redDim, border: `1px solid ${T.red}30`, borderRadius: 10, padding: '10px 14px', color: T.red, fontSize: 13, marginBottom: 16 }}>{error}</div>}
-                {success && <div style={{ background: T.tealDim, border: `1px solid ${T.teal}30`, borderRadius: 10, padding: '10px 14px', color: T.teal, fontSize: 13, marginBottom: 16 }}>{success}</div>}
-                <button onClick={handleKYCStep} disabled={loading || !kycFile}
-                  style={{ width: '100%', padding: '14px', background: kycFile && !loading ? 'linear-gradient(135deg, #4f8eff, #9b7dff)' : T.bg3, color: kycFile && !loading ? '#fff' : T.text2, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: kycFile && !loading ? 'pointer' : 'not-allowed', fontFamily: T.font }}>
+
+                <ErrorBox msg={error} />
+                <SuccessBox msg={success} />
+
+                <PrimaryBtn onClick={handleKYCStep} disabled={!kycFile} loading={loading}>
                   {loading ? '⏳ Uploading...' : '🔐 Submit for Verification'}
-                </button>
-                <div style={{ textAlign: 'center', marginTop: 12, fontSize: 11, color: T.text2 }}>🔒 Encrypted and only used for identity verification</div>
+                </PrimaryBtn>
+                <div style={{ textAlign: 'center', marginTop: 12, fontSize: 11, color: T.text2 }}>
+                  🔒 Encrypted and only used for identity verification
+                </div>
               </>
             )}
           </div>
@@ -544,23 +529,25 @@ export default function Auth({ onLogin }) {
     )
   }
 
-  // ── Landing Page ─────────────────────────────────────────────────────────
+  // ── LANDING PAGE ─────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: T.bg0, fontFamily: T.font, color: T.text0, overflowX: 'hidden' }}>
       <div style={{ position: 'fixed', top: '-5%', left: '50%', transform: 'translateX(-50%)', width: 900, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(79,142,255,0.08) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', top: '30%', right: '-10%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,212,170,0.05) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
 
+      {/* Navbar */}
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', height: 60, borderBottom: `1px solid ${T.border}`, background: 'rgba(13,14,20,0.9)', backdropFilter: 'blur(16px)', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>P</div>
           <span style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => setMode('signin')} style={{ padding: '7px 18px', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text1, fontSize: 13, cursor: 'pointer', fontFamily: T.font }}>Sign In</button>
-          <button onClick={() => { setMode('signup'); setStep(0) }} style={{ padding: '7px 18px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: T.font }}>Trade →</button>
+          <button onClick={() => { setMode('signin'); reset() }} style={{ padding: '7px 18px', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text1, fontSize: 13, cursor: 'pointer', fontFamily: T.font }}>Sign In</button>
+          <button onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ padding: '7px 18px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: T.font }}>Trade →</button>
         </div>
       </nav>
 
+      {/* Hero */}
       <section style={{ position: 'relative', textAlign: 'center', padding: '110px 24px 100px', zIndex: 1 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: T.tealDim, border: `1px solid rgba(0,212,170,0.2)`, borderRadius: 20, padding: '5px 14px', marginBottom: 28 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: T.teal, boxShadow: `0 0 6px ${T.teal}` }} />
@@ -571,37 +558,30 @@ export default function Auth({ onLogin }) {
         </h1>
         <h2 style={{ fontSize: 'clamp(18px, 3vw, 26px)', fontWeight: 600, color: T.text0, margin: '0 0 16px' }}>Your unfair advantage on Prediction Markets</h2>
         <p style={{ color: T.text1, fontSize: 15, maxWidth: 520, margin: '0 auto 40px', lineHeight: 1.7 }}>Trading Terminal with AI Analysis and Copy Trading for prediction markets</p>
-        <button onClick={() => { setMode('signup'); setStep(0) }}
+        <button onClick={() => { setMode('signup'); setStep(0); reset() }}
           style={{ padding: '14px 40px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 50, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, boxShadow: '0 0 40px rgba(79,142,255,0.35)' }}>
           Trade →
         </button>
       </section>
 
+      {/* Problems & Solutions */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: T.tealDim, border: `1px solid rgba(0,212,170,0.15)`, borderRadius: 20, padding: '4px 14px', marginBottom: 20 }}>
-            <span style={{ fontSize: 11, color: T.teal, fontWeight: 600 }}>✦ We solve key problems for prediction market traders</span>
-          </div>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, margin: 0 }}>Problems & <span style={{ color: T.teal }}>Solutions</span></h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid rgba(255,77,106,0.15)`, padding: '28px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: T.redDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</div>
-              <span style={{ fontWeight: 700, color: T.text0 }}>Problems</span>
-            </div>
-            {PROBLEMS.map((p, i) => <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 12 }}><span style={{ color: T.red }}>✕</span><span style={{ color: T.text1, fontSize: 13 }}>{p}</span></div>)}
+            <div style={{ fontWeight: 700, color: T.text0, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: T.red }}>✕</span> Problems</div>
+            {PROBLEMS.map((p, i) => <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 12 }}><span style={{ color: T.red, flexShrink: 0 }}>✕</span><span style={{ color: T.text1, fontSize: 13 }}>{p}</span></div>)}
           </div>
           <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid rgba(0,212,170,0.15)`, padding: '28px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: T.tealDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</div>
-              <span style={{ fontWeight: 700, color: T.text0 }}>Solutions</span>
-            </div>
-            {SOLUTIONS.map((s, i) => <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 12 }}><span style={{ color: T.teal }}>✓</span><span style={{ color: T.text1, fontSize: 13 }}>{s}</span></div>)}
+            <div style={{ fontWeight: 700, color: T.text0, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: T.teal }}>✓</span> Solutions</div>
+            {SOLUTIONS.map((s, i) => <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 12 }}><span style={{ color: T.teal, flexShrink: 0 }}>✓</span><span style={{ color: T.text1, fontSize: 13 }}>{s}</span></div>)}
           </div>
         </div>
       </section>
 
+      {/* Features */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, margin: '0 0 10px' }}>Key <span style={{ color: T.teal }}>Features</span></h2>
@@ -612,7 +592,7 @@ export default function Auth({ onLogin }) {
             <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: '24px 22px', transition: 'border-color 0.2s' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = f.color + '50'}
               onMouseLeave={e => e.currentTarget.style.borderColor = T.border}>
-              <div style={{ width: 40, height: 40, borderRadius: 11, background: f.color + '15', border: `1px solid ${f.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 14 }}>{f.icon}</div>
+              <div style={{ width: 40, height: 40, borderRadius: 11, background: f.color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 14 }}>{f.icon}</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: T.text0, marginBottom: 12 }}>{f.title}</div>
               {f.points.map((p, j) => <div key={j} style={{ display: 'flex', gap: 8, marginBottom: 6 }}><span style={{ color: f.color, fontSize: 11 }}>→</span><span style={{ color: T.text1, fontSize: 12 }}>{p}</span></div>)}
             </div>
@@ -620,14 +600,13 @@ export default function Auth({ onLogin }) {
         </div>
       </section>
 
+      {/* Two Modes */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, margin: 0 }}>Two Operating <span style={{ color: T.teal }}>Modes</span></h2>
-        </div>
+        <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, textAlign: 'center', margin: '0 0 48px' }}>Two Operating <span style={{ color: T.teal }}>Modes</span></h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           {MODES.map((m, i) => (
             <div key={i} style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${m.color}25`, padding: '32px 28px' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: `${m.color}15`, border: `1px solid ${m.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 16 }}>{m.icon}</div>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: `${m.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 16 }}>{m.icon}</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: T.text0, marginBottom: 4 }}>{m.title}</div>
               <div style={{ fontSize: 13, color: T.text2, marginBottom: 18 }}>{m.sub}</div>
               {m.points.map((p, j) => <div key={j} style={{ display: 'flex', gap: 10, marginBottom: 10 }}><span style={{ color: m.color }}>✓</span><span style={{ color: T.text1, fontSize: 13 }}>{p}</span></div>)}
@@ -639,10 +618,9 @@ export default function Auth({ onLogin }) {
         </div>
       </section>
 
+      {/* Trust */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, textAlign: 'center', margin: '0 0 48px' }}>
-          Why traders trust <span style={{ color: T.teal }}>PolyTrader?</span>
-        </h2>
+        <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, textAlign: 'center', margin: '0 0 48px' }}>Why traders trust <span style={{ color: T.teal }}>PolyTrader?</span></h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
           {TRUST.map((t, i) => (
             <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: T.bgCard, borderRadius: 14, border: `1px solid ${T.border}`, padding: '18px 20px' }}>
@@ -653,17 +631,19 @@ export default function Auth({ onLogin }) {
         </div>
       </section>
 
+      {/* CTA */}
       <section style={{ padding: '60px 24px 100px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', background: 'linear-gradient(135deg, rgba(79,142,255,0.08), rgba(155,125,255,0.08))', border: `1px solid rgba(79,142,255,0.2)`, borderRadius: 24, padding: '56px 40px' }}>
           <h2 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, margin: '0 0 14px' }}>Start your edge today</h2>
           <p style={{ color: T.text1, fontSize: 15, margin: '0 0 32px' }}>Join thousands of traders using PolyTrader.</p>
-          <button onClick={() => { setMode('signup'); setStep(0) }}
+          <button onClick={() => { setMode('signup'); setStep(0); reset() }}
             style={{ padding: '15px 48px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 50, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, boxShadow: '0 0 40px rgba(79,142,255,0.3)' }}>
             Trade → Free
           </button>
         </div>
       </section>
 
+      {/* Footer */}
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, background: T.bg1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#fff' }}>P</div>
