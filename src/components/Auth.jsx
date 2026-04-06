@@ -276,21 +276,23 @@ export default function Auth({ onLogin }) {
     if (!kycFile) { setError('Please upload your government ID.'); return }
     setLoading(true); reset()
     try {
-      // Use the active session — auth.uid() will be set correctly for RLS
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      console.log('SESSION:', session)
+      console.log('USER ID:', session?.user?.id)
       if (sessionError || !session) throw new Error('Session expired. Please sign in again.')
 
       const uid = session.user.id
-
-      // Upload file to storage
       const ext = kycFile.name.split('.').pop()
       const path = `${uid}/government_id_${Date.now()}.${ext}`
+
+      console.log('Uploading to path:', path)
       const { error: uploadError } = await supabase.storage
         .from('kyc-documents')
         .upload(path, kycFile, { upsert: true })
+      console.log('Storage error:', uploadError)
       if (uploadError) throw uploadError
 
-      // Insert KYC record — auth.uid() now matches uid so RLS passes
+      console.log('Inserting KYC row with user_id:', uid)
       const { error: kycError } = await supabase.from('kyc').insert({
         user_id: uid,
         status: 'pending',
@@ -298,14 +300,10 @@ export default function Auth({ onLogin }) {
         document_url: path,
         submitted_at: new Date().toISOString(),
       })
+      console.log('KYC insert error:', kycError)
       if (kycError) throw kycError
 
-      // Update profile kyc_status
-      await supabase.from('profiles').upsert({
-        id: uid,
-        kyc_status: 'pending',
-      })
-
+      await supabase.from('profiles').upsert({ id: uid, kyc_status: 'pending' })
       setSuccess('✅ KYC submitted! Taking you to your dashboard...')
       setTimeout(() => onLogin(session.user), 1800)
     } catch (e) {
