@@ -96,7 +96,6 @@ function AdminKYCReview() {
               <div>
                 <div style={{ color: T.text0, fontWeight: 600 }}>User ID: {item.user_id}</div>
                 <div style={{ color: T.text2, fontSize: 13 }}>Status: {item.status}</div>
-                <div style={{ color: T.text2, fontSize: 13 }}>Type: {item.doc_type || 'Unknown'}</div>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button 
@@ -555,47 +554,37 @@ export default function App() {
 
   const loadUserData = async (userId) => {
     try {
-      // Load profile balance
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('balance')
         .eq('id', userId)
-        .maybeSingle();
+        .maybeSingle()
 
-      if (profileError) console.warn('Profile load error:', profileError);
-      setBalance(profile?.balance ?? 0);
+      setBalance(profile?.balance ?? 0)
 
-      // Load latest KYC from kyc_documents
-      const { data: kycData, error: kycError } = await supabase
+      // Fixed: Use kyc_documents instead of old 'kyc' table
+      const { data: kycData } = await supabase
         .from('kyc_documents')
         .select('status')
         .eq('user_id', userId)
         .order('submitted_at', { ascending: false })
         .limit(1)
-        .maybeSingle();
+        .maybeSingle()
 
-      if (kycError) {
-        console.warn('KYC load error:', kycError);
-        setKycStatus('not_started');
-      } else {
-        setKycStatus(kycData?.status ?? 'not_started');
-      }
+      setKycStatus(kycData?.status ?? 'not_started')
 
-      // Load transactions
-      const { data: txData, error: txError } = await supabase
+      const { data: txData } = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
-      if (txError) console.warn('Transactions load error:', txError);
-      setTransactions(txData ?? []);
-
+      setTransactions(txData ?? [])
     } catch (e) {
-      console.warn('loadUserData failed:', e.message);
-      setKycStatus('not_started');
-      setBalance(0);
-      setTransactions([]);
+      console.warn('loadUserData failed:', e.message)
+      setKycStatus('not_started')
+      setBalance(0)
+      setTransactions([])
     }
   }
 
@@ -632,7 +621,6 @@ export default function App() {
     { id: 'markets',   label: 'Markets',    icon: 'markets'   },
     { id: 'copy',      label: 'Copy Trade', icon: 'users',    locked: kycStatus !== 'approved' },
     { id: 'deposits',  label: 'Deposits',   icon: 'deposit',  locked: kycStatus !== 'approved' },
-    // Admin Panel - Only visible to admins
     ...(user && user.id === '7feed100-4d48-4993-a898-13046a6392a9' ? [{ id: 'admin', label: 'Admin Panel', icon: 'shield' }] : []),
   ]
 
