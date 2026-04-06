@@ -108,38 +108,70 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
     setTimeout(() => setSaveMsg(''), 3000)
   }
 
+  // ==================== UPDATED KYC UPLOAD FUNCTION ====================
   const uploadKYCDoc = async (file) => {
-    if (!file) return
-    setUploading(true); setUploadMsg('')
-    try {
-      const ext = file.name.split('.').pop()
-      const path = `${user.id}/government_id.${ext}`
+    if (!file || !user) return;
 
-      // Upload file to storage bucket
+    setUploading(true);
+    setUploadMsg('');
+
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `${user.id}/${Date.now()}-${docType}.${ext}`;
+
+      // Step 1: Upload file to Storage
       const { error: uploadError } = await supabase.storage
         .from('kyc-documents')
-        .upload(path, file, { upsert: true })
-      if (uploadError) throw uploadError
+        .upload(filePath, file, { 
+          upsert: true,
+          contentType: file.type 
+        });
 
-      // Upsert into kyc table (one row per user)
-      const { data: upserted, error: dbError } = await supabase.from('kyc').upsert({
+      if (uploadError) throw uploadError;
+
+      // Step 2: Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('kyc-documents')
+        .getPublicUrl(filePath);
+
+      // Step 3: Insert into kyc_documents (this fixes the file_path NOT NULL error)
+      const { data: inserted, error: dbError } = await supabase
+        .from('kyc_documents')
+        .insert({
+          user_id: user.id,
+          file_path: filePath,           // Required to satisfy NOT NULL constraint
+          file_url: publicUrl,           // Full public URL from storage
+          document_type: docType,
+          status: 'pending',
+          submitted_at: new Date().toISOString(),
+        })
+        .select()
+        .maybeSingle();
+
+      if (dbError) throw dbError;
+
+      // Optional: Keep your existing 'kyc' table in sync for status tracking
+      await supabase.from('kyc').upsert({
         user_id: user.id,
         document_type: docType,
-        document_url: path,
         status: 'pending',
         submitted_at: new Date().toISOString(),
-      }).select().maybeSingle()
-      if (dbError) throw dbError
+      });
 
-      setKycRow(upserted)
-      if (onKycUpdate) onKycUpdate('pending')
-      setUploadMsg('Document uploaded! Under review within 1–2 business days.')
+      setKycRow(inserted);
+      if (onKycUpdate) onKycUpdate('pending');
+
+      setUploadMsg('Document uploaded successfully! Under review within 1–2 business days.');
+
     } catch (err) {
-      setUploadMsg('Upload failed: ' + (err.message || 'Unknown error'))
+      console.error('KYC upload error:', err);
+      setUploadMsg('Upload failed: ' + (err.message || 'Unknown error'));
     }
-    setUploading(false)
-    setTimeout(() => setUploadMsg(''), 5000)
-  }
+
+    setUploading(false);
+    setTimeout(() => setUploadMsg(''), 6000);
+  };
+  // ===================================================================
 
   const tabStyle = (id) => ({
     padding: '9px 18px', fontSize: 13, fontWeight: tab === id ? 600 : 400,
