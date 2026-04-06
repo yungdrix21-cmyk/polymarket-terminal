@@ -46,13 +46,8 @@ const TRUST = [
   { icon: '📊', text: 'Transparent simulation and risk management logic' },
 ]
 
-function withTimeout(promise, ms = 120000) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Request timed out. Supabase cold start — please wait 90 seconds and try again. If it keeps failing, refresh the page and wait longer.')), ms)
-    )
-  ])
+function withTimeout(promise, ms = 0) {
+  return promise;   // Completely bypass timeout for auth requests
 }
 
 function Field({ label, type = 'text', value, onChange, placeholder, required }) {
