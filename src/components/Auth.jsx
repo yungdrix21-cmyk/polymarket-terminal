@@ -179,6 +179,7 @@ export default function Auth({ onLogin }) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [signupUser, setSignupUser] = useState(null)
+  const [signupSession, setSignupSession] = useState(null) // ← store session from signUp
 
   const reset = () => { setError(''); setSuccess('') }
 
@@ -227,6 +228,7 @@ export default function Auth({ onLogin }) {
         return
       }
       setSignupUser(user)
+      setSignupSession(data.session) // ← save session right from signUp response
       if (data.session) {
         setStep(1)
       } else {
@@ -269,13 +271,45 @@ export default function Auth({ onLogin }) {
     }
   }
 
-  // Uses Edge Function to bypass RLS entirely
   const handleKYCStep = async () => {
     if (!kycFile) { setError('Please upload your government ID.'); return }
     setLoading(true); reset()
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      if (sessionError || !session) throw new Error('Session expired. Please sign in again.')
+      // Try multiple ways to get a valid session token
+      let accessToken = null
+      let currentUser = null
+
+      // 1. Try getting current session from Supabase
+      let { data: { session } } = await supabase.auth.getSession()
+
+      // 2. If no session, try refreshing
+      if (!session) {
+        const { data: refreshed } = await supabase.auth.refreshSession()
+        session = refreshed?.session
+      }
+
+      // 3. Fall back to stored signup session
+      if (!session && signupSession) {
+        session = signupSession
+      }
+
+      if (session) {
+        accessToken = session.access_token
+        currentUser = session.user
+      } else if (signupUser) {
+        // Last resort — try signing in again with stored credentials
+        setError('Session expired. Please sign in again to complete KYC.')
+        setLoading(false)
+        return
+      }
+
+      if (!accessToken) {
+        setError('Could not authenticate. Please sign in again.')
+        setLoading(false)
+        return
+      }
+
+      console.log('Sending KYC with token:', accessToken.slice(0, 20) + '...')
 
       const formData = new FormData()
       formData.append('file', kycFile)
@@ -285,17 +319,24 @@ export default function Auth({ onLogin }) {
         'https://njodnertiscjcxdssyat.supabase.co/functions/v1/submit-kyc',
         {
           method: 'POST',
-          headers: { Authorization: `Bearer ${session.access_token}` },
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
           body: formData,
         }
       )
 
+      console.log('Edge function status:', response.status)
       const result = await response.json()
+      console.log('Edge function result:', result)
+
       if (!response.ok) throw new Error(result.error || 'Upload failed')
 
       setSuccess('✅ KYC submitted! Taking you to your dashboard...')
-      setTimeout(() => onLogin(session.user), 1800)
+      setTimeout(() => onLogin(currentUser || signupUser), 1800)
     } catch (e) {
+      console.error('KYC error:', e)
       setError('Upload failed: ' + (e.message || 'Please try again.'))
     } finally {
       setLoading(false)
