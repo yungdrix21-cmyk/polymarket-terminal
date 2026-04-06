@@ -553,50 +553,33 @@ export default function App() {
   }, [])
 
   const loadUserData = async (userId) => {
-  try {
-    // Load profile (balance)
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('balance')
-      .eq('id', userId)
-      .maybeSingle();
+    try {
+      const { data: profile } = await Promise.race([
+        supabase.from('profiles').select('balance').eq('id', userId).maybeSingle(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+      ])
+      setBalance(profile?.balance ?? 0)
 
-    if (profileError) console.warn('Profile load error:', profileError);
-    setBalance(profile?.balance ?? 0);
+      const { data: kycData } = await supabase
+        .from('kyc')
+        .select('status')
+        .eq('user_id', userId)
+        .maybeSingle()
+      setKycStatus(kycData?.status ?? 'not_started')
 
-    // Load latest KYC from kyc_documents (this is the correct table now)
-    const { data: kycData, error: kycError } = await supabase
-      .from('kyc_documents')
-      .select('status')
-      .eq('user_id', userId)
-      .order('submitted_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (kycError) {
-      console.warn('KYC load error:', kycError);
-      setKycStatus('not_started');
-    } else {
-      setKycStatus(kycData?.status || 'not_started');
+      const { data: txData } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+      setTransactions(txData ?? [])
+    } catch (e) {
+      console.warn('loadUserData failed:', e.message)
+      setKycStatus('not_started')
+      setBalance(0)
+      setTransactions([])
     }
-
-    // Load transactions
-    const { data: txData, error: txError } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (txError) console.warn('Transactions load error:', txError);
-    setTransactions(txData ?? []);
-
-  } catch (e) {
-    console.warn('loadUserData failed:', e.message);
-    setKycStatus('not_started');
-    setBalance(0);
-    setTransactions([]);
   }
-};
 
   const handleLogin = async (u) => {
     setUser(u)
