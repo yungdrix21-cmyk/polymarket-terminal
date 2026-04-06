@@ -38,7 +38,6 @@ const Icon = ({ name, size = 16, color = 'currentColor', strokeWidth = 1.6 }) =>
     search:    <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
     trending:  <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>,
     clock:     <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
-    clipboard: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></>,
     zap:       <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></>,
     lock:      <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
     shield:    <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>,
@@ -58,19 +57,6 @@ const CRYPTO_MARKETS = [
   { id: '5', question: 'ETH Up or Down - Next 30 Minutes', outcomePrices: ['0.46', '0.54'], change: '-1.5%', volume: 67000, timeframe: '30m', symbol: 'ETH' },
   { id: '6', question: 'Bitcoin Up or Down - Next 15 Minutes', outcomePrices: ['0.55', '0.45'], change: '+0.9%', volume: 98000, timeframe: '15m', symbol: 'BTC' },
   { id: '7', question: 'Will Solana Break $185 in Next Hour?', outcomePrices: ['0.44', '0.56'], change: '-2.3%', volume: 112000, timeframe: '1h', symbol: 'SOL' },
-]
-
-const PORTFOLIO = [
-  { market: 'Will BTC hit $100k in 2025?', side: 'YES', shares: 150, avgPrice: 0.48, current: 0.55 },
-  { market: 'Will ETH be above $2k?', side: 'NO', shares: 200, avgPrice: 0.55, current: 0.52 },
-  { market: 'Will XRP be above $3?', side: 'YES', shares: 100, avgPrice: 0.38, current: 0.44 },
-]
-
-const RECENT_DEPOSITS = [
-  { id: 1, crypto: 'USDT', amount: 1250.00, date: '2 hours ago', status: 'Completed' },
-  { id: 2, crypto: 'BTC',  amount: 0.042,   date: 'Yesterday',   status: 'Completed' },
-  { id: 3, crypto: 'ETH',  amount: 1.85,    date: '3 days ago',  status: 'Completed' },
-  { id: 4, crypto: 'USDC', amount: 800.00,  date: '5 days ago',  status: 'Completed' },
 ]
 
 function Badge({ children, color = T.blue }) {
@@ -163,7 +149,7 @@ function LockedPage({ title }) {
       <div>
         <div style={{ fontSize: 16, fontWeight: 700, color: T.text0, marginBottom: 6 }}>{title} Locked</div>
         <div style={{ fontSize: 13, color: T.text1, maxWidth: 300, lineHeight: 1.6 }}>
-          Your KYC verification is pending review. This feature will be unlocked once your identity is approved.
+          Complete KYC verification to unlock this feature.
         </div>
       </div>
       <div style={{ background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 10, padding: '10px 20px' }}>
@@ -173,9 +159,7 @@ function LockedPage({ title }) {
   )
 }
 
-function DashboardPage({ user, recentDeposits, kycStatus }) {
-  const totalPnL = PORTFOLIO.reduce((sum, p) => sum + (p.current - p.avgPrice) * p.shares, 0)
-  const totalValue = PORTFOLIO.reduce((sum, p) => sum + p.current * p.shares, 0)
+function DashboardPage({ user, balance, transactions, kycStatus }) {
   return (
     <div style={{ padding: '28px 28px 40px', overflowY: 'auto', flex: 1 }}>
       <KYCBanner kycStatus={kycStatus} />
@@ -189,12 +173,14 @@ function DashboardPage({ user, recentDeposits, kycStatus }) {
           <span style={{ fontSize: 12, color: T.teal }}>Live</span>
         </div>
       </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 28 }}>
-        <StatCard label="Portfolio Value" value={`$${totalValue.toFixed(2)}`} color={T.text0} icon={<Icon name="wallet" size={15} />} sub="Total holdings" />
-        <StatCard label="Total P&L" value={`+$${totalPnL.toFixed(2)}`} color={T.teal} icon={<Icon name="trending" size={15} color={T.teal} />} sub="All time" />
-        <StatCard label="Open Positions" value={PORTFOLIO.length} color={T.blue} icon={<Icon name="zap" size={15} color={T.blue} />} sub="Active markets" />
+        <StatCard label="Account Balance" value={`$${Number(balance).toFixed(2)}`} color={T.text0} icon={<Icon name="wallet" size={15} />} sub="Available funds" />
+        <StatCard label="Total P&L" value="$0.00" color={T.text2} icon={<Icon name="trending" size={15} color={T.text2} />} sub="No trades yet" />
+        <StatCard label="Open Positions" value="0" color={T.blue} icon={<Icon name="zap" size={15} color={T.blue} />} sub="Active markets" />
         <StatCard label="Live Markets" value={CRYPTO_MARKETS.length} color={T.purple} icon={<Icon name="markets" size={15} color={T.purple} />} sub="Available now" />
       </div>
+
       <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: '20px 24px', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -203,7 +189,7 @@ function DashboardPage({ user, recentDeposits, kycStatus }) {
           </div>
           <Badge color={T.blue}>Live</Badge>
         </div>
-        <div style={{ color: T.text2, fontSize: 12, marginBottom: 18 }}>Open positions, working orders, and more</div>
+        <div style={{ color: T.text2, fontSize: 12, marginBottom: 18 }}>Your active trades will appear here</div>
         <div style={{ background: 'rgba(255,255,255,0.025)', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 24 }}>
           <div>
             <div style={{ color: T.text2, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>Active Positions</div>
@@ -219,30 +205,37 @@ function DashboardPage({ user, recentDeposits, kycStatus }) {
           </div>
         </div>
       </div>
+
       <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
         <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
           <Icon name="deposit" size={15} color={T.yellow} />
           <span style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>Recent Deposits & Transactions</span>
         </div>
-        {recentDeposits.map((dep, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', borderBottom: i < recentDeposits.length - 1 ? `1px solid ${T.border}` : 'none', transition: 'background 0.15s' }}
-            onMouseEnter={e => e.currentTarget.style.background = T.bgHover}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: T.yellowDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="deposit" size={15} color={T.yellow} />
-              </div>
-              <div>
-                <div style={{ color: T.text0, fontSize: 13, fontWeight: 500 }}>{dep.crypto} Deposit</div>
-                <div style={{ color: T.text2, fontSize: 11, marginTop: 2 }}>{dep.date}</div>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ color: T.teal, fontWeight: 600, fontSize: 14, fontFamily: T.mono }}>+${dep.amount}</div>
-              <Badge color={T.teal}>{dep.status}</Badge>
-            </div>
+        {transactions.length === 0 ? (
+          <div style={{ padding: '32px 24px', textAlign: 'center', color: T.text2, fontSize: 13 }}>
+            No transactions yet. Make a deposit to get started.
           </div>
-        ))}
+        ) : (
+          transactions.map((tx, i) => (
+            <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', borderBottom: i < transactions.length - 1 ? `1px solid ${T.border}` : 'none', transition: 'background 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.background = T.bgHover}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: T.yellowDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="deposit" size={15} color={T.yellow} />
+                </div>
+                <div>
+                  <div style={{ color: T.text0, fontSize: 13, fontWeight: 500 }}>{tx.crypto} Deposit</div>
+                  <div style={{ color: T.text2, fontSize: 11, marginTop: 2 }}>{new Date(tx.created_at).toLocaleDateString()}</div>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: T.teal, fontWeight: 600, fontSize: 14, fontFamily: T.mono }}>+${Number(tx.amount).toFixed(2)}</div>
+                <Badge color={T.teal}>{tx.status}</Badge>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )
@@ -319,16 +312,54 @@ function MarketsPage({ prices, selected, setSelected }) {
   )
 }
 
-function DepositsPage({ onDepositSuccess, kycStatus }) {
+function DepositsPage({ user, onDepositSuccess, kycStatus }) {
   if (kycStatus !== 'approved') return <LockedPage title="Deposits" />
   const [selectedCrypto, setSelectedCrypto] = useState(null)
   const [amount, setAmount] = useState('')
+  const [loading, setLoading] = useState(false)
+
   const cryptos = [
     { symbol: 'BTC', name: 'Bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', address: 'bc1qxy2kdyz3f3y3f3y3f3y3f3y3f3y3f', color: '#f7931a' },
     { symbol: 'ETH', name: 'Ethereum', logo: 'https://cryptologos.cc/logos/ethereum-eth-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', color: '#627eea' },
     { symbol: 'USDT', name: 'Tether', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', color: '#26a17b' },
     { symbol: 'USDC', name: 'USD Coin', logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', color: '#2775ca' },
   ]
+
+  const handleDeposit = async () => {
+    if (!amount || !user) return
+    setLoading(true)
+    try {
+      const depositAmount = parseFloat(amount)
+
+      const { error: txError } = await supabase.from('transactions').insert({
+        user_id: user.id,
+        type: 'deposit',
+        crypto: selectedCrypto.symbol,
+        amount: depositAmount,
+        status: 'Completed',
+      })
+      if (txError) throw txError
+
+      const { data: profileData } = await supabase.from('profiles').select('balance').eq('id', user.id).single()
+      const newBalance = (Number(profileData?.balance) || 0) + depositAmount
+      const { error: balError } = await supabase.from('profiles').update({ balance: newBalance }).eq('id', user.id)
+      if (balError) throw balError
+
+      onDepositSuccess(newBalance, {
+        id: Date.now(),
+        crypto: selectedCrypto.symbol,
+        amount: depositAmount,
+        status: 'Completed',
+        created_at: new Date().toISOString(),
+      })
+      setSelectedCrypto(null)
+      setAmount('')
+    } catch (err) {
+      console.error('Deposit error:', err)
+    }
+    setLoading(false)
+  }
+
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Deposit Funds</h2>
@@ -362,10 +393,9 @@ function DepositsPage({ onDepositSuccess, kycStatus }) {
                 style={{ flex: 1, background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, padding: '13px 14px', color: T.text0, fontSize: 16, fontFamily: T.mono, outline: 'none' }} />
               <div style={{ background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, padding: '13px 16px', color: T.text1, fontWeight: 700 }}>{selectedCrypto.symbol}</div>
             </div>
-            <button onClick={() => { if (amount) { onDepositSuccess({ id: Date.now(), crypto: selectedCrypto.symbol, amount: parseFloat(amount), date: 'Just now', status: 'Pending' }); setSelectedCrypto(null); setAmount('') } }}
-              disabled={!amount}
-              style={{ width: '100%', padding: '14px', background: amount ? T.teal : T.bg3, color: amount ? '#0d0e14' : T.text2, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: amount ? 'pointer' : 'not-allowed', fontFamily: T.font }}>
-              Confirm Deposit
+            <button onClick={handleDeposit} disabled={!amount || loading}
+              style={{ width: '100%', padding: '14px', background: amount && !loading ? T.teal : T.bg3, color: amount && !loading ? '#0d0e14' : T.text2, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: amount && !loading ? 'pointer' : 'not-allowed', fontFamily: T.font }}>
+              {loading ? 'Processing...' : 'Confirm Deposit'}
             </button>
           </div>
         </div>
@@ -428,59 +458,58 @@ function CopyTradingPage({ kycStatus }) {
 export default function App() {
   const [user, setUser] = useState(null)
   const [kycStatus, setKycStatus] = useState(null)
+  const [balance, setBalance] = useState(0)
+  const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [showLanding, setShowLanding] = useState(true)
   const [view, setView] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(null)
-  const [recentDeposits, setRecentDeposits] = useState(RECENT_DEPOSITS)
 
   useEffect(() => {
     const timeout = setTimeout(() => setLoading(false), 3000)
-
     supabase.auth.getSession().then(async ({ data }) => {
       clearTimeout(timeout)
       const u = data.session?.user ?? null
-      console.log('[App] getSession result — user:', u)
       setUser(u)
-      if (u) await fetchKYCStatus(u.id)
+      if (u) await loadUserData(u.id)
       setLoading(false)
-    }).catch((err) => {
-      console.error('[App] getSession error:', err)
-      clearTimeout(timeout)
-      setLoading(false)
-    })
+    }).catch(() => { clearTimeout(timeout); setLoading(false) })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const u = session?.user ?? null
-      console.log('[App] onAuthStateChange — event:', _event, '| user:', u)
       setUser(u)
-      if (u) await fetchKYCStatus(u.id)
+      if (u) await loadUserData(u.id)
     })
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchKYCStatus = async (userId) => {
-    console.log('[fetchKYCStatus] starting for userId:', userId)
+  const loadUserData = async (userId) => {
     try {
-      const { data, error } = await Promise.race([
-        supabase.from('profiles').select('kyc_status').eq('id', userId).maybeSingle(),
+      const { data: profile } = await Promise.race([
+        supabase.from('profiles').select('kyc_status, balance').eq('id', userId).maybeSingle(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
       ])
-      console.log('[fetchKYCStatus] result — data:', data, '| error:', error)
-      setKycStatus(data?.kyc_status ?? 'not_started')
+      setKycStatus(profile?.kyc_status ?? 'not_started')
+      setBalance(profile?.balance ?? 0)
+
+      const { data: txData } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+      setTransactions(txData ?? [])
     } catch (e) {
-      console.warn('[fetchKYCStatus] failed or timed out:', e.message)
+      console.warn('loadUserData failed:', e.message)
       setKycStatus('not_started')
+      setBalance(0)
+      setTransactions([])
     }
   }
 
   const handleLogin = async (u) => {
-    console.log('[handleLogin] called with user:', u)
     setUser(u)
-    console.log('[handleLogin] fetching KYC status...')
-    await fetchKYCStatus(u.id)
-    console.log('[handleLogin] ✅ done — setting showLanding to false')
+    await loadUserData(u.id)
     setShowLanding(false)
   }
 
@@ -488,7 +517,14 @@ export default function App() {
     await supabase.auth.signOut()
     setUser(null)
     setKycStatus(null)
+    setBalance(0)
+    setTransactions([])
     setShowLanding(true)
+  }
+
+  const handleDepositSuccess = (newBalance, newTx) => {
+    setBalance(newBalance)
+    setTransactions(prev => [newTx, ...prev])
   }
 
   if (loading) return (
@@ -500,10 +536,10 @@ export default function App() {
   if (showLanding) return <Auth onLogin={handleLogin} />
 
   const NAV_ITEMS = [
-    { id: 'dashboard', label: 'Dashboard',   icon: 'dashboard' },
-    { id: 'markets',   label: 'Markets',     icon: 'markets'   },
-    { id: 'copy',      label: 'Copy Trade',  icon: 'users',    locked: kycStatus !== 'approved' },
-    { id: 'deposits',  label: 'Deposits',    icon: 'deposit',  locked: kycStatus !== 'approved' },
+    { id: 'dashboard', label: 'Dashboard',  icon: 'dashboard' },
+    { id: 'markets',   label: 'Markets',    icon: 'markets'   },
+    { id: 'copy',      label: 'Copy Trade', icon: 'users',    locked: kycStatus !== 'approved' },
+    { id: 'deposits',  label: 'Deposits',   icon: 'deposit',  locked: kycStatus !== 'approved' },
   ]
   const BOTTOM_ITEMS = [
     { id: 'profile',  label: 'Profile',  icon: 'profile'  },
@@ -512,10 +548,10 @@ export default function App() {
   ]
 
   const renderPage = () => {
-    if (view === 'dashboard') return <DashboardPage user={user} recentDeposits={recentDeposits} kycStatus={kycStatus} />
+    if (view === 'dashboard') return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} />
     if (view === 'markets')   return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} />
     if (view === 'copy')      return <CopyTradingPage kycStatus={kycStatus} />
-    if (view === 'deposits')  return <DepositsPage onDepositSuccess={d => setRecentDeposits(prev => [d, ...prev])} kycStatus={kycStatus} />
+    if (view === 'deposits')  return <DepositsPage user={user} onDepositSuccess={handleDepositSuccess} kycStatus={kycStatus} />
     if (view === 'profile')   return <Profile user={user} kycStatus={kycStatus} onKycUpdate={status => setKycStatus(status)} />
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
@@ -529,7 +565,7 @@ export default function App() {
     const active = view === item.id
     return (
       <div onClick={() => setView(item.id)} title={collapsed ? item.label : ''}
-        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, marginBottom: 2, cursor: 'pointer', background: active ? T.bg3 : 'transparent', borderLeft: active && !collapsed ? `2px solid ${T.blue}` : '2px solid transparent', transition: 'all 0.15s', position: 'relative' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, marginBottom: 2, cursor: 'pointer', background: active ? T.bg3 : 'transparent', borderLeft: active && !collapsed ? `2px solid ${T.blue}` : '2px solid transparent', transition: 'all 0.15s' }}
         onMouseEnter={e => { if (!active) e.currentTarget.style.background = T.bgHover }}
         onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
         <Icon name={item.icon} size={16} color={active ? T.blue : item.locked ? T.text2 : T.text1} />
@@ -597,6 +633,9 @@ export default function App() {
             {view}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 700, color: T.teal }}>
+              ${Number(balance).toFixed(2)}
+            </div>
             <Icon name="bell" size={16} color={T.text2} />
             <div onClick={() => setView('profile')} style={{ width: 30, height: 30, borderRadius: 8, background: `${T.purple}20`, border: `1px solid ${T.purple}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <Icon name="profile" size={14} color={T.purple} />
