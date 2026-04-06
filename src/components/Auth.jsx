@@ -269,41 +269,30 @@ export default function Auth({ onLogin }) {
     }
   }
 
-  // ── FIX: Use existing session instead of re-signing in ──────────────────
-  // Re-signing in during signup creates a new session race condition where
-  // auth.uid() isn't propagated yet when RLS evaluates the INSERT policy.
+  // Uses Edge Function to bypass RLS entirely
   const handleKYCStep = async () => {
     if (!kycFile) { setError('Please upload your government ID.'); return }
     setLoading(true); reset()
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      console.log('SESSION:', session)
-      console.log('USER ID:', session?.user?.id)
       if (sessionError || !session) throw new Error('Session expired. Please sign in again.')
 
-      const uid = session.user.id
-      const ext = kycFile.name.split('.').pop()
-      const path = `${uid}/government_id_${Date.now()}.${ext}`
+      const formData = new FormData()
+      formData.append('file', kycFile)
+      formData.append('docType', docType)
 
-      console.log('Uploading to path:', path)
-      const { error: uploadError } = await supabase.storage
-        .from('kyc-documents')
-        .upload(path, kycFile, { upsert: true })
-      console.log('Storage error:', uploadError)
-      if (uploadError) throw uploadError
+      const response = await fetch(
+        'https://njodnertiscjcxdssyat.supabase.co/functions/v1/submit-kyc',
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: formData,
+        }
+      )
 
-      console.log('Inserting KYC row with user_id:', uid)
-      const { error: kycError } = await supabase.from('kyc').insert({
-        user_id: uid,
-        status: 'pending',
-        document_type: docType,
-        document_url: path,
-        submitted_at: new Date().toISOString(),
-      })
-      console.log('KYC insert error:', kycError)
-      if (kycError) throw kycError
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Upload failed')
 
-      await supabase.from('profiles').upsert({ id: uid, kyc_status: 'pending' })
       setSuccess('✅ KYC submitted! Taking you to your dashboard...')
       setTimeout(() => onLogin(session.user), 1800)
     } catch (e) {
@@ -501,7 +490,6 @@ export default function Auth({ onLogin }) {
     )
   }
 
-  // ── LANDING PAGE ─────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: T.bg0, fontFamily: T.font, color: T.text0, overflowX: 'hidden' }}>
       <div style={{ position: 'fixed', top: '-5%', left: '50%', transform: 'translateX(-50%)', width: 900, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(79,142,255,0.08) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
