@@ -552,7 +552,6 @@ export default function App() {
 
   const loadUserData = async (userId) => {
     try {
-      // Load profile balance
       const { data: profile } = await supabase
         .from('profiles')
         .select('balance')
@@ -561,7 +560,6 @@ export default function App() {
 
       setBalance(profile?.balance ?? 0)
 
-      // Load latest KYC from kyc_documents
       const { data: kycData } = await supabase
         .from('kyc_documents')
         .select('status')
@@ -572,7 +570,6 @@ export default function App() {
 
       setKycStatus(kycData?.status ?? 'not_started')
 
-      // Load transactions
       const { data: txData } = await supabase
         .from('transactions')
         .select('*')
