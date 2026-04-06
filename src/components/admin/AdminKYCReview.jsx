@@ -14,24 +14,28 @@ export default function AdminKYCReview() {
 
   const fetchPendingKYC = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('kyc_documents')
-      .select(`
-        id,
-        user_id,
-        doc_type,
-        file_url,
-        status,
-        submitted_at,
-        profiles!inner(first_name, last_name, email)
-      `)
-      .eq('status', 'pending')
-      .order('submitted_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('kyc_documents')
+        .select(`
+          id,
+          user_id,
+          doc_type,
+          file_url,
+          status,
+          submitted_at,
+          profiles!inner(first_name, last_name, email)
+        `)
+        .eq('status', 'pending')
+        .order('submitted_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching KYC:', error);
-    } else {
-      setKycList(data || []);
+      if (error) {
+        console.error('Error fetching KYC:', error);
+      } else {
+        setKycList(data || []);
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
     }
     setLoading(false);
   };
@@ -49,7 +53,7 @@ export default function AdminKYCReview() {
         .update({ kyc_status: 'approved' })
         .eq('id', kyc.user_id);
 
-      alert(`✅ KYC Approved for ${kyc.profiles?.first_name || 'User'}`);
+      alert(`✅ Approved for ${kyc.profiles?.first_name || 'User'}`);
       fetchPendingKYC();
     } catch (err) {
       alert('Approve failed: ' + err.message);
@@ -77,7 +81,7 @@ export default function AdminKYCReview() {
         .update({ kyc_status: 'rejected' })
         .eq('id', kyc.user_id);
 
-      alert(`❌ KYC Rejected for ${kyc.profiles?.first_name || 'User'}`);
+      alert(`❌ Rejected for ${kyc.profiles?.first_name || 'User'}`);
       fetchPendingKYC();
     } catch (err) {
       alert('Reject failed: ' + err.message);
@@ -86,7 +90,7 @@ export default function AdminKYCReview() {
   };
 
   if (loading) {
-    return <div style={{ padding: '40px', color: '#fff', textAlign: 'center' }}>Loading KYC submissions...</div>;
+    return <div style={{ padding: '60px', color: '#fff', textAlign: 'center' }}>Loading KYC submissions...</div>;
   }
 
   return (
@@ -97,7 +101,7 @@ export default function AdminKYCReview() {
         <div style={{ 
           background: '#1e2030', 
           borderRadius: '16px', 
-          padding: '60px 40px', 
+          padding: '60px', 
           textAlign: 'center', 
           color: '#aaa',
           fontSize: '18px'
@@ -113,7 +117,7 @@ export default function AdminKYCReview() {
             marginBottom: '24px',
             border: '1px solid #333'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div>
                 <strong style={{ fontSize: '18px' }}>
                   {kyc.profiles?.first_name} {kyc.profiles?.last_name}
@@ -121,17 +125,17 @@ export default function AdminKYCReview() {
                 <div style={{ color: '#888', marginTop: '4px' }}>{kyc.profiles?.email}</div>
               </div>
               <div style={{ color: '#ffd700', fontWeight: 600 }}>
-                {kyc.doc_type?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
+                {kyc.doc_type ? kyc.doc_type.replace('_', ' ').toUpperCase() : 'UNKNOWN'}
               </div>
             </div>
 
             {kyc.file_url && (
-              <div style={{ margin: '16px 0' }}>
+              <div style={{ marginBottom: '20px' }}>
                 <a 
                   href={kyc.file_url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  style={{ color: '#4f8eff', textDecoration: 'underline', fontSize: '15px' }}
+                  style={{ color: '#4f8eff', textDecoration: 'underline' }}
                 >
                   📄 View Uploaded Document
                 </a>
@@ -141,11 +145,11 @@ export default function AdminKYCReview() {
             <textarea
               placeholder="Rejection reason (optional)"
               value={rejectionNotes[kyc.id] || ''}
-              onChange={(e) => setRejectionNotes({ ...rejectionNotes, [kyc.id]: e.target.value })}
+              onChange={(e) => setRejectionNotes(prev => ({ ...prev, [kyc.id]: e.target.value }))}
               style={{
                 width: '100%', 
                 minHeight: '80px',
-                margin: '16px 0',
+                marginBottom: '16px',
                 padding: '12px',
                 background: '#14151f',
                 border: '1px solid #555',
@@ -165,8 +169,7 @@ export default function AdminKYCReview() {
                   color: '#000', 
                   border: 'none', 
                   borderRadius: '10px', 
-                  fontWeight: 'bold',
-                  cursor: processingId === kyc.id ? 'not-allowed' : 'pointer'
+                  fontWeight: 'bold' 
                 }}
               >
                 {processingId === kyc.id ? 'Approving...' : '✅ Approve KYC'}
@@ -182,8 +185,7 @@ export default function AdminKYCReview() {
                   color: '#fff', 
                   border: 'none', 
                   borderRadius: '10px', 
-                  fontWeight: 'bold',
-                  cursor: processingId === kyc.id ? 'not-allowed' : 'pointer'
+                  fontWeight: 'bold' 
                 }}
               >
                 {processingId === kyc.id ? 'Rejecting...' : '❌ Reject KYC'}
