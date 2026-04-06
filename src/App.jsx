@@ -429,7 +429,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [kycStatus, setKycStatus] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [showLanding, setShowLanding] = useState(true) // ← ADDED: always show landing first
+  const [showLanding, setShowLanding] = useState(true)
   const [view, setView] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(null)
@@ -441,18 +441,19 @@ export default function App() {
     supabase.auth.getSession().then(async ({ data }) => {
       clearTimeout(timeout)
       const u = data.session?.user ?? null
+      console.log('[App] getSession result — user:', u)
       setUser(u)
-      // ← CHANGED: session found but we do NOT set showLanding=false here.
-      // The user must explicitly click in from the landing page.
       if (u) await fetchKYCStatus(u.id)
       setLoading(false)
-    }).catch(() => {
+    }).catch((err) => {
+      console.error('[App] getSession error:', err)
       clearTimeout(timeout)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const u = session?.user ?? null
+      console.log('[App] onAuthStateChange — event:', _event, '| user:', u)
       setUser(u)
       if (u) await fetchKYCStatus(u.id)
     })
@@ -460,25 +461,36 @@ export default function App() {
   }, [])
 
   const fetchKYCStatus = async (userId, retries = 5) => {
+    console.log('[fetchKYCStatus] starting for userId:', userId)
     for (let i = 0; i < retries; i++) {
-      const { data } = await supabase.from('profiles').select('kyc_status').eq('id', userId).single()
-      if (data) { setKycStatus(data.kyc_status ?? 'not_started'); return }
+      console.log(`[fetchKYCStatus] attempt ${i + 1}/${retries}`)
+      const { data, error } = await supabase.from('profiles').select('kyc_status').eq('id', userId).single()
+      console.log(`[fetchKYCStatus] attempt ${i + 1} result — data:`, data, '| error:', error)
+      if (data) {
+        console.log('[fetchKYCStatus] ✅ got kyc_status:', data.kyc_status)
+        setKycStatus(data.kyc_status ?? 'not_started')
+        return
+      }
       await new Promise(res => setTimeout(res, 800))
     }
+    console.warn('[fetchKYCStatus] ❌ all retries failed — setting not_started')
     setKycStatus('not_started')
   }
 
   const handleLogin = async (u) => {
+    console.log('[handleLogin] called with user:', u)
     setUser(u)
+    console.log('[handleLogin] fetching KYC status...')
     await fetchKYCStatus(u.id)
-    setShowLanding(false) // ← ADDED: only enter the app after explicit login
+    console.log('[handleLogin] ✅ done — setting showLanding to false')
+    setShowLanding(false)
   }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setUser(null)
     setKycStatus(null)
-    setShowLanding(true) // ← ADDED: go back to landing on logout
+    setShowLanding(true)
   }
 
   if (loading) return (
@@ -487,7 +499,6 @@ export default function App() {
     </div>
   )
 
-  // ← CHANGED: show landing whenever showLanding is true (logged out OR new visitor)
   if (showLanding) return <Auth onLogin={handleLogin} />
 
   const NAV_ITEMS = [
