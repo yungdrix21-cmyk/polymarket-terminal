@@ -58,9 +58,9 @@ function AdminKYCReview() {
     setLoading(true);
     try {
       const { data } = await supabase
-        .from('kyc')
-        .select('user_id, status, updated_at')
-        .order('updated_at', { ascending: false });
+        .from('kyc_documents')
+        .select('user_id, doc_type, status, submitted_at')
+        .order('submitted_at', { ascending: false });
 
       setSubmissions(data || []);
     } catch (e) {
@@ -96,6 +96,7 @@ function AdminKYCReview() {
               <div>
                 <div style={{ color: T.text0, fontWeight: 600 }}>User ID: {item.user_id}</div>
                 <div style={{ color: T.text2, fontSize: 13 }}>Status: {item.status}</div>
+                <div style={{ color: T.text2, fontSize: 13 }}>Type: {item.doc_type || 'Unknown'}</div>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button 
@@ -554,30 +555,47 @@ export default function App() {
 
   const loadUserData = async (userId) => {
     try {
-      const { data: profile } = await Promise.race([
-        supabase.from('profiles').select('balance').eq('id', userId).maybeSingle(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
-      ])
-      setBalance(profile?.balance ?? 0)
+      // Load profile balance
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('balance')
+        .eq('id', userId)
+        .maybeSingle();
 
-      const { data: kycData } = await supabase
-        .from('kyc')
+      if (profileError) console.warn('Profile load error:', profileError);
+      setBalance(profile?.balance ?? 0);
+
+      // Load latest KYC from kyc_documents
+      const { data: kycData, error: kycError } = await supabase
+        .from('kyc_documents')
         .select('status')
         .eq('user_id', userId)
-        .maybeSingle()
-      setKycStatus(kycData?.status ?? 'not_started')
+        .order('submitted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      const { data: txData } = await supabase
+      if (kycError) {
+        console.warn('KYC load error:', kycError);
+        setKycStatus('not_started');
+      } else {
+        setKycStatus(kycData?.status ?? 'not_started');
+      }
+
+      // Load transactions
+      const { data: txData, error: txError } = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-      setTransactions(txData ?? [])
+        .order('created_at', { ascending: false });
+
+      if (txError) console.warn('Transactions load error:', txError);
+      setTransactions(txData ?? []);
+
     } catch (e) {
-      console.warn('loadUserData failed:', e.message)
-      setKycStatus('not_started')
-      setBalance(0)
-      setTransactions([])
+      console.warn('loadUserData failed:', e.message);
+      setKycStatus('not_started');
+      setBalance(0);
+      setTransactions([]);
     }
   }
 
