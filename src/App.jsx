@@ -49,6 +49,77 @@ const Icon = ({ name, size = 16, color = 'currentColor', strokeWidth = 1.6 }) =>
   )
 }
 
+// ==================== ADMIN KYC REVIEW PAGE ====================
+function AdminKYCReview() {
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadKYC = async () => {
+    setLoading(true);
+    try {
+      const { data } = await supabase
+        .from('kyc')
+        .select('user_id, status, updated_at')
+        .order('updated_at', { ascending: false });
+
+      setSubmissions(data || []);
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadKYC();
+  }, []);
+
+  return (
+    <div style={{ padding: '28px' }}>
+      <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 700, marginBottom: 20 }}>
+        👑 Admin KYC Review
+      </h2>
+
+      {loading ? (
+        <p style={{ color: T.text2 }}>Loading...</p>
+      ) : submissions.length === 0 ? (
+        <p style={{ color: T.text2 }}>No KYC submissions yet.</p>
+      ) : (
+        submissions.map(item => (
+          <div key={item.user_id} style={{
+            background: T.bgCard,
+            borderRadius: 14,
+            padding: 20,
+            marginBottom: 16,
+            border: `1px solid ${T.border}`
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ color: T.text0, fontWeight: 600 }}>User ID: {item.user_id}</div>
+                <div style={{ color: T.text2, fontSize: 13 }}>Status: {item.status}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button 
+                  onClick={() => alert('Approve clicked for ' + item.user_id)}
+                  style={{ padding: '8px 16px', background: T.teal, color: '#000', border: 'none', borderRadius: 8 }}
+                >
+                  Approve
+                </button>
+                <button 
+                  onClick={() => alert('Reject clicked for ' + item.user_id)}
+                  style={{ padding: '8px 16px', background: T.red, color: '#fff', border: 'none', borderRadius: 8 }}
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+// ============================================================
+
 const CRYPTO_MARKETS = [
   { id: '1', question: 'Bitcoin Up or Down - Next 5 Minutes', outcomePrices: ['0.53', '0.47'], change: '+1.2%', volume: 124000, timeframe: '5m', symbol: 'BTC' },
   { id: '2', question: 'Ethereum Up or Down - Next 15 Minutes', outcomePrices: ['0.49', '0.51'], change: '-0.8%', volume: 89000, timeframe: '15m', symbol: 'ETH' },
@@ -319,7 +390,7 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
   const [loading, setLoading] = useState(false)
 
   const cryptos = [
-    { symbol: 'BTC', name: 'Bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', address: 'bc1qxy2kdyz3f3y3f3y3f3y3f3y3f3y3f', color: '#f7931a' },
+    { symbol: 'BTC', name: 'Bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', address: 'bc1qxy2kdyz3f3y3f3y3f3y3f3y3f3y3f3y3f', color: '#f7931a' },
     { symbol: 'ETH', name: 'Ethereum', logo: 'https://cryptologos.cc/logos/ethereum-eth-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', color: '#627eea' },
     { symbol: 'USDT', name: 'Tether', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', color: '#26a17b' },
     { symbol: 'USDC', name: 'USD Coin', logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', color: '#2775ca' },
@@ -481,17 +552,14 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // ── FIXED: reads kyc status from kyc table directly ──
   const loadUserData = async (userId) => {
     try {
-      // Read balance from profiles
       const { data: profile } = await Promise.race([
         supabase.from('profiles').select('balance').eq('id', userId).maybeSingle(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
       ])
       setBalance(profile?.balance ?? 0)
 
-      // Read kyc status from kyc table (source of truth)
       const { data: kycData } = await supabase
         .from('kyc')
         .select('status')
@@ -499,7 +567,6 @@ export default function App() {
         .maybeSingle()
       setKycStatus(kycData?.status ?? 'not_started')
 
-      // Read transactions
       const { data: txData } = await supabase
         .from('transactions')
         .select('*')
@@ -547,7 +614,10 @@ export default function App() {
     { id: 'markets',   label: 'Markets',    icon: 'markets'   },
     { id: 'copy',      label: 'Copy Trade', icon: 'users',    locked: kycStatus !== 'approved' },
     { id: 'deposits',  label: 'Deposits',   icon: 'deposit',  locked: kycStatus !== 'approved' },
+    // Admin Panel - Only visible to admins
+    ...(user && user.id === '7feed100-4d48-4993-a898-13046a6392a9' ? [{ id: 'admin', label: 'Admin Panel', icon: 'shield' }] : []),
   ]
+
   const BOTTOM_ITEMS = [
     { id: 'profile',  label: 'Profile',  icon: 'profile'  },
     { id: 'settings', label: 'Settings', icon: 'settings' },
@@ -560,6 +630,8 @@ export default function App() {
     if (view === 'copy')      return <CopyTradingPage kycStatus={kycStatus} />
     if (view === 'deposits')  return <DepositsPage user={user} onDepositSuccess={handleDepositSuccess} kycStatus={kycStatus} />
     if (view === 'profile')   return <Profile user={user} kycStatus={kycStatus} onKycUpdate={status => setKycStatus(status)} />
+    if (view === 'admin')     return <AdminKYCReview />
+    
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
         <Icon name={BOTTOM_ITEMS.find(i => i.id === view)?.icon || 'dashboard'} size={40} color={T.text2} />
