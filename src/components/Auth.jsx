@@ -46,6 +46,15 @@ const TRUST = [
   { icon: '📊', text: 'Transparent simulation and risk management logic' },
 ]
 
+function withTimeout(promise, ms = 10000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timed out. Your Supabase project may be paused — check supabase.com/dashboard.')), ms)
+    )
+  ])
+}
+
 function Field({ label, type = 'text', value, onChange, placeholder, required }) {
   return (
     <div style={{ marginBottom: 14 }}>
@@ -160,7 +169,6 @@ export function KYCPending({ user, kycStatus, onLogout }) {
 export default function Auth({ onLogin }) {
   const [mode, setMode] = useState('landing')
   const [step, setStep] = useState(0)
-
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -174,7 +182,6 @@ export default function Auth({ onLogin }) {
   const [docType, setDocType] = useState('passport')
   const [dragOver, setDragOver] = useState(false)
   const fileRef = useRef()
-
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -187,7 +194,9 @@ export default function Auth({ onLogin }) {
     if (!email || !password) { setError('Please fill in all fields.'); return }
     setLoading(true); reset()
     try {
-      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error: err } = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password })
+      )
       if (err) {
         if (err.message.toLowerCase().includes('email not confirmed')) {
           setError('Please confirm your email first. Check your inbox for the confirmation link, then try again.')
@@ -212,7 +221,7 @@ export default function Auth({ onLogin }) {
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
     setLoading(true); reset()
     try {
-      const { data, error: err } = await supabase.auth.signUp({ email, password })
+      const { data, error: err } = await withTimeout(supabase.auth.signUp({ email, password }))
       if (err) {
         if (err.message.toLowerCase().includes('already') || err.message.toLowerCase().includes('registered')) {
           setError('An account with this email already exists. Please sign in instead.')
@@ -229,11 +238,7 @@ export default function Auth({ onLogin }) {
       }
       setSignupUser(user)
       setSignupSession(data.session)
-      if (data.session) {
-        setStep(1)
-      } else {
-        setMode('check_email')
-      }
+      if (data.session) { setStep(1) } else { setMode('check_email') }
     } catch (e) {
       setError(e.message || 'Signup failed.')
     } finally {
@@ -243,25 +248,20 @@ export default function Auth({ onLogin }) {
 
   const handleDetailsStep = async () => {
     if (!firstName || !lastName || !phone || !address || !city || !country) {
-      setError('Please fill in all required fields.')
-      return
+      setError('Please fill in all required fields.'); return
     }
     setLoading(true); reset()
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await withTimeout(supabase.auth.getUser())
       const uid = user?.id || signupUser?.id
       if (!uid) { setError('Session expired. Please go back and sign in again.'); return }
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: uid,
-        first_name: firstName,
-        last_name: lastName,
-        phone,
-        address,
-        city,
-        country,
-        kyc_status: 'not_started',
-        updated_at: new Date().toISOString(),
-      })
+      const { error: profileError } = await withTimeout(
+        supabase.from('profiles').upsert({
+          id: uid, first_name: firstName, last_name: lastName,
+          phone, address, city, country,
+          kyc_status: 'not_started', updated_at: new Date().toISOString(),
+        })
+      )
       if (profileError) throw profileError
       setStep(2)
     } catch (e) {
@@ -271,55 +271,35 @@ export default function Auth({ onLogin }) {
     }
   }
 
-  // ==================== FIXED handleKYCStep ====================
   const handleKYCStep = async () => {
-    if (!kycFile) {
-      setError('Please upload your government ID.')
-      return
-    }
-
-    setLoading(true)
-    reset()
-
+    if (!kycFile) { setError('Please upload your government ID.'); return }
+    setLoading(true); reset()
     try {
+      const { data: { session }, error: sessionError } = await withTimeout(supabase.auth.getSession())
+      if (sessionError || !session) throw new Error('Session expired. Please sign in again.')
+
       const formData = new FormData()
       formData.append('file', kycFile)
       formData.append('docType', docType)
 
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data, error: fnError } = await withTimeout(
+        supabase.functions.invoke('submit-kyc', {
+          body: formData,
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }),
+        30000
+      )
 
-      if (!session?.access_token) {
-        throw new Error('Session expired. Please sign in again.')
-      }
+      if (fnError) throw new Error(fnError.message || 'Upload failed')
 
-      const { data, error: fnError } = await supabase.functions.invoke('submit-kyc', {
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      })
-
-      if (fnError) {
-        console.error('Edge function error:', fnError)
-        throw new Error(fnError.message || 'Upload failed')
-      }
-
-      console.log('KYC upload success:', data)
-
-      setSuccess('✅ KYC documents submitted successfully! Taking you to dashboard...')
-
-      setTimeout(() => {
-        onLogin(session.user || signupUser)
-      }, 1800)
-
+      setSuccess('✅ KYC submitted! Taking you to your dashboard...')
+      setTimeout(() => onLogin(session.user || signupUser), 1800)
     } catch (e) {
-      console.error('KYC error:', e)
       setError('Upload failed: ' + (e.message || 'Please try again.'))
     } finally {
       setLoading(false)
     }
   }
-  // ==================== END OF FIXED FUNCTION ====================
 
   if (mode === 'check_email') {
     return (
@@ -329,20 +309,8 @@ export default function Auth({ onLogin }) {
           <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 800, margin: '0 0 12px' }}>Check your email</h2>
           <p style={{ color: T.text1, fontSize: 14, lineHeight: 1.7, margin: '0 0 28px' }}>
             We sent a confirmation link to <strong style={{ color: T.text0 }}>{email}</strong>.<br />
-            Click the link to activate your account, then sign in to continue setting up your profile.
+            Click the link to activate your account, then sign in to continue.
           </p>
-          <div style={{ background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 14, padding: '16px 20px', marginBottom: 24, textAlign: 'left' }}>
-            {[
-              { label: 'Email', value: email, color: T.teal },
-              { label: 'Next step', value: 'Confirm email → Sign in', color: T.blue },
-              { label: 'Status', value: '📧 Awaiting confirmation', color: T.yellow },
-            ].map((r, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: i < 2 ? `1px solid ${T.border}` : 'none' }}>
-                <span style={{ color: T.text2, fontSize: 13 }}>{r.label}</span>
-                <span style={{ color: r.color, fontSize: 13, fontWeight: 600 }}>{r.value}</span>
-              </div>
-            ))}
-          </div>
           <button onClick={() => { setMode('signin'); reset() }}
             style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, marginBottom: 14 }}>
             Go to Sign In →
@@ -359,7 +327,6 @@ export default function Auth({ onLogin }) {
   if (mode === 'signin') {
     return (
       <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
-        <div style={{ position: 'fixed', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 600, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(79,142,255,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ width: '100%', maxWidth: 420, position: 'relative' }}>
           <button onClick={() => { setMode('landing'); reset() }} style={{ background: 'none', border: 'none', color: T.text2, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0, fontFamily: T.font }}>
             ← Back to home
@@ -388,16 +355,13 @@ export default function Auth({ onLogin }) {
     return (
       <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20, overflowY: 'auto' }}>
         <div style={{ width: '100%', maxWidth: 480, paddingTop: 20 }}>
-          <button
-            onClick={() => { if (step === 0) { setMode('landing'); reset() } else { setStep(s => s - 1); reset() } }}
+          <button onClick={() => { if (step === 0) { setMode('landing'); reset() } else { setStep(s => s - 1); reset() } }}
             style={{ background: 'none', border: 'none', color: T.text2, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0, fontFamily: T.font }}>
             ← {step === 0 ? 'Back to home' : 'Back'}
           </button>
-
           <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.borderHi}`, padding: '36px', boxShadow: '0 24px 80px rgba(0,0,0,0.4)' }}>
             <Logo />
             <Steps current={step} />
-
             {step === 0 && (
               <>
                 <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 800 }}>Create your account</h2>
@@ -406,16 +370,13 @@ export default function Auth({ onLogin }) {
                 <Field label="Password" type="password" value={password} onChange={v => { setPassword(v); reset() }} placeholder="Min. 6 characters" required />
                 <Field label="Confirm Password" type="password" value={confirmPassword} onChange={v => { setConfirmPassword(v); reset() }} placeholder="Repeat password" required />
                 <ErrorBox msg={error} />
-                <PrimaryBtn onClick={handleAccountStep} loading={loading}>
-                  {loading ? 'Creating account...' : 'Continue →'}
-                </PrimaryBtn>
+                <PrimaryBtn onClick={handleAccountStep} loading={loading}>{loading ? 'Creating account...' : 'Continue →'}</PrimaryBtn>
                 <div style={{ textAlign: 'center', fontSize: 13, color: T.text2, marginTop: 16 }}>
                   Already have an account?{' '}
                   <span onClick={() => { setMode('signin'); reset() }} style={{ color: T.blue, cursor: 'pointer', fontWeight: 600 }}>Sign In</span>
                 </div>
               </>
             )}
-
             {step === 1 && (
               <>
                 <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 800 }}>Personal Details</h2>
@@ -438,17 +399,13 @@ export default function Auth({ onLogin }) {
                   </div>
                 </div>
                 <ErrorBox msg={error} />
-                <PrimaryBtn onClick={handleDetailsStep} loading={loading}>
-                  {loading ? 'Saving...' : 'Continue →'}
-                </PrimaryBtn>
+                <PrimaryBtn onClick={handleDetailsStep} loading={loading}>{loading ? 'Saving...' : 'Continue →'}</PrimaryBtn>
               </>
             )}
-
             {step === 2 && (
               <>
                 <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 800 }}>Verify Your Identity</h2>
-                <p style={{ color: T.text2, margin: '0 0 20px', fontSize: 13, lineHeight: 1.6 }}>Upload a government-issued ID to unlock deposits & trading. Encrypted and secure.</p>
-
+                <p style={{ color: T.text2, margin: '0 0 20px', fontSize: 13, lineHeight: 1.6 }}>Upload a government-issued ID to unlock deposits and trading.</p>
                 <div style={{ marginBottom: 18 }}>
                   <label style={{ color: T.text1, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', display: 'block', marginBottom: 8, textTransform: 'uppercase' }}>Document Type</label>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -460,7 +417,6 @@ export default function Auth({ onLogin }) {
                     ))}
                   </div>
                 </div>
-
                 <div
                   onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                   onDragLeave={() => setDragOver(false)}
@@ -482,19 +438,8 @@ export default function Auth({ onLogin }) {
                     </>
                   )}
                 </div>
-
-                <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '12px 14px', marginBottom: 18 }}>
-                  {['All 4 corners visible', 'Clear and readable text', 'Document not expired', 'No black & white copies'].map((r, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: i < 3 ? 6 : 0 }}>
-                      <span style={{ color: T.teal, fontSize: 11 }}>✓</span>
-                      <span style={{ color: T.text1, fontSize: 12 }}>{r}</span>
-                    </div>
-                  ))}
-                </div>
-
                 <ErrorBox msg={error} />
                 <SuccessBox msg={success} />
-
                 <PrimaryBtn onClick={handleKYCStep} disabled={!kycFile} loading={loading}>
                   {loading ? '⏳ Uploading...' : '🔐 Submit for Verification'}
                 </PrimaryBtn>
@@ -513,7 +458,6 @@ export default function Auth({ onLogin }) {
     <div style={{ minHeight: '100vh', background: T.bg0, fontFamily: T.font, color: T.text0, overflowX: 'hidden' }}>
       <div style={{ position: 'fixed', top: '-5%', left: '50%', transform: 'translateX(-50%)', width: 900, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(79,142,255,0.08) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', top: '30%', right: '-10%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,212,170,0.05) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
-
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', height: 60, borderBottom: `1px solid ${T.border}`, background: 'rgba(13,14,20,0.9)', backdropFilter: 'blur(16px)', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>P</div>
@@ -524,7 +468,6 @@ export default function Auth({ onLogin }) {
           <button onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ padding: '7px 18px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: T.font }}>Trade →</button>
         </div>
       </nav>
-
       <section style={{ position: 'relative', textAlign: 'center', padding: '110px 24px 100px', zIndex: 1 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: T.tealDim, border: `1px solid rgba(0,212,170,0.2)`, borderRadius: 20, padding: '5px 14px', marginBottom: 28 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: T.teal, boxShadow: `0 0 6px ${T.teal}` }} />
@@ -540,7 +483,6 @@ export default function Auth({ onLogin }) {
           Trade →
         </button>
       </section>
-
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, margin: 0 }}>Problems & <span style={{ color: T.teal }}>Solutions</span></h2>
@@ -556,7 +498,6 @@ export default function Auth({ onLogin }) {
           </div>
         </div>
       </section>
-
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, margin: '0 0 10px' }}>Key <span style={{ color: T.teal }}>Features</span></h2>
@@ -574,7 +515,6 @@ export default function Auth({ onLogin }) {
           ))}
         </div>
       </section>
-
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, textAlign: 'center', margin: '0 0 48px' }}>Two Operating <span style={{ color: T.teal }}>Modes</span></h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
@@ -591,7 +531,6 @@ export default function Auth({ onLogin }) {
           ))}
         </div>
       </section>
-
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, textAlign: 'center', margin: '0 0 48px' }}>Why traders trust <span style={{ color: T.teal }}>PolyTrader?</span></h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
@@ -603,7 +542,6 @@ export default function Auth({ onLogin }) {
           ))}
         </div>
       </section>
-
       <section style={{ padding: '60px 24px 100px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', background: 'linear-gradient(135deg, rgba(79,142,255,0.08), rgba(155,125,255,0.08))', border: `1px solid rgba(79,142,255,0.2)`, borderRadius: 24, padding: '56px 40px' }}>
           <h2 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, margin: '0 0 14px' }}>Start your edge today</h2>
@@ -614,7 +552,6 @@ export default function Auth({ onLogin }) {
           </button>
         </div>
       </section>
-
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, background: T.bg1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#fff' }}>P</div>
