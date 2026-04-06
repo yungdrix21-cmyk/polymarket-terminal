@@ -330,7 +330,6 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
     setLoading(true)
     try {
       const depositAmount = parseFloat(amount)
-
       const { error: txError } = await supabase.from('transactions').insert({
         user_id: user.id,
         type: 'deposit',
@@ -339,12 +338,10 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
         status: 'Completed',
       })
       if (txError) throw txError
-
       const { data: profileData } = await supabase.from('profiles').select('balance').eq('id', user.id).single()
       const newBalance = (Number(profileData?.balance) || 0) + depositAmount
       const { error: balError } = await supabase.from('profiles').update({ balance: newBalance }).eq('id', user.id)
       if (balError) throw balError
-
       onDepositSuccess(newBalance, {
         id: Date.now(),
         crypto: selectedCrypto.symbol,
@@ -484,15 +481,25 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // ── FIXED: reads kyc status from kyc table directly ──
   const loadUserData = async (userId) => {
     try {
+      // Read balance from profiles
       const { data: profile } = await Promise.race([
-        supabase.from('profiles').select('kyc_status, balance').eq('id', userId).maybeSingle(),
+        supabase.from('profiles').select('balance').eq('id', userId).maybeSingle(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
       ])
-      setKycStatus(profile?.kyc_status ?? 'not_started')
       setBalance(profile?.balance ?? 0)
 
+      // Read kyc status from kyc table (source of truth)
+      const { data: kycData } = await supabase
+        .from('kyc')
+        .select('status')
+        .eq('user_id', userId)
+        .maybeSingle()
+      setKycStatus(kycData?.status ?? 'not_started')
+
+      // Read transactions
       const { data: txData } = await supabase
         .from('transactions')
         .select('*')
