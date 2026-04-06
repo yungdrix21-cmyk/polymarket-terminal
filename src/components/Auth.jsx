@@ -269,16 +269,18 @@ export default function Auth({ onLogin }) {
     }
   }
 
-  // ── FIXED: Sign in explicitly before inserting so auth.uid() is set ──────
+  // ── FIX: Use existing session instead of re-signing in ──────────────────
+  // Re-signing in during signup creates a new session race condition where
+  // auth.uid() isn't propagated yet when RLS evaluates the INSERT policy.
   const handleKYCStep = async () => {
     if (!kycFile) { setError('Please upload your government ID.'); return }
     setLoading(true); reset()
     try {
-      // Explicitly sign in to ensure auth.uid() is active for RLS
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-      if (signInError) throw new Error('Could not authenticate. Please try signing in manually.')
+      // Use the active session — auth.uid() will be set correctly for RLS
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) throw new Error('Session expired. Please sign in again.')
 
-      const uid = signInData.user.id
+      const uid = session.user.id
 
       // Upload file to storage
       const ext = kycFile.name.split('.').pop()
@@ -305,7 +307,7 @@ export default function Auth({ onLogin }) {
       })
 
       setSuccess('✅ KYC submitted! Taking you to your dashboard...')
-      setTimeout(() => onLogin(signInData.user), 1800)
+      setTimeout(() => onLogin(session.user), 1800)
     } catch (e) {
       setError('Upload failed: ' + (e.message || 'Please try again.'))
     } finally {
