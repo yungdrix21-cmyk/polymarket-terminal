@@ -460,21 +460,19 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchKYCStatus = async (userId, retries = 5) => {
+  const fetchKYCStatus = async (userId) => {
     console.log('[fetchKYCStatus] starting for userId:', userId)
-    for (let i = 0; i < retries; i++) {
-      console.log(`[fetchKYCStatus] attempt ${i + 1}/${retries}`)
-      const { data, error } = await supabase.from('profiles').select('kyc_status').eq('id', userId).single()
-      console.log(`[fetchKYCStatus] attempt ${i + 1} result — data:`, data, '| error:', error)
-      if (data) {
-        console.log('[fetchKYCStatus] ✅ got kyc_status:', data.kyc_status)
-        setKycStatus(data.kyc_status ?? 'not_started')
-        return
-      }
-      await new Promise(res => setTimeout(res, 800))
+    try {
+      const { data, error } = await Promise.race([
+        supabase.from('profiles').select('kyc_status').eq('id', userId).maybeSingle(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+      ])
+      console.log('[fetchKYCStatus] result — data:', data, '| error:', error)
+      setKycStatus(data?.kyc_status ?? 'not_started')
+    } catch (e) {
+      console.warn('[fetchKYCStatus] failed or timed out:', e.message)
+      setKycStatus('not_started')
     }
-    console.warn('[fetchKYCStatus] ❌ all retries failed — setting not_started')
-    setKycStatus('not_started')
   }
 
   const handleLogin = async (u) => {
