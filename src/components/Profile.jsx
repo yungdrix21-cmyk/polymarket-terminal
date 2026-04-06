@@ -49,8 +49,7 @@ function Input({ label, value, onChange, placeholder, type = 'text', disabled })
           border: `1px solid ${T.border}`, borderRadius: 10,
           color: disabled ? T.text2 : T.text0, fontSize: 13,
           fontFamily: T.font, outline: 'none', boxSizing: 'border-box',
-          opacity: disabled ? 0.6 : 1,
-          transition: 'border-color 0.15s',
+          opacity: disabled ? 0.6 : 1, transition: 'border-color 0.15s',
         }}
         onFocus={e => { if (!disabled) e.target.style.borderColor = T.blue }}
         onBlur={e => { e.target.style.borderColor = T.border }}
@@ -61,11 +60,11 @@ function Input({ label, value, onChange, placeholder, type = 'text', disabled })
 
 function KYCStatusBadge({ status }) {
   const map = {
-    unverified:  { label: 'Not Started',    color: T.text2,   bg: T.bg3        },
-    not_started: { label: 'Not Started',    color: T.text2,   bg: T.bg3        },
-    pending:     { label: 'Under Review',   color: T.yellow,  bg: T.yellowDim  },
-    approved:    { label: 'Verified ✓',     color: T.teal,    bg: T.tealDim    },
-    rejected:    { label: 'Rejected',       color: T.red,     bg: T.redDim     },
+    unverified:  { label: 'Not Started',  color: T.text2,  bg: T.bg3       },
+    not_started: { label: 'Not Started',  color: T.text2,  bg: T.bg3       },
+    pending:     { label: 'Under Review', color: T.yellow, bg: T.yellowDim },
+    approved:    { label: 'Verified ✓',  color: T.teal,   bg: T.tealDim   },
+    rejected:    { label: 'Rejected',     color: T.red,    bg: T.redDim    },
   }
   const s = map[status] || map.unverified
   return (
@@ -79,8 +78,8 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
   const [profile, setProfile] = useState({ first_name: '', last_name: '', phone: '', address: '', city: '', country: '' })
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
-  const [tab, setTab] = useState('details') // details | kyc | security
-  const [kycDocs, setKycDocs] = useState([])
+  const [tab, setTab] = useState('details')
+  const [kycRow, setKycRow] = useState(null)  // single row from kyc table
   const [uploading, setUploading] = useState(false)
   const [uploadMsg, setUploadMsg] = useState('')
   const [docType, setDocType] = useState('passport')
@@ -88,70 +87,58 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
 
   useEffect(() => {
     if (!user) return
+    // Load profile
     supabase.from('profiles').select('*').eq('id', user.id).single()
       .then(({ data }) => { if (data) setProfile(data) })
-    supabase.from('kyc_documents').select('*').eq('user_id', user.id).order('uploaded_at', { ascending: false })
-      .then(({ data }) => { if (data) setKycDocs(data) })
+    // Load kyc row from kyc table (not kyc_documents)
+    supabase.from('kyc').select('*').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => { if (data) setKycRow(data) })
   }, [user])
 
   const saveProfile = async () => {
-    setSaving(true)
-    setSaveMsg('')
+    setSaving(true); setSaveMsg('')
     const { error } = await supabase.from('profiles').upsert({
-      id: user.id,
-      email: user.email,
-      first_name: profile.first_name,
-      last_name: profile.last_name,
-      phone: profile.phone,
-      address: profile.address,
-      city: profile.city,
-      country: profile.country,
+      id: user.id, email: user.email,
+      first_name: profile.first_name, last_name: profile.last_name,
+      phone: profile.phone, address: profile.address,
+      city: profile.city, country: profile.country,
     })
     setSaving(false)
-    if (error) { setSaveMsg('Error saving. Please try again.') }
-    else { setSaveMsg('Profile saved successfully!') }
+    setSaveMsg(error ? 'Error saving. Please try again.' : 'Profile saved successfully!')
     setTimeout(() => setSaveMsg(''), 3000)
   }
 
   const uploadKYCDoc = async (file) => {
     if (!file) return
-    setUploading(true)
-    setUploadMsg('')
+    setUploading(true); setUploadMsg('')
     try {
       const ext = file.name.split('.').pop()
-      const path = `${user.id}/${docType}_${Date.now()}.${ext}`
-      const { error: uploadError } = await supabase.storage.from('kyc-documents').upload(path, file, { upsert: true })
+      const path = `${user.id}/government_id.${ext}`
+
+      // Upload file to storage bucket
+      const { error: uploadError } = await supabase.storage
+        .from('kyc-documents')
+        .upload(path, file, { upsert: true })
       if (uploadError) throw uploadError
 
-      const { data: { publicUrl } } = supabase.storage.from('kyc-documents').getPublicUrl(path)
-
-      const { error: dbError } = await supabase.from('kyc_documents').insert({
-        user_id: user.id, doc_type: docType, file_url: publicUrl, status: 'pending',
-      })
+      // Upsert into kyc table (one row per user)
+      const { data: upserted, error: dbError } = await supabase.from('kyc').upsert({
+        user_id: user.id,
+        document_type: docType,
+        document_url: path,
+        status: 'pending',
+        submitted_at: new Date().toISOString(),
+      }).select().maybeSingle()
       if (dbError) throw dbError
 
-      // Update profile kyc_status to pending
-      await supabase.from('profiles').update({ kyc_status: 'pending' }).eq('id', user.id)
+      setKycRow(upserted)
       if (onKycUpdate) onKycUpdate('pending')
-
-      // Refresh docs list
-      const { data } = await supabase.from('kyc_documents').select('*').eq('user_id', user.id).order('uploaded_at', { ascending: false })
-      if (data) setKycDocs(data)
-
-      setUploadMsg('Document uploaded! Under review within 1-2 business days.')
+      setUploadMsg('Document uploaded! Under review within 1–2 business days.')
     } catch (err) {
       setUploadMsg('Upload failed: ' + (err.message || 'Unknown error'))
     }
     setUploading(false)
     setTimeout(() => setUploadMsg(''), 5000)
-  }
-
-  const deleteDoc = async (docId, fileUrl) => {
-    // Extract path from URL
-    const path = fileUrl.split('/kyc-documents/')[1]
-    if (path) await supabase.storage.from('kyc-documents').remove([path])
-    await supabase.from('kyc_documents').delete().eq('id', docId)
-    setKycDocs(prev => prev.filter(d => d.id !== docId))
   }
 
   const tabStyle = (id) => ({
@@ -273,7 +260,7 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
             </div>
           </div>
 
-          {/* Upload section */}
+          {/* Upload section — only show if not approved */}
           {kycStatus !== 'approved' && (
             <div style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, padding: '22px 28px', marginBottom: 20 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: T.text0, marginBottom: 16 }}>Upload Identity Document</div>
@@ -327,56 +314,44 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
             </div>
           )}
 
-          {/* Uploaded docs list */}
-          {kycDocs.length > 0 && (
+          {/* Show current KYC row if exists */}
+          {kycRow && (
             <div style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, fontSize: 14, fontWeight: 600, color: T.text0 }}>
-                Uploaded Documents ({kycDocs.length})
+                Submitted Document
               </div>
-              {kycDocs.map((doc, i) => (
-                <div key={doc.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 14, padding: '14px 24px',
-                  borderBottom: i < kycDocs.length - 1 ? `1px solid ${T.border}` : 'none',
-                }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 9, background: T.blueDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="file" size={16} color={T.blue} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 24px' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 9, background: T.blueDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="file" size={16} color={T.blue} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: T.text0, textTransform: 'capitalize', marginBottom: 2 }}>
+                    {kycRow.document_type?.replace('_', ' ')}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: T.text0, textTransform: 'capitalize', marginBottom: 2 }}>
-                      {doc.doc_type?.replace('_', ' ')}
-                    </div>
-                    <div style={{ fontSize: 11, color: T.text2 }}>
-                      {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString() : 'Uploaded'}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    {doc.status === 'pending' && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: T.yellowDim, border: `1px solid ${T.yellow}30` }}>
-                        <Icon name="clock" size={11} color={T.yellow} />
-                        <span style={{ fontSize: 11, color: T.yellow, fontWeight: 600 }}>Pending</span>
-                      </div>
-                    )}
-                    {doc.status === 'approved' && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: T.tealDim, border: `1px solid ${T.teal}30` }}>
-                        <Icon name="check" size={11} color={T.teal} />
-                        <span style={{ fontSize: 11, color: T.teal, fontWeight: 600 }}>Approved</span>
-                      </div>
-                    )}
-                    {doc.status === 'rejected' && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: T.redDim, border: `1px solid ${T.red}30` }}>
-                        <span style={{ fontSize: 11, color: T.red, fontWeight: 600 }}>Rejected</span>
-                      </div>
-                    )}
-                    {doc.status !== 'approved' && (
-                      <button onClick={() => deleteDoc(doc.id, doc.file_url)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6, color: T.text2, transition: 'color 0.15s' }}
-                        onMouseEnter={e => e.currentTarget.style.color = T.red}
-                        onMouseLeave={e => e.currentTarget.style.color = T.text2}>
-                        <Icon name="trash" size={14} />
-                      </button>
-                    )}
+                  <div style={{ fontSize: 11, color: T.text2 }}>
+                    {kycRow.submitted_at ? new Date(kycRow.submitted_at).toLocaleDateString() : 'Submitted'}
                   </div>
                 </div>
-              ))}
+                <div>
+                  {kycRow.status === 'pending' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: T.yellowDim, border: `1px solid ${T.yellow}30` }}>
+                      <Icon name="clock" size={11} color={T.yellow} />
+                      <span style={{ fontSize: 11, color: T.yellow, fontWeight: 600 }}>Pending</span>
+                    </div>
+                  )}
+                  {kycRow.status === 'approved' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: T.tealDim, border: `1px solid ${T.teal}30` }}>
+                      <Icon name="check" size={11} color={T.teal} />
+                      <span style={{ fontSize: 11, color: T.teal, fontWeight: 600 }}>Approved</span>
+                    </div>
+                  )}
+                  {kycRow.status === 'rejected' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: T.redDim, border: `1px solid ${T.red}30` }}>
+                      <span style={{ fontSize: 11, color: T.red, fontWeight: 600 }}>Rejected</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
