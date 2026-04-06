@@ -23,7 +23,6 @@ const Icon = ({ name, size = 16, color = 'currentColor', strokeWidth = 1.6 }) =>
     check:    <><polyline points="20 6 9 17 4 12"/></>,
     upload:   <><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></>,
     clock:    <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
-    close:    <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
     file:     <><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></>,
     save:     <><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>,
   }
@@ -84,11 +83,9 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
   useEffect(() => {
     if (!user) return
 
-    // Load profile
     supabase.from('profiles').select('*').eq('id', user.id).single()
       .then(({ data }) => { if (data) setProfile(data) })
 
-    // Load latest KYC from kyc_documents (this fixes the refresh issue)
     supabase
       .from('kyc_documents')
       .select('*')
@@ -98,9 +95,7 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
       .maybeSingle()
       .then(({ data }) => {
         setKycRow(data)
-        if (data && onKycUpdate) {
-          onKycUpdate(data.status || 'pending')
-        }
+        if (data && onKycUpdate) onKycUpdate(data.status || 'pending')
       })
   }, [user, onKycUpdate])
 
@@ -118,24 +113,24 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
   }
 
   const uploadKYCDoc = async (file) => {
-    if (!file || !user) return;
+    if (!file || !user) return
 
-    setUploading(true);
-    setUploadMsg('');
+    setUploading(true)
+    setUploadMsg('')
 
     try {
-      const ext = file.name.split('.').pop();
-      const filePath = `${user.id}/${Date.now()}-${docType}.${ext}`;
+      const ext = file.name.split('.').pop()
+      const filePath = `${user.id}/${Date.now()}-${docType}.${ext}`
 
       const { error: uploadError } = await supabase.storage
         .from('kyc-documents')
-        .upload(filePath, file, { upsert: true, contentType: file.type });
+        .upload(filePath, file, { upsert: true, contentType: file.type })
 
-      if (uploadError) throw uploadError;
+      if (uploadError) throw uploadError
 
       const { data: { publicUrl } } = supabase.storage
         .from('kyc-documents')
-        .getPublicUrl(filePath);
+        .getPublicUrl(filePath)
 
       const { data: inserted, error: dbError } = await supabase
         .from('kyc_documents')
@@ -148,23 +143,23 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
           submitted_at: new Date().toISOString(),
         })
         .select()
-        .maybeSingle();
+        .maybeSingle()
 
-      if (dbError) throw dbError;
+      if (dbError) throw dbError
 
-      setKycRow(inserted);
-      if (onKycUpdate) onKycUpdate('pending');
+      setKycRow(inserted)
+      if (onKycUpdate) onKycUpdate('pending')
 
-      setUploadMsg('Document uploaded successfully! Under review within 1–2 business days.');
+      setUploadMsg('Document uploaded successfully! Under review within 1–2 business days.')
 
     } catch (err) {
-      console.error('KYC upload error:', err);
-      setUploadMsg('Upload failed: ' + (err.message || 'Unknown error'));
+      console.error('KYC upload error:', err)
+      setUploadMsg('Upload failed: ' + (err.message || 'Unknown error'))
     }
 
-    setUploading(false);
-    setTimeout(() => setUploadMsg(''), 6000);
-  };
+    setUploading(false)
+    setTimeout(() => setUploadMsg(''), 6000)
+  }
 
   const tabStyle = (id) => ({
     padding: '9px 18px', fontSize: 13, fontWeight: tab === id ? 600 : 400,
@@ -175,6 +170,7 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
 
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 28 }}>
         <div style={{
@@ -205,7 +201,56 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
         <button style={tabStyle('security')} onClick={() => setTab('security')}>Security</button>
       </div>
 
-      {/* KYC Tab */}
+      {/* PERSONAL DETAILS TAB */}
+      {tab === 'details' && (
+        <div style={{ maxWidth: 680 }}>
+          <div style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, padding: '24px 28px', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
+              <Icon name="profile" size={16} color={T.blue} />
+              <span style={{ fontSize: 15, fontWeight: 600, color: T.text0 }}>Personal Information</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <Input label="First Name" value={profile.first_name} onChange={v => setProfile(p => ({ ...p, first_name: v }))} placeholder="John" />
+              <Input label="Last Name" value={profile.last_name} onChange={v => setProfile(p => ({ ...p, last_name: v }))} placeholder="Smith" />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <Input label="Email Address" value={user?.email} onChange={() => {}} disabled />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <Input label="Phone Number" value={profile.phone} onChange={v => setProfile(p => ({ ...p, phone: v }))} placeholder="+1 234 567 8900" type="tel" />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <Input label="Home Address" value={profile.address} onChange={v => setProfile(p => ({ ...p, address: v }))} placeholder="123 Main Street" />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <Input label="City" value={profile.city} onChange={v => setProfile(p => ({ ...p, city: v }))} placeholder="New York" />
+              <Input label="Country" value={profile.country} onChange={v => setProfile(p => ({ ...p, country: v }))} placeholder="United States" />
+            </div>
+          </div>
+
+          {saveMsg && (
+            <div style={{
+              padding: '12px 18px', borderRadius: 10, marginBottom: 16, fontSize: 13, fontWeight: 500,
+              background: saveMsg.includes('Error') ? T.redDim : T.tealDim,
+              color: saveMsg.includes('Error') ? T.red : T.teal,
+              border: `1px solid ${saveMsg.includes('Error') ? T.red : T.teal}30`,
+            }}>{saveMsg}</div>
+          )}
+
+          <button onClick={saveProfile} disabled={saving} style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '12px 28px', background: saving ? T.bg3 : T.blue,
+            color: saving ? T.text2 : '#fff', border: 'none', borderRadius: 12,
+            fontSize: 14, fontWeight: 600, cursor: saving ? 'default' : 'pointer',
+            fontFamily: T.font, transition: 'all 0.2s',
+          }}>
+            <Icon name="save" size={15} color={saving ? T.text2 : '#fff'} />
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      )}
+
+      {/* KYC TAB */}
       {tab === 'kyc' && (
         <div style={{ maxWidth: 680 }}>
           {/* Status card */}
@@ -246,11 +291,14 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
                 </div>
               </div>
 
-              <div onClick={() => fileRef.current?.click()} style={{
-                border: `2px dashed ${T.borderHi}`, borderRadius: 14, padding: '32px 20px',
-                textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s',
-                background: uploading ? T.blueDim : 'transparent',
-              }}>
+              <div
+                onClick={() => fileRef.current?.click()}
+                style={{
+                  border: `2px dashed ${T.borderHi}`, borderRadius: 14, padding: '32px 20px',
+                  textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s',
+                  background: uploading ? T.blueDim : 'transparent',
+                }}
+              >
                 <div style={{ marginBottom: 12, opacity: 0.6 }}>
                   <Icon name="upload" size={32} color={T.blue} />
                 </div>
@@ -262,14 +310,18 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
                   onChange={e => { if (e.target.files[0]) uploadKYCDoc(e.target.files[0]) }} />
               </div>
 
-              {uploadMsg && <div style={{ marginTop: 14, padding: '12px 16px', borderRadius: 10, fontSize: 13,
-                background: uploadMsg.includes('failed') ? T.redDim : T.tealDim,
-                color: uploadMsg.includes('failed') ? T.red : T.teal,
-                border: `1px solid ${uploadMsg.includes('failed') ? T.red : T.teal}30` }}>{uploadMsg}</div>}
+              {uploadMsg && (
+                <div style={{
+                  marginTop: 14, padding: '12px 16px', borderRadius: 10, fontSize: 13,
+                  background: uploadMsg.includes('failed') ? T.redDim : T.tealDim,
+                  color: uploadMsg.includes('failed') ? T.red : T.teal,
+                  border: `1px solid ${uploadMsg.includes('failed') ? T.red : T.teal}30`,
+                }}>{uploadMsg}</div>
+              )}
             </div>
           )}
 
-          {/* Show submitted document */}
+          {/* Submitted Document */}
           {kycRow && (
             <div style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, fontSize: 14, fontWeight: 600, color: T.text0 }}>
@@ -288,12 +340,16 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
                   </div>
                 </div>
                 <div>
-                  {kycRow.status === 'pending' && <div style={{ padding: '4px 10px', borderRadius: 20, background: T.yellowDim, border: `1px solid ${T.yellow}30` }}>
-                    <span style={{ fontSize: 11, color: T.yellow, fontWeight: 600 }}>Pending Review</span>
-                  </div>}
-                  {kycRow.status === 'approved' && <div style={{ padding: '4px 10px', borderRadius: 20, background: T.tealDim, border: `1px solid ${T.teal}30` }}>
-                    <span style={{ fontSize: 11, color: T.teal, fontWeight: 600 }}>Approved</span>
-                  </div>}
+                  {kycRow.status === 'pending' && (
+                    <div style={{ padding: '4px 10px', borderRadius: 20, background: T.yellowDim, border: `1px solid ${T.yellow}30` }}>
+                      <span style={{ fontSize: 11, color: T.yellow, fontWeight: 600 }}>Pending Review</span>
+                    </div>
+                  )}
+                  {kycRow.status === 'approved' && (
+                    <div style={{ padding: '4px 10px', borderRadius: 20, background: T.tealDim, border: `1px solid ${T.teal}30` }}>
+                      <span style={{ fontSize: 11, color: T.teal, fontWeight: 600 }}>Approved</span>
+                    </div>
+                  )}
                 </div>
               </div>
               {kycRow.file_url && (
@@ -308,9 +364,39 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
         </div>
       )}
 
-      {/* Other tabs remain the same - Personal Details & Security */}
-      {tab === 'details' && ( /* your existing details tab code */ )}
-      {tab === 'security' && ( /* your existing security tab code */ )}
+      {/* SECURITY TAB */}
+      {tab === 'security' && (
+        <div style={{ maxWidth: 680 }}>
+          <div style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, padding: '24px 28px', marginBottom: 20 }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: T.text0, marginBottom: 18 }}>Change Password</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <Input label="New Password" value="" onChange={() => {}} placeholder="••••••••" type="password" />
+              <Input label="Confirm New Password" value="" onChange={() => {}} placeholder="••••••••" type="password" />
+            </div>
+            <button style={{ marginTop: 20, padding: '12px 24px', background: T.blue, color: '#fff', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: T.font }}>
+              Update Password
+            </button>
+          </div>
+
+          <div style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, padding: '24px 28px' }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: T.text0, marginBottom: 6 }}>Account Information</div>
+            <div style={{ fontSize: 13, color: T.text2, marginBottom: 18 }}>Your account details and registration info</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                ['Email', user?.email],
+                ['User ID', user?.id?.slice(0, 18) + '...'],
+                ['Account Created', user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'],
+                ['Last Sign In', user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : '—'],
+              ].map(([label, val]) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: T.bg3, borderRadius: 10 }}>
+                  <span style={{ fontSize: 13, color: T.text1 }}>{label}</span>
+                  <span style={{ fontSize: 12, color: T.text0, fontFamily: T.mono }}>{val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
