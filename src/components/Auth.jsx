@@ -118,7 +118,6 @@ function PrimaryBtn({ onClick, disabled, loading, children }) {
   )
 }
 
-// ── KYC Pending export (used from App.jsx) ─────────────────────────────────
 export function KYCPending({ user, kycStatus, onLogout }) {
   return (
     <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
@@ -158,25 +157,19 @@ export function KYCPending({ user, kycStatus, onLogout }) {
   )
 }
 
-// ── Main Auth ──────────────────────────────────────────────────────────────
 export default function Auth({ onLogin }) {
-  const [mode, setMode] = useState('landing') // landing | signin | signup | check_email
-  const [step, setStep] = useState(0)         // 0=account 1=details 2=kyc
+  const [mode, setMode] = useState('landing')
+  const [step, setStep] = useState(0)
 
-  // Step 0
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-
-  // Step 1
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
   const [country, setCountry] = useState('')
-
-  // Step 2
   const [kycFile, setKycFile] = useState(null)
   const [docType, setDocType] = useState('passport')
   const [dragOver, setDragOver] = useState(false)
@@ -185,13 +178,10 @@ export default function Auth({ onLogin }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
-  // We store the authed user object throughout signup flow
   const [signupUser, setSignupUser] = useState(null)
 
   const reset = () => { setError(''); setSuccess('') }
 
-  // ── SIGN IN ──────────────────────────────────────────────────────────────
   const handleSignIn = async () => {
     if (!email || !password) { setError('Please fill in all fields.'); return }
     setLoading(true); reset()
@@ -215,10 +205,6 @@ export default function Auth({ onLogin }) {
     }
   }
 
-  // ── STEP 0: Create account ────────────────────────────────────────────────
-  // KEY FIX: We do NOT try to sign in mid-flow. We use the session returned
-  // by signUp directly (works when email confirmation is OFF). If confirmation
-  // is required, we show the check_email screen and stop there.
   const handleAccountStep = async () => {
     if (!email || !password || !confirmPassword) { setError('Please fill in all fields.'); return }
     if (password !== confirmPassword) { setError('Passwords do not match.'); return }
@@ -227,7 +213,6 @@ export default function Auth({ onLogin }) {
     try {
       const { data, error: err } = await supabase.auth.signUp({ email, password })
       if (err) {
-        // Handle duplicate email
         if (err.message.toLowerCase().includes('already') || err.message.toLowerCase().includes('registered')) {
           setError('An account with this email already exists. Please sign in instead.')
         } else {
@@ -235,23 +220,16 @@ export default function Auth({ onLogin }) {
         }
         return
       }
-
       const user = data?.user
       if (!user) { setError('Signup failed. Please try again.'); return }
-
-      // Duplicate check: Supabase returns user but with no identities if already registered
       if (user.identities && user.identities.length === 0) {
         setError('An account with this email already exists. Please sign in instead.')
         return
       }
-
       setSignupUser(user)
-
       if (data.session) {
-        // Email confirmation is OFF — user is immediately logged in, proceed to details
         setStep(1)
       } else {
-        // Email confirmation is ON — tell user to check inbox
         setMode('check_email')
       }
     } catch (e) {
@@ -261,9 +239,6 @@ export default function Auth({ onLogin }) {
     }
   }
 
-  // ── STEP 1: Save personal details ────────────────────────────────────────
-  // KEY FIX: We use signupUser from state (set during step 0), NOT a new signIn call.
-  // If signupUser is somehow missing, we try getUser() from the active session.
   const handleDetailsStep = async () => {
     if (!firstName || !lastName || !phone || !address || !city || !country) {
       setError('Please fill in all required fields.')
@@ -271,11 +246,9 @@ export default function Auth({ onLogin }) {
     }
     setLoading(true); reset()
     try {
-      // Get current user from active session
       const { data: { user } } = await supabase.auth.getUser()
       const uid = user?.id || signupUser?.id
       if (!uid) { setError('Session expired. Please go back and sign in again.'); return }
-
       const { error: profileError } = await supabase.from('profiles').upsert({
         id: uid,
         first_name: firstName,
@@ -296,43 +269,50 @@ export default function Auth({ onLogin }) {
     }
   }
 
-  // ── STEP 2: Upload KYC ───────────────────────────────────────────────────
-  // KEY FIX: Uses getUser() for the UID, not newUserId from state.
+  // ── FIXED: Sign in explicitly before inserting so auth.uid() is set ──────
   const handleKYCStep = async () => {
     if (!kycFile) { setError('Please upload your government ID.'); return }
     setLoading(true); reset()
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const uid = user?.id || signupUser?.id
-      if (!uid) { setError('Session expired. Please sign in again.'); return }
+      // Explicitly sign in to ensure auth.uid() is active for RLS
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) throw new Error('Could not authenticate. Please try signing in manually.')
 
+      const uid = signInData.user.id
+
+      // Upload file to storage
       const ext = kycFile.name.split('.').pop()
-      const path = `${uid}/government_id.${ext}`
-
+      const path = `${uid}/government_id_${Date.now()}.${ext}`
       const { error: uploadError } = await supabase.storage
         .from('kyc-documents')
         .upload(path, kycFile, { upsert: true })
       if (uploadError) throw uploadError
 
-      // Update profile with KYC status pending
-      const { error: profileError } = await supabase.from('profiles').upsert({
+      // Insert KYC record — auth.uid() now matches uid so RLS passes
+      const { error: kycError } = await supabase.from('kyc').insert({
+        user_id: uid,
+        status: 'pending',
+        document_type: docType,
+        document_url: path,
+        submitted_at: new Date().toISOString(),
+      })
+      if (kycError) throw kycError
+
+      // Update profile kyc_status
+      await supabase.from('profiles').upsert({
         id: uid,
         kyc_status: 'pending',
-        kyc_id_type: docType,
-        kyc_submitted_at: new Date().toISOString(),
       })
-      if (profileError) throw profileError
 
-      setSuccess('✅ KYC submitted! Redirecting to your dashboard...')
-      setTimeout(() => onLogin(user), 1800)
+      setSuccess('✅ KYC submitted! Taking you to your dashboard...')
+      setTimeout(() => onLogin(signInData.user), 1800)
     } catch (e) {
-      setError(e.message || 'Upload failed. Please try again.')
+      setError('Upload failed: ' + (e.message || 'Please try again.'))
     } finally {
       setLoading(false)
     }
   }
 
-  // ── CHECK EMAIL SCREEN ───────────────────────────────────────────────────
   if (mode === 'check_email') {
     return (
       <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
@@ -368,7 +348,6 @@ export default function Auth({ onLogin }) {
     )
   }
 
-  // ── SIGN IN SCREEN ───────────────────────────────────────────────────────
   if (mode === 'signin') {
     return (
       <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
@@ -397,7 +376,6 @@ export default function Auth({ onLogin }) {
     )
   }
 
-  // ── SIGNUP FLOW (3 steps) ────────────────────────────────────────────────
   if (mode === 'signup') {
     return (
       <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20, overflowY: 'auto' }}>
@@ -412,7 +390,6 @@ export default function Auth({ onLogin }) {
             <Logo />
             <Steps current={step} />
 
-            {/* ── STEP 0: Account ── */}
             {step === 0 && (
               <>
                 <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 800 }}>Create your account</h2>
@@ -431,7 +408,6 @@ export default function Auth({ onLogin }) {
               </>
             )}
 
-            {/* ── STEP 1: Personal Details ── */}
             {step === 1 && (
               <>
                 <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 800 }}>Personal Details</h2>
@@ -460,13 +436,11 @@ export default function Auth({ onLogin }) {
               </>
             )}
 
-            {/* ── STEP 2: KYC ── */}
             {step === 2 && (
               <>
                 <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 800 }}>Verify Your Identity</h2>
                 <p style={{ color: T.text2, margin: '0 0 20px', fontSize: 13, lineHeight: 1.6 }}>Upload a government-issued ID to unlock deposits & trading. Encrypted and secure.</p>
 
-                {/* Doc type selector */}
                 <div style={{ marginBottom: 18 }}>
                   <label style={{ color: T.text1, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', display: 'block', marginBottom: 8, textTransform: 'uppercase' }}>Document Type</label>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -479,7 +453,6 @@ export default function Auth({ onLogin }) {
                   </div>
                 </div>
 
-                {/* Drop zone */}
                 <div
                   onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                   onDragLeave={() => setDragOver(false)}
@@ -502,7 +475,6 @@ export default function Auth({ onLogin }) {
                   )}
                 </div>
 
-                {/* Requirements */}
                 <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '12px 14px', marginBottom: 18 }}>
                   {['All 4 corners visible', 'Clear and readable text', 'Document not expired', 'No black & white copies'].map((r, i) => (
                     <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: i < 3 ? 6 : 0 }}>
@@ -535,7 +507,6 @@ export default function Auth({ onLogin }) {
       <div style={{ position: 'fixed', top: '-5%', left: '50%', transform: 'translateX(-50%)', width: 900, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(79,142,255,0.08) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', top: '30%', right: '-10%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,212,170,0.05) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
 
-      {/* Navbar */}
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', height: 60, borderBottom: `1px solid ${T.border}`, background: 'rgba(13,14,20,0.9)', backdropFilter: 'blur(16px)', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>P</div>
@@ -547,7 +518,6 @@ export default function Auth({ onLogin }) {
         </div>
       </nav>
 
-      {/* Hero */}
       <section style={{ position: 'relative', textAlign: 'center', padding: '110px 24px 100px', zIndex: 1 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: T.tealDim, border: `1px solid rgba(0,212,170,0.2)`, borderRadius: 20, padding: '5px 14px', marginBottom: 28 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: T.teal, boxShadow: `0 0 6px ${T.teal}` }} />
@@ -564,7 +534,6 @@ export default function Auth({ onLogin }) {
         </button>
       </section>
 
-      {/* Problems & Solutions */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, margin: 0 }}>Problems & <span style={{ color: T.teal }}>Solutions</span></h2>
@@ -581,7 +550,6 @@ export default function Auth({ onLogin }) {
         </div>
       </section>
 
-      {/* Features */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, margin: '0 0 10px' }}>Key <span style={{ color: T.teal }}>Features</span></h2>
@@ -600,7 +568,6 @@ export default function Auth({ onLogin }) {
         </div>
       </section>
 
-      {/* Two Modes */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, textAlign: 'center', margin: '0 0 48px' }}>Two Operating <span style={{ color: T.teal }}>Modes</span></h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
@@ -618,7 +585,6 @@ export default function Auth({ onLogin }) {
         </div>
       </section>
 
-      {/* Trust */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, textAlign: 'center', margin: '0 0 48px' }}>Why traders trust <span style={{ color: T.teal }}>PolyTrader?</span></h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
@@ -631,7 +597,6 @@ export default function Auth({ onLogin }) {
         </div>
       </section>
 
-      {/* CTA */}
       <section style={{ padding: '60px 24px 100px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', background: 'linear-gradient(135deg, rgba(79,142,255,0.08), rgba(155,125,255,0.08))', border: `1px solid rgba(79,142,255,0.2)`, borderRadius: 24, padding: '56px 40px' }}>
           <h2 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, margin: '0 0 14px' }}>Start your edge today</h2>
@@ -643,7 +608,6 @@ export default function Auth({ onLogin }) {
         </div>
       </section>
 
-      {/* Footer */}
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, background: T.bg1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#fff' }}>P</div>
