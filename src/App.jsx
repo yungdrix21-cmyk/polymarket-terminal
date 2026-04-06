@@ -534,59 +534,82 @@ export default function App() {
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(null)
 
+  // ── FIX: timeout prevents infinite loading if Supabase hangs ──
   useEffect(() => {
+    let cancelled = false
+
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        console.warn('Supabase getSession timed out — showing auth screen')
+        setLoading(false)
+      }
+    }, 5000)
+
     supabase.auth.getSession().then(async ({ data }) => {
+      if (cancelled) return
+      clearTimeout(timeout)
       const u = data.session?.user ?? null
       setUser(u)
-      if (u) await loadUserData(u.id)
+      if (u) {
+        await loadUserData(u.id)
+        setShowLanding(false)
+      }
       setLoading(false)
-    }).catch(() => setLoading(false))
+    }).catch((err) => {
+      if (cancelled) return
+      clearTimeout(timeout)
+      console.error('getSession error:', err)
+      setLoading(false)
+    })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (cancelled) return
       const u = session?.user ?? null
       setUser(u)
       if (u) await loadUserData(u.id)
     })
-    return () => subscription.unsubscribe()
+
+    return () => {
+      cancelled = true
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [])
 
-   const loadUserData = async (userId) => {
+  const loadUserData = async (userId) => {
     try {
-      // Load profile balance
       const { data: profile } = await supabase
         .from('profiles')
         .select('balance')
         .eq('id', userId)
-        .maybeSingle();
+        .maybeSingle()
 
-      setBalance(profile?.balance ?? 0);
+      setBalance(profile?.balance ?? 0)
 
-      // Load KYC status from the correct table
       const { data: kycData } = await supabase
         .from('kyc_documents')
         .select('status')
         .eq('user_id', userId)
         .order('submitted_at', { ascending: false })
         .limit(1)
-        .maybeSingle();
+        .maybeSingle()
 
-      setKycStatus(kycData?.status ?? 'not_started');
+      setKycStatus(kycData?.status ?? 'not_started')
 
-      // Load transactions
       const { data: txData } = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
-      setTransactions(txData ?? []);
+      setTransactions(txData ?? [])
     } catch (e) {
-      console.warn('loadUserData failed:', e.message);
-      setKycStatus('not_started');
-      setBalance(0);
-      setTransactions([]);
+      console.warn('loadUserData failed:', e.message)
+      setKycStatus('not_started')
+      setBalance(0)
+      setTransactions([])
     }
-  };
+  }
 
   const handleLogin = async (u) => {
     setUser(u)
