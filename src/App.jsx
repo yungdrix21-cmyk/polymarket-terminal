@@ -535,14 +535,12 @@ export default function App() {
   const [selected, setSelected] = useState(null)
 
   useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 3000)
     supabase.auth.getSession().then(async ({ data }) => {
-      clearTimeout(timeout)
       const u = data.session?.user ?? null
       setUser(u)
       if (u) await loadUserData(u.id)
       setLoading(false)
-    }).catch(() => { clearTimeout(timeout); setLoading(false) })
+    }).catch(() => setLoading(false))
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const u = session?.user ?? null
@@ -554,6 +552,7 @@ export default function App() {
 
   const loadUserData = async (userId) => {
     try {
+      // Load profile balance
       const { data: profile } = await supabase
         .from('profiles')
         .select('balance')
@@ -562,7 +561,7 @@ export default function App() {
 
       setBalance(profile?.balance ?? 0)
 
-      // Fixed: Use kyc_documents instead of old 'kyc' table
+      // Load latest KYC from kyc_documents
       const { data: kycData } = await supabase
         .from('kyc_documents')
         .select('status')
@@ -573,6 +572,7 @@ export default function App() {
 
       setKycStatus(kycData?.status ?? 'not_started')
 
+      // Load transactions
       const { data: txData } = await supabase
         .from('transactions')
         .select('*')
