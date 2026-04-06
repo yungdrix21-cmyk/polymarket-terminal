@@ -275,66 +275,22 @@ export default function Auth({ onLogin }) {
     if (!kycFile) { setError('Please upload your government ID.'); return }
     setLoading(true); reset()
     try {
-      // Try multiple ways to get a valid session token
-      let accessToken = null
-      let currentUser = null
-
-      // 1. Try getting current session from Supabase
-      let { data: { session } } = await supabase.auth.getSession()
-
-      // 2. If no session, try refreshing
-      if (!session) {
-        const { data: refreshed } = await supabase.auth.refreshSession()
-        session = refreshed?.session
-      }
-
-      // 3. Fall back to stored signup session
-      if (!session && signupSession) {
-        session = signupSession
-      }
-
-      if (session) {
-        accessToken = session.access_token
-        currentUser = session.user
-      } else if (signupUser) {
-        // Last resort — try signing in again with stored credentials
-        setError('Session expired. Please sign in again to complete KYC.')
-        setLoading(false)
-        return
-      }
-
-      if (!accessToken) {
-        setError('Could not authenticate. Please sign in again.')
-        setLoading(false)
-        return
-      }
-
-      console.log('Sending KYC with token:', accessToken.slice(0, 20) + '...')
-
       const formData = new FormData()
       formData.append('file', kycFile)
       formData.append('docType', docType)
 
-      const response = await fetch(
-        'https://njodnertiscjcxdssyat.supabase.co/functions/v1/submit-kyc',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: formData,
-        }
-      )
+      const { data, error: fnError } = await supabase.functions.invoke('submit-kyc', {
+        body: formData,
+      })
 
-      console.log('Edge function status:', response.status)
-      const result = await response.json()
-      console.log('Edge function result:', result)
+      console.log('Edge function response:', data, fnError)
+      if (fnError) throw new Error(fnError.message)
 
-      if (!response.ok) throw new Error(result.error || 'Upload failed')
+      const { data: { user } } = await supabase.auth.getUser()
+      const currentUser = user || signupUser
 
       setSuccess('✅ KYC submitted! Taking you to your dashboard...')
-      setTimeout(() => onLogin(currentUser || signupUser), 1800)
+      setTimeout(() => onLogin(currentUser), 1800)
     } catch (e) {
       console.error('KYC error:', e)
       setError('Upload failed: ' + (e.message || 'Please try again.'))
