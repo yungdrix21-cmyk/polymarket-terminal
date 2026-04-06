@@ -46,11 +46,11 @@ const TRUST = [
   { icon: '📊', text: 'Transparent simulation and risk management logic' },
 ]
 
-function withTimeout(promise, ms = 10000) {
+function withTimeout(promise, ms = 30000) {
   return Promise.race([
     promise,
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Request timed out. Your Supabase project may be paused — check supabase.com/dashboard.')), ms)
+      setTimeout(() => reject(new Error('Request timed out. Supabase is waking up — please wait 15 seconds and try again.')), ms)
     )
   ])
 }
