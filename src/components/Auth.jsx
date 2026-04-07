@@ -171,7 +171,6 @@ export function KYCPending({ user, kycStatus, onLogout }) {
 }
 
 export default function Auth({ onLogin }) {
-  const timeoutRef = useRef(null)
   const [mode, setMode] = useState('landing')
   const [step, setStep] = useState(0)
   const [email, setEmail] = useState('')
