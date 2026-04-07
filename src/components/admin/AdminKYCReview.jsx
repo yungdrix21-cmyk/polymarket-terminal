@@ -45,6 +45,7 @@ export default function AdminKYCReview() {
 
       if (error) {
         console.error('Error fetching KYC:', error);
+        setLoading(false);
         return;
       }
 
@@ -183,13 +184,16 @@ export default function AdminKYCReview() {
             border: '1px solid #333'
           }}>
 
-            {/* USER INFO */}
+            {/* USER INFO (FIXED) */}
             <div style={{ marginBottom: '12px' }}>
               <strong style={{ fontSize: '18px' }}>
-                {kyc.profiles?.first_name} {kyc.profiles?.last_name}
+                {kyc.profiles?.first_name
+                  ? `${kyc.profiles.first_name} ${kyc.profiles.last_name || ''}`
+                  : 'Unknown User'}
               </strong>
-              <div style={{ color: '#888' }}>
-                {kyc.profiles?.email}
+
+              <div style={{ color: '#888', marginTop: '4px' }}>
+                {kyc.profiles?.email || `User ID: ${kyc.user_id}`}
               </div>
             </div>
 
@@ -207,6 +211,20 @@ export default function AdminKYCReview() {
                 }}
                 onClick={() => window.open(kyc.signed_url, '_blank')}
               />
+            )}
+
+            {/* OPEN FULL DOC */}
+            {kyc.signed_url && (
+              <div style={{ marginBottom: '12px' }}>
+                <a
+                  href={kyc.signed_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#4f8eff' }}
+                >
+                  📄 Open Full Document
+                </a>
+              </div>
             )}
 
             {/* NOTES */}
@@ -246,7 +264,7 @@ export default function AdminKYCReview() {
                   fontWeight: 'bold'
                 }}
               >
-                Approve
+                {processingId === kyc.id ? 'Processing...' : 'Approve'}
               </button>
 
               <button
@@ -262,7 +280,7 @@ export default function AdminKYCReview() {
                   fontWeight: 'bold'
                 }}
               >
-                Reject
+                {processingId === kyc.id ? 'Rejecting...' : 'Reject'}
               </button>
             </div>
 
