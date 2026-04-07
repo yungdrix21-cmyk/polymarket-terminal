@@ -24,28 +24,32 @@ export default function AdminKYCReview() {
   const { data, error } = await supabase
   .from('kyc_documents')
   .select(`
-  id,
-  user_id,
-  doc_type,
-  file_url,
-  status,
-  submitted_at,
-  profiles!inner(first_name, last_name, email)
-`)
-.eq('status', 'pending')
-.order('submitted_at', { ascending: false });
+    id,
+    user_id,
+    doc_type,
+    file_path,
+    status,
+    submitted_at,
+    profiles (
+      first_name,
+      last_name,
+      email
+    )
+  `)
+  .eq('status', 'pending')
+  .order('submitted_at', { ascending: false });
 
       if (error) {
   console.error('Error fetching KYC:', error);
 } else {
   const enhancedData = await Promise.all(
     (data || []).map(async (kyc) => {
-      if (!kyc.file_url) return kyc;
+      if (!kyc.file_path) return kyc;
 
       // If file_url is a FULL URL → extract path
-      const path = kyc.file_url.includes('kyc-documents')
-        ? kyc.file_url.split('/kyc-documents/')[1]
-        : kyc.file_url;
+      const path = kyc.file_path.includes('kyc-documents')
+        ? kyc.file_path.split('/kyc-documents/')[1]
+        : kyc.file_path;
 
       const { data: signed, error: signedError } = await supabase
         .storage
