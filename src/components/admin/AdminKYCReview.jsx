@@ -30,7 +30,7 @@ export default function AdminKYCReview() {
   file_url,
   status,
   submitted_at,
-  profiles(first_name, last_name, email)
+  profiles(*)
 `)
 .eq('status', 'pending')
 .order('submitted_at', { ascending: false });
