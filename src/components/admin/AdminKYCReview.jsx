@@ -76,27 +76,25 @@ export default function AdminKYCReview() {
   };
 
   const handleApprove = async (kyc) => {
-  if (processingId) return // 🔥 prevents double click globally
-
-  setProcessingId(kyc.id)
   setProcessingId(kyc.id);
+
   try {
-    const { error: kycError } = await supabase
+    const { data, error } = await supabase
       .from('kyc_documents')
-      .update({ status: 'approved', reviewed_at: new Date().toISOString() })
-      .eq('id', kyc.id);
+      .update({
+        status: 'approved',
+        reviewed_at: new Date().toISOString()
+      })
+      .eq('id', kyc.id)
+      .select(); // 👈 ADD THIS
 
-    if (kycError) throw kycError;
+    console.log("APPROVE RESPONSE:", data, error); // 👈 ADD THIS
 
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ kyc_status: 'approved' })
-      .eq('id', kyc.user_id);
+    if (error) throw error;
 
-    if (profileError) throw profileError;
-
-    alert(`✅ Approved for ${kyc.profiles?.first_name || 'User'}`);
+    alert(`✅ Approved for ${kyc.user_id}`);
     fetchPendingKYC();
+
   } catch (err) {
     console.error(err);
     alert('Approve failed: ' + err.message);
