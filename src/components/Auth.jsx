@@ -190,29 +190,27 @@ export default function Auth({ onLogin }) {
   const reset = () => { setError(''); setSuccess('') }
 
   const handleSignIn = async () => {
-    if (!email || !password) { setError('Please fill in all fields.'); return }
-    setLoading(true); reset()
-    try {
-      const { data, error: err } = await withTimeout(
-        supabase.auth.signInWithPassword({ email, password })
-      )
-      if (err) {
-        if (err.message.toLowerCase().includes('email not confirmed')) {
-          setError('Please confirm your email first. Check your inbox for the confirmation link, then try again.')
-        } else if (err.message.toLowerCase().includes('invalid') || err.message.toLowerCase().includes('credentials')) {
-          setError('Wrong email or password. Please try again.')
-        } else {
-          setError(err.message)
-        }
-        return
+  if (!email || !password) { setError('Please fill in all fields.'); return }
+  setLoading(true); reset()
+  try {
+    const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
+    if (err) {
+      if (err.message.toLowerCase().includes('email not confirmed')) {
+        setError('Please confirm your email first. Check your inbox for the confirmation link.')
+      } else if (err.message.toLowerCase().includes('invalid') || err.message.toLowerCase().includes('credentials')) {
+        setError('Wrong email or password. Please try again.')
+      } else {
+        setError(err.message)
       }
-      onLogin(data.user)
-    } catch (e) {
-      setError(e.message || 'Something went wrong.')
-    } finally {
-      setLoading(false)
+      return
     }
+    onLogin(data.user)
+  } catch (e) {
+    setError(e.message || 'Something went wrong.')
+  } finally {
+    setLoading(false)
   }
+}
 
   const handleAccountStep = async () => {
     if (!email || !password || !confirmPassword) { setError('Please fill in all fields.'); return }
