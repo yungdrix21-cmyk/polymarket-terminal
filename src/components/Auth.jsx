@@ -192,30 +192,58 @@ export default function Auth({ onLogin }) {
 
   // ── FIX: handleSignIn now wrapped with withTimeout so it can't hang forever ──
   const handleSignIn = async () => {
-    if (!email || !password) { setError('Please fill in all fields.'); return }
-    setLoading(true); reset()
-    try {
-      const { data, error: err } = await withTimeout(
-        supabase.auth.signInWithPassword({ email, password }),
-        15000
-      )
-      if (err) {
-        if (err.message.toLowerCase().includes('email not confirmed')) {
-          setError('Please confirm your email first. Check your inbox for the confirmation link.')
-        } else if (err.message.toLowerCase().includes('invalid') || err.message.toLowerCase().includes('credentials')) {
-          setError('Wrong email or password. Please try again.')
-        } else {
-          setError(err.message)
-        }
-        return
-      }
-      onLogin(data.user)
-    } catch (e) {
-      setError(e.message || 'Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+  if (!email || !password) {
+    setError('Please fill in all fields.')
+    return
   }
+
+  setLoading(true)
+  reset()
+
+  try {
+    console.log("Signing in...")
+
+    const { data, error: err } = await withTimeout(
+      supabase.auth.signInWithPassword({ email, password }),
+      15000
+    )
+
+    console.log("Response:", data, err)
+
+    if (err) {
+      if (err.message.toLowerCase().includes('email not confirmed')) {
+        setError('Please confirm your email first. Check your inbox.')
+      } else if (
+        err.message.toLowerCase().includes('invalid') ||
+        err.message.toLowerCase().includes('credentials')
+      ) {
+        setError('Wrong email or password.')
+      } else {
+        setError(err.message)
+      }
+      return
+    }
+
+    if (!data?.user) {
+      setError('Login failed. No user returned.')
+      return
+    }
+
+    // 🔥 prevents hanging if onLogin breaks
+    if (onLogin && typeof onLogin === 'function') {
+      onLogin(data.user)
+    } else {
+      console.warn('onLogin is not defined')
+      setSuccess('Logged in successfully (no redirect handler)')
+    }
+
+  } catch (e) {
+    console.error("Login error:", e)
+    setError(e.message || 'Something went wrong.')
+  } finally {
+    setLoading(false)
+  }
+}
 
   const handleAccountStep = async () => {
     if (!email || !password || !confirmPassword) { setError('Please fill in all fields.'); return }
