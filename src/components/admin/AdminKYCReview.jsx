@@ -39,10 +39,35 @@ export default function AdminKYCReview() {
         .order('submitted_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching KYC:', error);
-      } else {
-        setKycList(data || []);
+  console.error('Error fetching KYC:', error);
+} else {
+  const enhancedData = await Promise.all(
+    (data || []).map(async (kyc) => {
+      if (!kyc.file_url) return kyc;
+
+      // If file_url is a FULL URL → extract path
+      const path = kyc.file_url.includes('kyc-documents')
+        ? kyc.file_url.split('/kyc-documents/')[1]
+        : kyc.file_url;
+
+      const { data: signed, error: signedError } = await supabase
+        .storage
+        .from('kyc-documents') // ✅ YOUR bucket
+        .createSignedUrl(path, 60);
+
+      if (signedError) {
+        console.error('Signed URL error:', signedError);
       }
+
+      return {
+        ...kyc,
+        signed_url: signed?.signedUrl || null
+      };
+    })
+  );
+
+  setKycList(enhancedData);
+}
     } catch (err) {
       console.error('Unexpected error:', err);
     }
@@ -163,18 +188,42 @@ export default function AdminKYCReview() {
               </div>
             </div>
 
-            {kyc.file_url && (
-              <div style={{ marginBottom: '20px' }}>
-                <a 
-                  href={kyc.file_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ color: '#4f8eff', textDecoration: 'underline' }}
-                >
-                  📄 View Uploaded Document
-                </a>
-              </div>
-            )}
+            {kyc.signed_url && (
+  <div style={{ marginBottom: '20px' }}>
+    
+    <img
+      src={kyc.signed_url}
+      alt="KYC Document"
+      style={{
+        maxWidth: '100%',
+        maxHeight: '300px',
+        borderRadius: '8px',
+        marginBottom: '10px'
+      }}
+    />
+
+    <a
+      href={kyc.signed_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ color: '#4f8eff', textDecoration: 'underline' }}
+    >
+      📄 Open Full Document
+    </a>
+
+  </div>
+)}
+
+    <a
+      href={kyc.signed_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ color: '#4f8eff', textDecoration: 'underline' }}
+    >
+      📄 Open Full Document
+    </a>
+  </div>
+)}
 
             <textarea
               placeholder="Rejection reason (optional)"
