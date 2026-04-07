@@ -235,20 +235,22 @@ export default function AdminKYCReview() {
 
             <div style={{ display: 'flex', gap: '12px' }}>
               <button 
-                onClick={() => handleApprove(kyc)}
-                disabled={processingId === kyc.id}
-                style={{ 
-                  flex: 1, 
-                  padding: '14px', 
-                  background: '#00d4aa', 
-                  color: '#000', 
-                  border: 'none', 
-                  borderRadius: '10px', 
-                  fontWeight: 'bold' 
-                }}
-              >
-                {processingId === kyc.id ? 'Approving...' : '✅ Approve KYC'}
-              </button>
+  onClick={() => {
+    console.log("BUTTON CLICK WORKS");
+    handleApprove(kyc);
+  }}
+  style={{ 
+    flex: 1, 
+    padding: '14px', 
+    background: '#00d4aa', 
+    color: '#000', 
+    border: 'none', 
+    borderRadius: '10px', 
+    fontWeight: 'bold' 
+  }}
+>
+  Approve KYC
+</button>
 
               <button 
                 onClick={() => handleReject(kyc)}
