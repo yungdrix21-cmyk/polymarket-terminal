@@ -535,46 +535,54 @@ export default function App() {
   const [selected, setSelected] = useState(null)
 
   // ── FIX: timeout prevents infinite loading if Supabase hangs ──
-  useEffect(() => {
-    let cancelled = false
-
-    const timeout = setTimeout(() => {
-      if (!cancelled) {
-        console.warn('Supabase getSession timed out — showing auth screen')
-        setLoading(false)
-      }
-    }, 5000)
-
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (cancelled) return
-      clearTimeout(timeout)
-      const u = data.session?.user ?? null
-      setUser(u)
-      if (u) {
-        await loadUserData(u.id)
-        setShowLanding(false)
-      }
-      setLoading(false)
-    }).catch((err) => {
-      if (cancelled) return
-      clearTimeout(timeout)
-      console.error('getSession error:', err)
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (cancelled) return
-      const u = session?.user ?? null
-      setUser(u)
-      if (u) await loadUserData(u.id)
-    })
-
-    return () => {
-      cancelled = true
-      clearTimeout(timeout)
-      subscription.unsubscribe()
+ useEffect(() => {
+  supabase.auth.getSession().then(async ({ data }) => {
+    const u = data.session?.user ?? null
+    setUser(u)
+    if (u) {
+      await loadUserData(u.id)
+      setShowLanding(false)
     }
-  }, [])
+    setLoading(false)
+  }).catch(() => setLoading(false))
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const u = session?.user ?? null
+    setUser(u)
+    if (u) await loadUserData(u.id)
+  })
+  return () => subscription.unsubscribe()
+}, [])
+
+const loadUserData = async (userId) => {
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('balance')
+      .eq('id', userId)
+      .maybeSingle()
+    setBalance(profile?.balance ?? 0)
+
+    const { data: kycData } = await supabase
+      .from('kyc')
+      .select('status')
+      .eq('user_id', userId)
+      .maybeSingle()
+    setKycStatus(kycData?.status ?? 'not_started')
+
+    const { data: txData } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    setTransactions(txData ?? [])
+  } catch (e) {
+    console.warn('loadUserData failed:', e.message)
+    setKycStatus('not_started')
+    setBalance(0)
+    setTransactions([])
+  }
+}
 
   const loadUserData = async (userId) => {
     try {
