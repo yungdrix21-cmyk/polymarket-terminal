@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 const T = {
@@ -171,6 +171,7 @@ export function KYCPending({ user, kycStatus, onLogout }) {
 }
 
 export default function Auth({ onLogin }) {
+  const timeoutRef = useRef(null)
   const [mode, setMode] = useState('landing')
   const [step, setStep] = useState(0)
   const [email, setEmail] = useState('')
@@ -186,6 +187,17 @@ export default function Auth({ onLogin }) {
   const [docType, setDocType] = useState('passport')
   const [dragOver, setDragOver] = useState(false)
   const fileRef = useRef()
+  const fileRef = useRef()
+  const timeoutRef = useRef(null)
+
+  useEffect(() => {
+  return () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+  }
+}, [])
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
