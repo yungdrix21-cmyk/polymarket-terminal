@@ -47,8 +47,7 @@ const TRUST = [
 ]
 
 function withTimeout(promise, ms = 0) {
-  return promise;  // Bypass timeout completely — let Supabase take as long as it needs
-}
+ new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000))
 function Field({ label, type = 'text', value, onChange, placeholder, required }) {
   return (
     <div style={{ marginBottom: 14 }}>

@@ -1,13 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 
-export const supabase = createClient(
-  'https://njodnertiscjcxdssyat.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qb2RuZXJ0aXNjamN4ZHNzeWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjc1ODYsImV4cCI6MjA5MDY0MzU4Nn0.VPaBdBnHvW-yGth-U7SSIpywnJGiQVZtP6E3WRUaQJg',
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://njodnertiscjcxdssyat.supabase.co'
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qb2RuZXJ0aXNjamN4ZHNzeWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjc1ODYsImV4cCI6MjA5MDY0MzU4Nn0.VPaBdBnHvW-yGth-U7SSIpywnJGiQVZtP6E3WRUaQJg'
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+  global: {
+    fetch: (url, options = {}) => {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 20000)
+      return fetch(url, { ...options, signal: controller.signal })
+        .finally(() => clearTimeout(timer))
     },
-  }
-)
+  },
+})
