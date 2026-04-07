@@ -187,7 +187,6 @@ export default function Auth({ onLogin }) {
   const [docType, setDocType] = useState('passport')
   const [dragOver, setDragOver] = useState(false)
   const fileRef = useRef()
-  const fileRef = useRef()
   const timeoutRef = useRef(null)
 
   useEffect(() => {
