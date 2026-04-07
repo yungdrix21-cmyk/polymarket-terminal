@@ -231,11 +231,13 @@ export default function Auth({ onLogin }) {
 
     // 🔥 prevents hanging if onLogin breaks
     if (onLogin && typeof onLogin === 'function') {
-      onLogin(data.user)
-    } else {
-      console.warn('onLogin is not defined')
-      setSuccess('Logged in successfully (no redirect handler)')
-    }
+  await Promise.resolve(onLogin(data.user))
+} else {
+  console.warn('onLogin is not defined')
+
+  // fallback so it NEVER gets stuck
+  window.location.href = '/dashboard'
+}
 
   } catch (e) {
     console.error("Login error:", e)
