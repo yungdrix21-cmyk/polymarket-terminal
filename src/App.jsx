@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
 import Profile from './components/Profile'
+import PolymarketMarkets from './components/PolymarketMarkets'
 
 const T = {
   bg0: '#0d0e14', bg1: '#12131c', bg2: '#181922', bg3: '#1e2030', bgCard: '#14151f',

@@ -34,7 +34,8 @@ export default function AdminKYCReview() {
           file_path,
           status,
           submitted_at,
-          profiles (
+          profiles:profiles!kyc_documents_user_id_fkey (
+            id,
             first_name,
             last_name,
             email
@@ -43,11 +44,7 @@ export default function AdminKYCReview() {
         .eq('status', 'pending')
         .order('submitted_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching KYC:', error);
-        setLoading(false);
-        return;
-      }
+      if (error) throw error;
 
       const enhancedData = await Promise.all(
         (data || []).map(async (kyc) => {
@@ -73,13 +70,15 @@ export default function AdminKYCReview() {
         })
       );
 
+      console.log("KYC DATA:", enhancedData); // DEBUG
+
       setKycList(enhancedData);
 
     } catch (err) {
-      console.error('Unexpected error:', err);
+      console.error('Fetch error:', err);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleApprove = async (kyc) => {
@@ -96,7 +95,7 @@ export default function AdminKYCReview() {
 
       if (error) throw error;
 
-      alert(`✅ Approved for ${kyc.user_id}`);
+      alert(`✅ Approved`);
       fetchPendingKYC();
 
     } catch (err) {
@@ -112,7 +111,7 @@ export default function AdminKYCReview() {
 
     const notes = rejectionNotes[kyc.id] || "Rejected by admin";
 
-    if (!window.confirm(`Reject KYC for ${kyc.profiles?.first_name || 'this user'}?`)) return;
+    if (!window.confirm(`Reject this KYC?`)) return;
 
     setProcessingId(kyc.id);
 
@@ -172,7 +171,7 @@ export default function AdminKYCReview() {
           color: '#aaa',
           fontSize: '18px'
         }}>
-          No pending KYC submissions.
+          No pending KYC submissions at the moment.
         </div>
       ) : (
         kycList.map((kyc) => (
@@ -184,50 +183,53 @@ export default function AdminKYCReview() {
             border: '1px solid #333'
           }}>
 
-            {/* USER INFO (FIXED) */}
-            <div style={{ marginBottom: '12px' }}>
+            {/* USER INFO */}
+            <div style={{ marginBottom: '16px' }}>
               <strong style={{ fontSize: '18px' }}>
-                {kyc.profiles?.first_name
-                  ? `${kyc.profiles.first_name} ${kyc.profiles.last_name || ''}`
+                {kyc.profiles
+                  ? `${kyc.profiles.first_name} ${kyc.profiles.last_name}`
                   : 'Unknown User'}
               </strong>
-
-              <div style={{ color: '#888', marginTop: '4px' }}>
-                {kyc.profiles?.email || `User ID: ${kyc.user_id}`}
+              <div style={{ color: '#888' }}>
+                {kyc.profiles?.email || 'No email'}
               </div>
+            </div>
+
+            {/* DOC TYPE */}
+            <div style={{ color: '#ffd700', marginBottom: '16px' }}>
+              {kyc.doc_type
+                ? kyc.doc_type.replace('_', ' ').toUpperCase()
+                : 'UNKNOWN'}
             </div>
 
             {/* DOCUMENT */}
             {kyc.signed_url && (
-              <img
-                src={kyc.signed_url}
-                alt="KYC Document"
-                style={{
-                  width: '100%',
-                  maxWidth: '400px',
-                  borderRadius: '10px',
-                  marginBottom: '16px',
-                  cursor: 'pointer'
-                }}
-                onClick={() => window.open(kyc.signed_url, '_blank')}
-              />
-            )}
-
-            {/* OPEN FULL DOC */}
-            {kyc.signed_url && (
-              <div style={{ marginBottom: '12px' }}>
-                <a
-                  href={kyc.signed_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: '#4f8eff' }}
-                >
-                  📄 Open Full Document
-                </a>
+              <div style={{ marginBottom: '20px' }}>
+                <img
+                  src={kyc.signed_url}
+                  alt="KYC Document"
+                  style={{
+                    width: '100%',
+                    maxWidth: '400px',
+                    borderRadius: '10px',
+                    border: '1px solid #333',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => window.open(kyc.signed_url, '_blank')}
+                />
               </div>
             )}
 
-            {/* NOTES */}
+            <a
+              href={kyc.signed_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#4f8eff', textDecoration: 'underline' }}
+            >
+              📄 Open Full Document
+            </a>
+
+            {/* REJECTION NOTES */}
             <textarea
               placeholder="Rejection reason (optional)"
               value={rejectionNotes[kyc.id] || ''}
@@ -240,6 +242,7 @@ export default function AdminKYCReview() {
               style={{
                 width: '100%',
                 minHeight: '80px',
+                marginTop: '16px',
                 marginBottom: '16px',
                 padding: '12px',
                 background: '#14151f',
@@ -249,7 +252,7 @@ export default function AdminKYCReview() {
               }}
             />
 
-            {/* BUTTONS */}
+            {/* ACTIONS */}
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={() => handleApprove(kyc)}
@@ -264,7 +267,7 @@ export default function AdminKYCReview() {
                   fontWeight: 'bold'
                 }}
               >
-                {processingId === kyc.id ? 'Processing...' : 'Approve'}
+                Approve KYC
               </button>
 
               <button
@@ -280,10 +283,9 @@ export default function AdminKYCReview() {
                   fontWeight: 'bold'
                 }}
               >
-                {processingId === kyc.id ? 'Rejecting...' : 'Reject'}
+                {processingId === kyc.id ? 'Rejecting...' : '❌ Reject KYC'}
               </button>
             </div>
-
           </div>
         ))
       )}
