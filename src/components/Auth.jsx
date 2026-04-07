@@ -15,12 +15,16 @@ const T = {
 }
 
 function withTimeout(promise, ms = 15000) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Request timed out. Please check your connection and try again.')), ms)
-    )
-  ])
+  let timeoutId
+
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error('Request timed out. Please try again.'))
+    }, ms)
+  })
+
+  return Promise.race([promise, timeout])
+    .finally(() => clearTimeout(timeoutId))
 }
 
 const PROBLEMS = [
