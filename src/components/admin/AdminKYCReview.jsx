@@ -76,7 +76,8 @@ export default function AdminKYCReview() {
   };
 
   const handleApprove = async (kyc) => {
-  setProcessingId(kyc.id);
+    console.log("CLICKED APPROVE", kyc.id);
+    setProcessingId(kyc.id);
 
   try {
     const { data, error } = await supabase
