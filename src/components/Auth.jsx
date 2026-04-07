@@ -14,11 +14,12 @@ const T = {
   mono: '"DM Mono", monospace',
 }
 
-// ✅ Fixed withTimeout — actually returns the race
 function withTimeout(promise, ms = 15000) {
   return Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out. Please try again.')), ms))
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timed out. Please check your connection and try again.')), ms)
+    )
   ])
 }
 
@@ -189,28 +190,32 @@ export default function Auth({ onLogin }) {
 
   const reset = () => { setError(''); setSuccess('') }
 
+  // ── FIX: handleSignIn now wrapped with withTimeout so it can't hang forever ──
   const handleSignIn = async () => {
-  if (!email || !password) { setError('Please fill in all fields.'); return }
-  setLoading(true); reset()
-  try {
-    const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
-    if (err) {
-      if (err.message.toLowerCase().includes('email not confirmed')) {
-        setError('Please confirm your email first. Check your inbox for the confirmation link.')
-      } else if (err.message.toLowerCase().includes('invalid') || err.message.toLowerCase().includes('credentials')) {
-        setError('Wrong email or password. Please try again.')
-      } else {
-        setError(err.message)
+    if (!email || !password) { setError('Please fill in all fields.'); return }
+    setLoading(true); reset()
+    try {
+      const { data, error: err } = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password }),
+        15000
+      )
+      if (err) {
+        if (err.message.toLowerCase().includes('email not confirmed')) {
+          setError('Please confirm your email first. Check your inbox for the confirmation link.')
+        } else if (err.message.toLowerCase().includes('invalid') || err.message.toLowerCase().includes('credentials')) {
+          setError('Wrong email or password. Please try again.')
+        } else {
+          setError(err.message)
+        }
+        return
       }
-      return
+      onLogin(data.user)
+    } catch (e) {
+      setError(e.message || 'Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    onLogin(data.user)
-  } catch (e) {
-    setError(e.message || 'Something went wrong.')
-  } finally {
-    setLoading(false)
   }
-}
 
   const handleAccountStep = async () => {
     if (!email || !password || !confirmPassword) { setError('Please fill in all fields.'); return }
