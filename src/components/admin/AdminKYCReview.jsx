@@ -76,8 +76,9 @@ export default function AdminKYCReview() {
   };
 
   const handleApprove = async (kyc) => {
-    console.log("CLICKED APPROVE", kyc.id);
-    setProcessingId(kyc.id);
+  console.log("CLICKED APPROVE:", kyc); // 👈 ADD THIS
+
+  setProcessingId(kyc.id);
 
   try {
     const { data, error } = await supabase
@@ -87,9 +88,9 @@ export default function AdminKYCReview() {
         reviewed_at: new Date().toISOString()
       })
       .eq('id', kyc.id)
-      .select(); // 👈 ADD THIS
+      .select(); // 👈 IMPORTANT
 
-    console.log("APPROVE RESPONSE:", data, error); // 👈 ADD THIS
+    console.log("APPROVE RESPONSE:", data, error); // 👈 IMPORTANT
 
     if (error) throw error;
 
@@ -97,7 +98,7 @@ export default function AdminKYCReview() {
     fetchPendingKYC();
 
   } catch (err) {
-    console.error(err);
+    console.error("APPROVE ERROR:", err);
     alert('Approve failed: ' + err.message);
   } finally {
     setProcessingId(null);
