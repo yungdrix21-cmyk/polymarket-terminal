@@ -21,22 +21,9 @@ export default function AdminKYCReview() {
     fetchPendingKYC();
   }, []);
 
-  const fetchPendingKYC = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('kyc_documents')
-        .select(`
-  id,
-  user_id,
-  doc_type,
-  file_url,
-  status,
-  submitted_at,
-  profiles(first_name, last_name, email)
-`)
-        .eq('status', 'pending')
-        .order('submitted_at', { ascending: false });
+  const { data, error } = await supabase
+  .from('kyc_documents')
+  .select('*');
 
       if (error) {
   console.error('Error fetching KYC:', error);
