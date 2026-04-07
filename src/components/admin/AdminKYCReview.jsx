@@ -175,29 +175,20 @@ export default function AdminKYCReview() {
               </div>
             </div>
 
-            {kyc.signed_url && (
+            {kyc.file_url && (
   <div style={{ marginBottom: '20px' }}>
-    
     <img
-      src={kyc.signed_url}
+      src={kyc.file_url}
       alt="KYC Document"
       style={{
-        maxWidth: '100%',
-        maxHeight: '300px',
-        borderRadius: '8px',
-        marginBottom: '10px'
+        width: '100%',
+        maxWidth: '400px',
+        borderRadius: '10px',
+        border: '1px solid #333',
+        cursor: 'pointer'
       }}
+      onClick={() => window.open(kyc.file_url, '_blank')}
     />
-
-    <a
-      href={kyc.signed_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{ color: '#4f8eff', textDecoration: 'underline' }}
-    >
-      📄 Open Full Document
-    </a>
-
   </div>
 )}
 
