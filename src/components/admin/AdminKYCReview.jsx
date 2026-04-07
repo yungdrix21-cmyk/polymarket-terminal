@@ -27,14 +27,14 @@ export default function AdminKYCReview() {
       const { data, error } = await supabase
         .from('kyc_documents')
         .select(`
-          id,
-          user_id,
-          doc_type,
-          file_url,
-          status,
-          submitted_at,
-          profiles!inner(first_name, last_name, email)
-        `)
+  id,
+  user_id,
+  doc_type,
+  file_url,
+  status,
+  submitted_at,
+  profiles(first_name, last_name, email)
+`)
         .eq('status', 'pending')
         .order('submitted_at', { ascending: false });
 
