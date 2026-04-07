@@ -14,6 +14,14 @@ const T = {
   mono: '"DM Mono", monospace',
 }
 
+// ✅ Fixed withTimeout — actually returns the race
+function withTimeout(promise, ms = 15000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out. Please try again.')), ms))
+  ])
+}
+
 const PROBLEMS = [
   'Hundreds of markets — hard to find the right one',
   'Manual analysis takes hours',
@@ -46,8 +54,6 @@ const TRUST = [
   { icon: '📊', text: 'Transparent simulation and risk management logic' },
 ]
 
-function withTimeout(promise, ms = 0) {
- new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000))
 function Field({ label, type = 'text', value, onChange, placeholder, required }) {
   return (
     <div style={{ marginBottom: 14 }}>
@@ -268,26 +274,25 @@ export default function Auth({ onLogin }) {
     if (!kycFile) { setError('Please upload your government ID.'); return }
     setLoading(true); reset()
     try {
-      const { data: { session }, error: sessionError } = await withTimeout(supabase.auth.getSession())
-      if (sessionError || !session) throw new Error('Session expired. Please sign in again.')
-
       const formData = new FormData()
       formData.append('file', kycFile)
       formData.append('docType', docType)
 
       const { data, error: fnError } = await withTimeout(
-        supabase.functions.invoke('submit-kyc', {
-          body: formData,
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }),
+        supabase.functions.invoke('submit-kyc', { body: formData }),
         30000
       )
 
+      console.log('Edge function response:', data, fnError)
       if (fnError) throw new Error(fnError.message || 'Upload failed')
 
+      const { data: { user } } = await supabase.auth.getUser()
+      const currentUser = user || signupUser
+
       setSuccess('✅ KYC submitted! Taking you to your dashboard...')
-      setTimeout(() => onLogin(session.user || signupUser), 1800)
+      setTimeout(() => onLogin(currentUser), 1800)
     } catch (e) {
+      console.error('KYC error:', e)
       setError('Upload failed: ' + (e.message || 'Please try again.'))
     } finally {
       setLoading(false)
