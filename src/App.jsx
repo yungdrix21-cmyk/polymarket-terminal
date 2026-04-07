@@ -536,22 +536,40 @@ export default function App() {
 
   // ── FIX: timeout prevents infinite loading if Supabase hangs ──
  useEffect(() => {
-  supabase.auth.getSession().then(async ({ data }) => {
-    const u = data.session?.user ?? null
-    setUser(u)
-    if (u) {
-      await loadUserData(u.id)
-      setShowLanding(false)
-    }
-    setLoading(false)
-  }).catch(() => setLoading(false))
+  let mounted = true
 
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-    const u = session?.user ?? null
-    setUser(u)
-    if (u) await loadUserData(u.id)
-  })
-  return () => subscription.unsubscribe()
+  const initAuth = async () => {
+    try {
+      const { data, error } = await supabase.auth.getSession()
+
+      if (error) {
+        console.error("Session error:", error)
+      }
+
+      if (mounted) {
+        setUser(data?.session?.user ?? null)
+      }
+    } catch (err) {
+      console.error("Auth crash:", err)
+    } finally {
+      // 🔥 ALWAYS stop loading no matter what
+      if (mounted) setLoading(false)
+    }
+  }
+
+  initAuth()
+
+  const { data: listener } = supabase.auth.onAuthStateChange(
+    (_event, session) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    }
+  )
+
+  return () => {
+    mounted = false
+    listener?.subscription?.unsubscribe()
+  }
 }, [])
 
   const loadUserData = async (userId) => {
@@ -609,11 +627,18 @@ export default function App() {
     setTransactions(prev => [newTx, ...prev])
   }
 
-  if (loading) return (
-    <div style={{ height: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: T.text2, fontSize: 13, fontFamily: T.font }}>Loading...</div>
+  if (loading) {
+  return (
+    <div style={{
+      color: 'white',
+      textAlign: 'center',
+      marginTop: '20%',
+      fontSize: '18px'
+    }}>
+      Initializing app...
     </div>
   )
+}
 
   if (showLanding) return <Auth onLogin={handleLogin} />
 
