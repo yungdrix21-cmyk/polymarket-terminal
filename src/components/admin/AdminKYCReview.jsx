@@ -2,6 +2,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
+function withTimeout(promise, ms = 15000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timed out')), ms)
+    )
+  ])
+}
+
 export default function AdminKYCReview() {
   const [kycList, setKycList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +50,9 @@ export default function AdminKYCReview() {
   };
 
   const handleApprove = async (kyc) => {
+  if (processingId) return // 🔥 prevents double click globally
+
+  setProcessingId(kyc.id)
   setProcessingId(kyc.id);
   try {
     const { error: kycError } = await supabase
@@ -68,38 +80,48 @@ export default function AdminKYCReview() {
 };
 
   const handleReject = async (kyc) => {
-  const notes = rejectionNotes[kyc.id] || "Rejected by admin";
-  if (!window.confirm(`Reject KYC for ${kyc.profiles?.first_name || 'this user'}?`)) return;
+  if (processingId) return // ✅ prevent double click
 
-  setProcessingId(kyc.id);
+  const notes = rejectionNotes[kyc.id] || "Rejected by admin"
+
+  if (!window.confirm(`Reject KYC for ${kyc.profiles?.first_name || 'this user'}?`)) return
+
+  setProcessingId(kyc.id)
+
   try {
-    const { error: kycError } = await supabase
-      .from('kyc_documents')
-      .update({ 
-        status: 'rejected', 
-        notes: notes, 
-        reviewed_at: new Date().toISOString() 
-      })
-      .eq('id', kyc.id);
+    const { error: kycError } = await withTimeout(
+      supabase
+        .from('kyc_documents')
+        .update({ 
+          status: 'rejected', 
+          notes: notes, 
+          reviewed_at: new Date().toISOString() 
+        })
+        .eq('id', kyc.id)
+    )
 
-    if (kycError) throw kycError;
+    if (kycError) throw kycError
 
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ kyc_status: 'rejected' })
-      .eq('id', kyc.user_id);
+    const { error: profileError } = await withTimeout(
+      supabase
+        .from('profiles')
+        .update({ kyc_status: 'rejected' })
+        .eq('id', kyc.user_id)
+    )
 
-    if (profileError) throw profileError;
+    if (profileError) throw profileError
 
-    alert(`❌ Rejected for ${kyc.profiles?.first_name || 'User'}`);
-    fetchPendingKYC();
+    console.log(`Rejected: ${kyc.id}`)
+
+    fetchPendingKYC()
+
   } catch (err) {
-    console.error(err);
-    alert('Reject failed: ' + err.message);
+    console.error(err)
+    alert('Reject failed: ' + err.message)
   } finally {
-    setProcessingId(null);
+    setProcessingId(null)
   }
-};
+}
 
   if (loading) {
     return <div style={{ padding: '60px', color: '#fff', textAlign: 'center' }}>Loading KYC submissions...</div>;
