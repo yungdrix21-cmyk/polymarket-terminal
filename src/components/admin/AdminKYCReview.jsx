@@ -34,7 +34,7 @@ export default function AdminKYCReview() {
           file_path,
           status,
           submitted_at,
-          profiles:profiles!kyc_documents_user_id_fkey (
+          profiles:profiles!kyc_user_fk (
             id,
             first_name,
             last_name,
@@ -70,7 +70,7 @@ export default function AdminKYCReview() {
         })
       );
 
-      console.log("KYC DATA:", enhancedData); // DEBUG
+      console.log("KYC DATA:", enhancedData);
 
       setKycList(enhancedData);
 
@@ -202,7 +202,7 @@ export default function AdminKYCReview() {
                 : 'UNKNOWN'}
             </div>
 
-            {/* DOCUMENT */}
+            {/* DOCUMENT PREVIEW */}
             {kyc.signed_url && (
               <div style={{ marginBottom: '20px' }}>
                 <img
@@ -220,14 +220,17 @@ export default function AdminKYCReview() {
               </div>
             )}
 
-            <a
-              href={kyc.signed_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: '#4f8eff', textDecoration: 'underline' }}
-            >
-              📄 Open Full Document
-            </a>
+            {/* OPEN LINK */}
+            {kyc.signed_url && (
+              <a
+                href={kyc.signed_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#4f8eff', textDecoration: 'underline' }}
+              >
+                📄 Open Full Document
+              </a>
+            )}
 
             {/* REJECTION NOTES */}
             <textarea
@@ -252,7 +255,7 @@ export default function AdminKYCReview() {
               }}
             />
 
-            {/* ACTIONS */}
+            {/* ACTION BUTTONS */}
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={() => handleApprove(kyc)}
@@ -286,6 +289,7 @@ export default function AdminKYCReview() {
                 {processingId === kyc.id ? 'Rejecting...' : '❌ Reject KYC'}
               </button>
             </div>
+
           </div>
         ))
       )}
