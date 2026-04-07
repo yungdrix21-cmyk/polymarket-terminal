@@ -554,36 +554,6 @@ export default function App() {
   return () => subscription.unsubscribe()
 }, [])
 
-const loadUserData = async (userId) => {
-  try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('balance')
-      .eq('id', userId)
-      .maybeSingle()
-    setBalance(profile?.balance ?? 0)
-
-    const { data: kycData } = await supabase
-      .from('kyc')
-      .select('status')
-      .eq('user_id', userId)
-      .maybeSingle()
-    setKycStatus(kycData?.status ?? 'not_started')
-
-    const { data: txData } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-    setTransactions(txData ?? [])
-  } catch (e) {
-    console.warn('loadUserData failed:', e.message)
-    setKycStatus('not_started')
-    setBalance(0)
-    setTransactions([])
-  }
-}
-
   const loadUserData = async (userId) => {
   try {
     const { data: profile } = await supabase

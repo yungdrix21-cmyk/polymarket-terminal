@@ -41,53 +41,65 @@ export default function AdminKYCReview() {
   };
 
   const handleApprove = async (kyc) => {
-    setProcessingId(kyc.id);
-    try {
-      await supabase
-        .from('kyc_documents')
-        .update({ status: 'approved', reviewed_at: new Date().toISOString() })
-        .eq('id', kyc.id);
+  setProcessingId(kyc.id);
+  try {
+    const { error: kycError } = await supabase
+      .from('kyc_documents')
+      .update({ status: 'approved', reviewed_at: new Date().toISOString() })
+      .eq('id', kyc.id);
 
-      await supabase
-        .from('profiles')
-        .update({ kyc_status: 'approved' })
-        .eq('id', kyc.user_id);
+    if (kycError) throw kycError;
 
-      alert(`✅ Approved for ${kyc.profiles?.first_name || 'User'}`);
-      fetchPendingKYC();
-    } catch (err) {
-      alert('Approve failed: ' + err.message);
-    }
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ kyc_status: 'approved' })
+      .eq('id', kyc.user_id);
+
+    if (profileError) throw profileError;
+
+    alert(`✅ Approved for ${kyc.profiles?.first_name || 'User'}`);
+    fetchPendingKYC();
+  } catch (err) {
+    console.error(err);
+    alert('Approve failed: ' + err.message);
+  } finally {
     setProcessingId(null);
-  };
+  }
+};
 
   const handleReject = async (kyc) => {
-    const notes = rejectionNotes[kyc.id] || "Rejected by admin";
-    if (!window.confirm(`Reject KYC for ${kyc.profiles?.first_name || 'this user'}?`)) return;
+  const notes = rejectionNotes[kyc.id] || "Rejected by admin";
+  if (!window.confirm(`Reject KYC for ${kyc.profiles?.first_name || 'this user'}?`)) return;
 
-    setProcessingId(kyc.id);
-    try {
-      await supabase
-        .from('kyc_documents')
-        .update({ 
-          status: 'rejected', 
-          notes: notes, 
-          reviewed_at: new Date().toISOString() 
-        })
-        .eq('id', kyc.id);
+  setProcessingId(kyc.id);
+  try {
+    const { error: kycError } = await supabase
+      .from('kyc_documents')
+      .update({ 
+        status: 'rejected', 
+        notes: notes, 
+        reviewed_at: new Date().toISOString() 
+      })
+      .eq('id', kyc.id);
 
-      await supabase
-        .from('profiles')
-        .update({ kyc_status: 'rejected' })
-        .eq('id', kyc.user_id);
+    if (kycError) throw kycError;
 
-      alert(`❌ Rejected for ${kyc.profiles?.first_name || 'User'}`);
-      fetchPendingKYC();
-    } catch (err) {
-      alert('Reject failed: ' + err.message);
-    }
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ kyc_status: 'rejected' })
+      .eq('id', kyc.user_id);
+
+    if (profileError) throw profileError;
+
+    alert(`❌ Rejected for ${kyc.profiles?.first_name || 'User'}`);
+    fetchPendingKYC();
+  } catch (err) {
+    console.error(err);
+    alert('Reject failed: ' + err.message);
+  } finally {
     setProcessingId(null);
-  };
+  }
+};
 
   if (loading) {
     return <div style={{ padding: '60px', color: '#fff', textAlign: 'center' }}>Loading KYC submissions...</div>;
