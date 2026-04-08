@@ -28,24 +28,25 @@ function AdminKYCReview() {
     setLoading(false);
   };
 
-  const updateKYC = async (userId, status) => {
-  console.log("CLICKED", userId, status)
+  const updateKYC = async (id, status) => {
+  console.log("CLICKED", id, status)
 
   try {
     const { error } = await supabase
       .from('kyc_documents')
       .update({ status })
-      .eq('id', userId)  // ✅ FIX HERE
+      .eq('id', id)   // ✅ CORRECT
 
     if (error) throw error
 
     console.log("UPDATED SUCCESS")
 
+    // ✅ FIX STATE UPDATE HERE
     setSubmissions(prev =>
-  prev.map(s =>
-    s.id === userId ? { ...s, status } : s
-  )
-)
+      prev.map(s =>
+        s.id === id ? { ...s, status } : s
+      )
+    )
 
   } catch (err) {
     console.error("UPDATE FAILED:", err)
@@ -68,16 +69,19 @@ function AdminKYCReview() {
       ) : submissions.length === 0 ? (
         <p style={{ color: T.text2 }}>No KYC submissions yet.</p>
       ) : (
-        submissions.map(item => (
-          <div key={item.id} style={{
-            background: T.bgCard,
-            borderRadius: 14,
-            padding: 20,
-            marginBottom: 16,
-            border: `1px solid ${T.border}`
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <div>
+        submissions.map(item => {
+  console.log("ITEM:", item); // ✅ works
+
+  return (
+    <div key={item.id} style={{
+      background: T.bgCard,
+      borderRadius: 14,
+      padding: 20,
+      marginBottom: 16,
+      border: `1px solid ${T.border}`
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div>
                 <div style={{ color: T.text0, fontWeight: 600 }}>
                   User: {item.profiles?.email || item.user_id}
                 </div>
