@@ -58,16 +58,49 @@ function AdminKYCReview() {
   const loadKYC = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('kyc_documents')
-        .select('user_id, doc_type, status, submitted_at')
+        .select(`
+          id,
+          user_id,
+          status,
+          document_url,
+          submitted_at,
+          profiles (
+            email
+          )
+        `)
         .order('submitted_at', { ascending: false });
 
+      if (error) throw error;
       setSubmissions(data || []);
     } catch (e) {
       console.error(e);
     }
     setLoading(false);
+  };
+
+  // ✅ FIXED: updateKYC is now defined inside the component
+  const updateKYC = async (id, status) => {
+    console.log("UPDATE CALLED:", id, status);
+
+    const { data, error } = await supabase
+      .from('kyc_documents')
+      .update({ status })
+      .eq('id', id)
+      .select();
+
+    console.log("RESPONSE:", data, error);
+
+    if (error) {
+      console.error(error);
+      alert("Update failed");
+      return;
+    }
+
+    setSubmissions(prev =>
+      prev.map(s => s.id === id ? { ...s, status } : s)
+    );
   };
 
   useEffect(() => {
@@ -86,7 +119,7 @@ function AdminKYCReview() {
         <p style={{ color: T.text2 }}>No KYC submissions yet.</p>
       ) : (
         submissions.map(item => (
-          <div key={`${item.id}-${item.submitted_at}`} style={{
+          <div key={item.id} style={{
             background: T.bgCard,
             borderRadius: 14,
             padding: 20,
@@ -96,24 +129,66 @@ function AdminKYCReview() {
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ color: T.text0, fontWeight: 600 }}>
-  User: {item.profiles?.email || item.user_id}
-</div>
-                <div style={{ color: T.text2, fontSize: 13 }}>Status: {item.status}</div>
+                  User: {item.profiles?.email || item.user_id}
+                </div>
+                <div style={{ color: T.text2, fontSize: 13 }}>
+                  Status: {item.status}
+                </div>
+                {item.document_url && (
+                  <a
+                    href={item.document_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: T.blue, fontSize: 12 }}
+                  >
+                    View Document
+                  </a>
+                )}
               </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button 
-                  onClick={() => updateKYC(item.id, 'approved')}
-                  style={{ padding: '8px 16px', background: T.teal, color: '#000', border: 'none', borderRadius: 8 }}
-                >
-                  Approve
-                </button>
-                <button 
-                  onClick={() => updateKYC(item.id, 'rejected')}
-                  style={{ padding: '8px 16px', background: T.red, color: '#fff', border: 'none', borderRadius: 8 }}
-                >
-                  Reject
-                </button>
-              </div>
+
+              {item.status === 'pending' ? (
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={() => updateKYC(item.id, 'approved')}
+                    style={{
+                      padding: '8px 16px',
+                      background: T.teal,
+                      color: '#000',
+                      border: 'none',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => updateKYC(item.id, 'rejected')}
+                    style={{
+                      padding: '8px 16px',
+                      background: T.red,
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Reject
+                  </button>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '6px 12px',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background: item.status === 'approved' ? T.tealDim : T.redDim,
+                  color: item.status === 'approved' ? T.teal : T.red
+                }}>
+                  {item.status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                </div>
+              )}
             </div>
           </div>
         ))
@@ -429,7 +504,6 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
   try {
     const depositAmount = parseFloat(amount)
 
-    // 1. Save transaction
     const { error: txError } = await supabase
       .from('transactions')
       .insert({
@@ -442,7 +516,6 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
 
     if (txError) throw txError
 
-    // 2. Atomic balance update
     const { error: rpcError } = await supabase.rpc('increment_balance', {
       user_id: user.id,
       amount: depositAmount
@@ -450,16 +523,13 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
 
     if (rpcError) throw rpcError
 
-    // 3. Update UI instantly
-
-    // 4. Add transaction locally
     onDepositSuccess({
-  id: Date.now(),
-  crypto: selectedCrypto.symbol,
-  amount: depositAmount,
-  status: 'Completed',
-  created_at: new Date().toISOString(),
-})
+      id: Date.now(),
+      crypto: selectedCrypto.symbol,
+      amount: depositAmount,
+      status: 'Completed',
+      created_at: new Date().toISOString(),
+    })
 
     setSelectedCrypto(null)
     setAmount('')
@@ -595,8 +665,7 @@ export default function App() {
   const [kycStatus, setKycStatus] = useState(null)
   const [balance, setBalance] = useState(0)
 
-  // ── FIX: timeout prevents infinite loading if Supabase hangs ──
- useEffect(() => {
+  useEffect(() => {
   let mounted = true
 
   const initAuth = async () => {
@@ -613,7 +682,6 @@ export default function App() {
     } catch (err) {
       console.error("Auth crash:", err)
     } finally {
-      // 🔥 ALWAYS stop loading no matter what
       if (mounted) setLoading(false)
     }
   }
@@ -633,20 +701,16 @@ export default function App() {
   }
 }, [])
 
-// useEffect(() => {
-//   fetchMarkets();
-// }, []);
-
   const loadUserData = async (userId) => {
   try {
     const { data: profileData } = await supabase
-  .from('profiles')
-  .select('balance, role') // ✅ include role
-  .eq('id', userId)
-  .maybeSingle()
+      .from('profiles')
+      .select('balance, role')
+      .eq('id', userId)
+      .maybeSingle()
 
-setProfile(profileData) // ✅ SAVE PROFILE
-setBalance(profileData?.balance ?? 0)
+    setProfile(profileData)
+    setBalance(profileData?.balance ?? 0)
 
     const { data: kycData } = await supabase
       .from('kyc_documents')
@@ -658,18 +722,11 @@ setBalance(profileData?.balance ?? 0)
 
     setKycStatus(kycData?.status ?? 'not_started')
 
-    const { data } = await supabase
-  .from('kyc_documents')
-  .select(`
-    id,
-    user_id,
-    status,
-    submitted_at,
-    profiles (
-      email
-    )
-  `)
-  .order('submitted_at', { ascending: false });
+    const { data: txData } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
 
     setTransactions(txData ?? [])
   } catch (e) {
@@ -739,7 +796,7 @@ setBalance(profileData?.balance ?? 0)
     balance={balance} 
     transactions={transactions} 
     kycStatus={kycStatus}
-    markets={markets}   // ✅ ADD THIS
+    markets={markets}
   />
     if (view === 'markets') {
   return (
