@@ -7,22 +7,14 @@ function AdminKYCReview() {
     try {
       const { data, error } = await supabase
         .from('kyc_documents')
-        .select(`
-          id,
-          doc_type,
-          status,
-          submitted_at,
-          profiles:user_id (
-            email
-          )
-        `)
+        .select('*') // ✅ get everything (including file URLs)
         .order('submitted_at', { ascending: false });
 
       if (error) throw error;
 
       setSubmissions(data || []);
     } catch (e) {
-      console.error("KYC LOAD ERROR:", e.message);
+      console.error(e);
     }
     setLoading(false);
   };
@@ -30,6 +22,38 @@ function AdminKYCReview() {
   useEffect(() => {
     loadKYC();
   }, []);
+
+  // ✅ Approve KYC
+  const handleApprove = async (user_id) => {
+    try {
+      await supabase
+        .from('kyc_documents')
+        .update({ status: 'approved' })
+        .eq('user_id', user_id);
+
+      alert('KYC Approved');
+
+      loadKYC(); // refresh list
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // ❌ Reject KYC
+  const handleReject = async (user_id) => {
+    try {
+      await supabase
+        .from('kyc_documents')
+        .update({ status: 'rejected' })
+        .eq('user_id', user_id);
+
+      alert('KYC Rejected');
+
+      loadKYC();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div style={{ padding: '28px' }}>
@@ -42,59 +66,75 @@ function AdminKYCReview() {
       ) : submissions.length === 0 ? (
         <p style={{ color: T.text2 }}>No KYC submissions yet.</p>
       ) : (
-        submissions.map(item => (
-          <div key={item.id} style={{
-            background: T.bgCard,
-            borderRadius: 14,
-            padding: 20,
-            marginBottom: 16,
-            border: `1px solid ${T.border}`
-          }}>
+        submissions.map((item) => (
+          <div
+            key={item.id}
+            style={{
+              background: T.bgCard,
+              borderRadius: 14,
+              padding: 20,
+              marginBottom: 16,
+              border: `1px solid ${T.border}`,
+            }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-
               <div>
-                {/* ✅ EMAIL INSTEAD OF USER ID */}
                 <div style={{ color: T.text0, fontWeight: 600 }}>
-                  {item.profiles?.email || "Unknown User"}
-                </div>
-
-                <div style={{ color: T.text2, fontSize: 13 }}>
-                  Document: {item.doc_type}
+                  User ID: {item.user_id}
                 </div>
 
                 <div style={{ color: T.text2, fontSize: 13 }}>
                   Status: {item.status}
                 </div>
+
+                <div style={{ color: T.text2, fontSize: 12, marginTop: 4 }}>
+                  {new Date(item.submitted_at).toLocaleString()}
+                </div>
+
+                {/* ✅ Document links */}
+                <div style={{ marginTop: 10 }}>
+                  {item.document_url && (
+                    <a
+                      href={item.document_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: T.blue, fontSize: 12 }}
+                    >
+                      View Document
+                    </a>
+                  )}
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: 10 }}>
-                <button 
-                  onClick={() => alert('Approve clicked')}
+                <button
+                  onClick={() => handleApprove(item.user_id)}
                   style={{
                     padding: '8px 16px',
                     background: T.teal,
                     color: '#000',
                     border: 'none',
-                    borderRadius: 8
+                    borderRadius: 8,
                   }}
                 >
                   Approve
                 </button>
 
-                <button 
-                  onClick={() => alert('Reject clicked')}
+                <button
+                  onClick={() => handleReject(item.user_id)}
                   style={{
                     padding: '8px 16px',
                     background: T.red,
                     color: '#fff',
                     border: 'none',
-                    borderRadius: 8
+                    borderRadius: 8,
                   }}
+                >
+                  Reject
                 >
                   Reject
                 </button>
               </div>
-
             </div>
           </div>
         ))
