@@ -572,13 +572,38 @@ useEffect(() => {
       console.log("🚀 Fetching markets...")
 
       const res = await fetch("/api/markets")
-      console.log("📡 Response:", res)
-
       const data = await res.json()
+
       console.log("📦 RAW DATA:", data)
 
-      // 🔥 TEMP: don't slice yet
-      setMarkets(data)
+      // 🔥 FILTER CRYPTO ONLY
+      // 🔥 FILTER + FORMAT MARKETS
+const filtered = data.filter(market => {
+  const q = market.question?.toLowerCase() || ""
+
+  return (
+    q.includes("btc") ||
+    q.includes("bitcoin") ||
+    q.includes("eth") ||
+    q.includes("ethereum") ||
+    q.includes("crypto")
+  )
+})
+
+const formatted = filtered.slice(0, 10).map(m => ({
+  id: m.id,
+  question: m.question,
+  outcomePrices: m.outcomePrices || m.outcomes?.map(o => o.price) || [0.5, 0.5],
+  change: "+0.0%",
+  volume: m.volume || 0,
+  timeframe: "5m"
+}))
+
+setMarkets(formatted)
+console.log("✅ FINAL MARKETS:", formatted)
+
+      // 🔥 LIMIT TO ~10 (simulate short-term markets)
+      setMarkets(filtered.slice(0, 10))
 
     } catch (err) {
       console.error("❌ Failed to load markets:", err)
@@ -685,11 +710,11 @@ useEffect(() => {
   />
     if (view === 'markets') {
   return (
-    <div>
-      {markets.map(m => (
-        <MarketCard key={m.id} market={m} />
-      ))}
-    </div>
+    <MarketsPage 
+      prices={markets} 
+      selected={selected} 
+      setSelected={setSelected} 
+    />
   )
 }
     if (view === 'copy')      return <CopyTradingPage kycStatus={kycStatus} />
