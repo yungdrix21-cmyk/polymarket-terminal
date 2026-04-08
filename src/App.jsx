@@ -2,7 +2,7 @@ import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
 import Profile from './components/Profile'
 import PolymarketMarkets from './components/PolymarketMarkets'
-import AdminKYCReview from './components/admin/AdminKYCReview'
+import AdminKYCReview from './components/admin/AdminKYCReview';
 import React, { useState, useEffect } from "react";
 
 const T = {
@@ -73,42 +73,100 @@ function StatCard({ label, value, color, icon, sub }) {
 
 function Chart({ market }) {
   const [candles, setCandles] = useState([])
+
   useEffect(() => {
     let price = parseFloat(market.outcomePrices?.[0] ?? 0.5)
-    const initial = Array.from({ length: 42 }, () => {
+    const initial = Array.from({ length: 48 }, () => {
       const open = price
-      const change = (Math.random() - 0.48) * 0.04
+      const change = (Math.random() - 0.48) * 0.035
       const close = Math.min(0.99, Math.max(0.01, open + change))
-      const high = Math.max(open, close) + Math.random() * 0.012
-      const low = Math.min(open, close) - Math.random() * 0.012
+      const high = Math.max(open, close) + Math.random() * 0.015
+      const low = Math.min(open, close) - Math.random() * 0.015
       price = close
-      return { open, close, high, low, volume: Math.floor(Math.random() * 50000 + 10000) }
+      return { open, close, high, low, volume: Math.floor(Math.random() * 60000 + 8000) }
     })
     setCandles(initial)
-  }, [market])
+  }, [market.id])
+
+  useEffect(() => {
+    if (!candles.length) return
+    const last = candles[candles.length - 1]
+    const newClose = market.outcomePrices[0]
+    const newCandle = {
+      open: last.close,
+      close: newClose,
+      high: Math.max(last.close, newClose) + Math.random() * 0.01,
+      low: Math.min(last.close, newClose) - Math.random() * 0.01,
+      volume: Math.floor(Math.random() * 60000 + 8000)
+    }
+    setCandles(prev => [...prev.slice(-47), newCandle])
+  }, [market.outcomePrices[0]])
+
   if (!candles.length) return null
-  const W = 14, chartH = 180, volH = 40, pad = 6
-  const minP = Math.min(...candles.map(c => c.low)), maxP = Math.max(...candles.map(c => c.high))
+
+  const W = 16, chartH = 200, volH = 44, pad = 8
+  const minP = Math.min(...candles.map(c => c.low))
+  const maxP = Math.max(...candles.map(c => c.high))
   const maxVol = Math.max(...candles.map(c => c.volume))
-  const scaleP = v => chartH - ((v - minP) / (maxP - minP)) * (chartH - pad * 2) - pad
+  const scaleP = v => chartH - ((v - minP) / (maxP - minP || 1)) * (chartH - pad * 2) - pad
   const scaleV = v => volH - (v / maxVol) * (volH - 3)
   const totalW = candles.length * W + 20
+  const linePoints = candles.map((c, i) => `${i * W + W / 2},${scaleP(c.close)}`).join(' ')
+  const lastPrice = candles[candles.length - 1]?.close ?? 0.5
+  const firstPrice = candles[0]?.close ?? 0.5
+  const isOverallUp = lastPrice >= firstPrice
+
   return (
-    <div style={{ overflowX: 'auto', marginTop: 12 }}>
-      <svg width={totalW} height={chartH + volH + 20}>
-        {[0.25, 0.5, 0.75].map((v, i) => <line key={i} x1={0} y1={scaleP(minP + (maxP - minP) * v)} x2={totalW} y2={scaleP(minP + (maxP - minP) * v)} stroke="rgba(255,255,255,0.04)" strokeWidth={1} strokeDasharray="4,4" />)}
+    <div style={{ overflowX: 'auto', marginTop: 12, background: 'rgba(255,255,255,0.02)', borderRadius: 12, padding: '12px 8px' }}>
+      <svg width={totalW} height={chartH + volH + 28} style={{ display: 'block' }}>
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={isOverallUp ? '#00d4aa' : '#ff4d6a'} stopOpacity="0.15" />
+            <stop offset="100%" stopColor={isOverallUp ? '#00d4aa' : '#ff4d6a'} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {[0.2, 0.4, 0.6, 0.8].map((v, i) => (
+          <g key={i}>
+            <line
+              x1={0} y1={scaleP(minP + (maxP - minP) * v)}
+              x2={totalW} y2={scaleP(minP + (maxP - minP) * v)}
+              stroke="rgba(255,255,255,0.04)" strokeWidth={1} strokeDasharray="3,6"
+            />
+            <text x={4} y={scaleP(minP + (maxP - minP) * v) - 3} fill="rgba(255,255,255,0.2)" fontSize={9} fontFamily="monospace">
+              {((minP + (maxP - minP) * v) * 100).toFixed(0)}%
+            </text>
+          </g>
+        ))}
+
+        <polygon
+          points={`${candles.map((c, i) => `${i * W + W / 2},${scaleP(c.close)}`).join(' ')} ${(candles.length - 1) * W + W / 2},${chartH} 0,${chartH}`}
+          fill="url(#areaGrad)"
+        />
+
         {candles.map((c, i) => {
           const isUp = c.close >= c.open
-          const color = isUp ? T.teal : T.red
+          const color = isUp ? '#00d4aa' : '#ff4d6a'
           const bodyTop = scaleP(Math.max(c.open, c.close))
-          const bodyH = Math.max(1.5, Math.abs(scaleP(c.open) - scaleP(c.close)))
+          const bodyH = Math.max(2, Math.abs(scaleP(c.open) - scaleP(c.close)))
           const x = i * W + W / 2
-          return <g key={i}>
-            <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} opacity={0.5} />
-            <rect x={i * W + 2} y={bodyTop} width={W - 4} height={bodyH} fill={color} opacity={0.9} rx={1.5} />
-            <rect x={i * W + 2} y={chartH + scaleV(c.volume)} width={W - 4} height={volH - scaleV(c.volume)} fill={color} opacity={0.18} rx={1} />
-          </g>
+          return (
+            <g key={i}>
+              <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} opacity={0.6} />
+              <rect x={i * W + 3} y={bodyTop} width={W - 6} height={bodyH} fill={color} opacity={0.85} rx={2} />
+              <rect x={i * W + 3} y={chartH + 8 + scaleV(c.volume)} width={W - 6} height={volH - scaleV(c.volume)} fill={color} opacity={0.25} rx={1} />
+            </g>
+          )
         })}
+
+        <polyline points={linePoints} fill="none" stroke={isOverallUp ? '#00d4aa' : '#ff4d6a'} strokeWidth={1.5} opacity={0.5} strokeLinejoin="round" />
+
+        <rect x={totalW - 52} y={scaleP(lastPrice) - 10} width={48} height={16} fill={isOverallUp ? '#00d4aa' : '#ff4d6a'} rx={4} />
+        <text x={totalW - 28} y={scaleP(lastPrice) + 2} fill="#000" fontSize={10} fontWeight="700" fontFamily="monospace" textAnchor="middle">
+          {(lastPrice * 100).toFixed(1)}%
+        </text>
+
+        <text x={4} y={chartH + 8} fill="rgba(255,255,255,0.2)" fontSize={9} fontFamily="monospace">VOL</text>
       </svg>
     </div>
   )
@@ -235,6 +293,89 @@ function DashboardPage({ user, balance, transactions, kycStatus, markets }) {
   )
 }
 
+function AIInsights({ market }) {
+  const [insight, setInsight] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!market) return
+    setLoading(true)
+    setInsight(null)
+
+    const yes = (market.outcomePrices[0] * 100).toFixed(1)
+    const no = (market.outcomePrices[1] * 100).toFixed(1)
+
+    const prompt = `You are a prediction market analyst. Given this market: "${market.question}"
+Current probabilities: YES ${yes}% / NO ${no}%
+Give a very short 2-3 sentence analysis. Mention the current lean, what could shift the odds, and a confidence note. Be concise and direct. No bullet points.`
+
+    fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    })
+      .then(r => r.json())
+      .then(data => {
+        const text = data?.content?.[0]?.text
+        setInsight(text || "Unable to generate insight.")
+        setLoading(false)
+      })
+      .catch(() => {
+        setInsight("Unable to generate insight.")
+        setLoading(false)
+      })
+  }, [market?.id])
+
+  return (
+    <div style={{
+      marginTop: 20,
+      background: 'rgba(79,142,255,0.06)',
+      border: '1px solid rgba(79,142,255,0.15)',
+      borderRadius: 12,
+      padding: '16px 20px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <div style={{
+          width: 20, height: 20, borderRadius: 6,
+          background: 'linear-gradient(135deg, #4f8eff, #9b7dff)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 11, fontWeight: 800, color: '#fff'
+        }}>AI</div>
+        <span style={{ fontSize: 11, fontWeight: 600, color: T.blue, letterSpacing: '0.06em' }}>AI MARKET INSIGHT</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+          <span style={{ fontSize: 10, background: T.tealDim, color: T.teal, padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
+            YES {(market.outcomePrices[0] * 100).toFixed(0)}%
+          </span>
+          <span style={{ fontSize: 10, background: T.redDim, color: T.red, padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
+            NO {(market.outcomePrices[1] * 100).toFixed(0)}%
+          </span>
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 14, height: 14, borderRadius: '50%',
+            border: '2px solid rgba(79,142,255,0.2)',
+            borderTop: '2px solid #4f8eff',
+            animation: 'spin 0.8s linear infinite',
+            flexShrink: 0
+          }} />
+          <span style={{ color: T.text2, fontSize: 13 }}>Analyzing market conditions...</span>
+        </div>
+      ) : (
+        <p style={{ color: T.text1, fontSize: 13, lineHeight: 1.7, margin: 0 }}>
+          {insight}
+        </p>
+      )}
+    </div>
+  )
+}
+
 function MarketsPage({ prices, selected, setSelected }) {
   const selectedLive = prices?.find(m => m.id === selected?.id)
   return (
@@ -245,7 +386,7 @@ function MarketsPage({ prices, selected, setSelected }) {
             <div style={{ width: 7, height: 7, borderRadius: '50%', background: T.red, boxShadow: `0 0 5px ${T.red}` }} />
             <span style={{ fontSize: 13, fontWeight: 600, color: T.text0 }}>Live Crypto Markets</span>
           </div>
-          <Badge color={T.purple}>7 active</Badge>
+          <Badge color={T.purple}>{prices?.length || 0} active</Badge>
         </div>
         <div style={{ overflowY: 'auto', flex: 1 }}>
           {prices?.map(market => {
@@ -322,9 +463,10 @@ function MarketsPage({ prices, selected, setSelected }) {
               </div>
             </div>
             <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
-              <div style={{ fontSize: 10, color: T.text2, marginBottom: 8, letterSpacing: '0.08em' }}>LIVE PROBABILITY CHART</div>
-              <Chart market={selectedLive} />
-            </div>
+  <div style={{ fontSize: 10, color: T.text2, marginBottom: 8, letterSpacing: '0.08em' }}>LIVE PROBABILITY CHART</div>
+  <Chart market={selectedLive} />
+  <AIInsights market={selectedLive} />
+</div>
           </>
         ) : (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
@@ -492,26 +634,41 @@ function CopyTradingPage({ kycStatus }) {
 }
 
 export default function App() {
-  const fakeMarkets = [
-  {
-    id: 1,
-    question: "Will BTC be above $70K in 5 minutes?",
-    timeframe: "5m",
-    outcomePrices: [0.62, 0.38],
-    volume: 12000,
-  },
-  {
-    id: 2,
-    question: "Will ETH go up in 5 minutes?",
-    timeframe: "5m",
-    outcomePrices: [0.48, 0.52],
-    volume: 8000,
-  }
-];
-  const [markets, setMarkets] = useState(fakeMarkets);
+  const INITIAL_MARKETS = [
+    { id: 1,  question: "Will BTC be above $70K in 5 minutes?",    timeframe: "5m", outcomePrices: [0.62, 0.38], volume: 124000 },
+    { id: 2,  question: "Will ETH be above $3K in 5 minutes?",     timeframe: "5m", outcomePrices: [0.48, 0.52], volume: 89000  },
+    { id: 3,  question: "Will SOL be above $150 in 5 minutes?",    timeframe: "5m", outcomePrices: [0.71, 0.29], volume: 56000  },
+    { id: 4,  question: "Will BNB be above $400 in 5 minutes?",    timeframe: "5m", outcomePrices: [0.55, 0.45], volume: 43000  },
+    { id: 5,  question: "Will MATIC be above $1 in 5 minutes?",    timeframe: "5m", outcomePrices: [0.38, 0.62], volume: 31000  },
+    { id: 6,  question: "Will DOGE be above $0.15 in 5 minutes?",  timeframe: "5m", outcomePrices: [0.44, 0.56], volume: 67000  },
+    { id: 7,  question: "Will AVAX be above $30 in 5 minutes?",    timeframe: "5m", outcomePrices: [0.59, 0.41], volume: 28000  },
+    { id: 8,  question: "Will LINK be above $15 in 5 minutes?",    timeframe: "5m", outcomePrices: [0.66, 0.34], volume: 19000  },
+    { id: 9,  question: "Will XRP be above $0.60 in 5 minutes?",   timeframe: "5m", outcomePrices: [0.73, 0.27], volume: 92000  },
+    { id: 10, question: "Will ADA be above $0.45 in 5 minutes?",   timeframe: "5m", outcomePrices: [0.41, 0.59], volume: 35000  },
+  ]
+  const [markets, setMarkets] = useState(INITIAL_MARKETS);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMarkets(prev => prev.map(m => {
+        const current = m.outcomePrices[0]
+        const change = (Math.random() - 0.5) * 0.06
+        const newYes = Math.min(0.97, Math.max(0.03, current + change))
+        const newNo = parseFloat((1 - newYes).toFixed(4))
+        const pctChange = ((newYes - current) * 100).toFixed(1)
+        return {
+          ...m,
+          outcomePrices: [newYes, newNo],
+          change: `${pctChange >= 0 ? '+' : ''}${pctChange}%`,
+          volume: m.volume + Math.floor(Math.random() * 500)
+        }
+      }))
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showLanding, setShowLanding] = useState(false)  // ✅ don't assume logged out
+  const [showLanding, setShowLanding] = useState(true)
   const [view, setView] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(null)
@@ -549,8 +706,11 @@ export default function App() {
 
   const { data: listener } = supabase.auth.onAuthStateChange(
     (_event, session) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
+      if (!session?.user) {
+        setUser(null)
+        setShowLanding(true)
+        setLoading(false)
+      }
     }
   )
 
@@ -572,12 +732,12 @@ export default function App() {
     setBalance(profileData?.balance ?? 0)
 
     const { data: kycData } = await supabase
-  .from('kyc_documents')
-  .select('status')
-  .eq('user_id', userId)   // ✅ correct
-  .order('submitted_at', { ascending: false })
-  .limit(1)
-  .maybeSingle()
+      .from('kyc_documents')
+      .select('status')
+      .eq('user_id', userId)
+      .order('submitted_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
     setKycStatus(kycData?.status ?? 'not_started')
 
@@ -619,12 +779,26 @@ export default function App() {
   if (loading) {
   return (
     <div style={{
-      color: 'white',
-      textAlign: 'center',
-      marginTop: '20%',
-      fontSize: '18px'
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100vh',
+      background: '#0d0e14',
+      gap: 16,
     }}>
-      Initializing app...
+      <div style={{
+        width: 40,
+        height: 40,
+        borderRadius: '50%',
+        border: `3px solid rgba(255,255,255,0.08)`,
+        borderTop: `3px solid #00d4aa`,
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <div style={{ color: '#4a4d62', fontSize: 13, fontFamily: '"DM Sans", system-ui, sans-serif' }}>
+        Loading...
+      </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }
