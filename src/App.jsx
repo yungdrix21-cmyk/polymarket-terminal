@@ -435,7 +435,7 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
         type: 'deposit',
         crypto: selectedCrypto.symbol,
         amount: depositAmount,
-        status: 'Completed',
+        status: 'completed',
       })
 
     if (txError) throw txError
@@ -449,19 +449,15 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
     if (rpcError) throw rpcError
 
     // 3. Update UI instantly
-    setBalance(prev => Number(prev) + depositAmount)
 
     // 4. Add transaction locally
-    onDepositSuccess(
-      Number(balance) + depositAmount,
-      {
-        id: Date.now(),
-        crypto: selectedCrypto.symbol,
-        amount: depositAmount,
-        status: 'Completed',
-        created_at: new Date().toISOString(),
-      }
-    )
+    onDepositSuccess({
+  id: Date.now(),
+  crypto: selectedCrypto.symbol,
+  amount: depositAmount,
+  status: 'Completed',
+  created_at: new Date().toISOString(),
+})
 
     setSelectedCrypto(null)
     setAmount('')
@@ -593,6 +589,7 @@ export default function App() {
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(null)
   const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
   const [kycStatus, setKycStatus] = useState(null)
   const [balance, setBalance] = useState(0)
 
@@ -640,13 +637,14 @@ export default function App() {
 
   const loadUserData = async (userId) => {
   try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('balance')
-      .eq('id', userId)
-      .maybeSingle()
+    const { data: profileData } = await supabase
+  .from('profiles')
+  .select('balance, role') // ✅ include role
+  .eq('id', userId)
+  .maybeSingle()
 
-    setBalance(profile?.balance ?? 0)
+setProfile(profileData) // ✅ SAVE PROFILE
+setBalance(profileData?.balance ?? 0)
 
     const { data: kycData } = await supabase
       .from('kyc_documents')
@@ -688,10 +686,10 @@ export default function App() {
     setShowLanding(true)
   }
 
-  const handleDepositSuccess = (newBalance, newTx) => {
-    setBalance(newBalance)
-    setTransactions(prev => [newTx, ...prev])
-  }
+  const handleDepositSuccess = (newTx) => {
+  setBalance(prev => Number(prev) + Number(newTx.amount))
+  setTransactions(prev => [newTx, ...prev])
+}
 
   if (loading) {
   return (
@@ -713,8 +711,9 @@ export default function App() {
     { id: 'markets',   label: 'Markets',    icon: 'markets'   },
     { id: 'copy',      label: 'Copy Trade', icon: 'users',    locked: kycStatus !== 'approved' },
     { id: 'deposits',  label: 'Deposits',   icon: 'deposit',  locked: kycStatus !== 'approved' },
-    ...(user && profiles.role === 'admin' ? [{ id: 'admin', label: 'Admin Panel', icon: 'shield' }] : []),
-  ]
+    ...(user && profile?.role === 'admin'
+  ? [{ id: 'admin', label: 'Admin Panel', icon: 'shield' }]
+  : []),
 
   const BOTTOM_ITEMS = [
     { id: 'profile',  label: 'Profile',  icon: 'profile'  },
