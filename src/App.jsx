@@ -121,15 +121,48 @@ function AdminKYCReview() {
 }
 // ============================================================
 
-const CRYPTO_MARKETS = [
-  { id: '1', question: 'Bitcoin Up or Down - Next 5 Minutes', outcomePrices: ['0.53', '0.47'], change: '+1.2%', volume: 124000, timeframe: '5m', symbol: 'BTC' },
-  { id: '2', question: 'Ethereum Up or Down - Next 15 Minutes', outcomePrices: ['0.49', '0.51'], change: '-0.8%', volume: 89000, timeframe: '15m', symbol: 'ETH' },
-  { id: '3', question: 'Solana Up or Down - Next 5 Minutes', outcomePrices: ['0.58', '0.42'], change: '+3.4%', volume: 156000, timeframe: '5m', symbol: 'SOL' },
-  { id: '4', question: 'Bitcoin Above $92,000 on April 2?', outcomePrices: ['0.61', '0.39'], change: '+2.1%', volume: 245000, timeframe: 'Daily', symbol: 'BTC' },
-  { id: '5', question: 'ETH Up or Down - Next 30 Minutes', outcomePrices: ['0.46', '0.54'], change: '-1.5%', volume: 67000, timeframe: '30m', symbol: 'ETH' },
-  { id: '6', question: 'Bitcoin Up or Down - Next 15 Minutes', outcomePrices: ['0.55', '0.45'], change: '+0.9%', volume: 98000, timeframe: '15m', symbol: 'BTC' },
-  { id: '7', question: 'Will Solana Break $185 in Next Hour?', outcomePrices: ['0.44', '0.56'], change: '-2.3%', volume: 112000, timeframe: '1h', symbol: 'SOL' },
-]
+const [markets, setMarkets] = useState([]);
+const [loadingMarkets, setLoadingMarkets] = useState(true);
+
+useEffect(() => {
+  const fetchMarkets = async () => {
+    try {
+      const res = await fetch("https://gamma-api.polymarket.com/markets");
+      const data = await res.json();
+
+      const cryptoKeywords = [
+        "bitcoin", "btc",
+        "ethereum", "eth",
+        "solana", "sol",
+        "crypto", "doge", "bnb", "xrp"
+      ];
+
+      const formatted = data
+        .filter(m => {
+          const q = m.question?.toLowerCase() || "";
+          return m.active && cryptoKeywords.some(k => q.includes(k));
+        })
+        .slice(0, 20)
+        .map(m => ({
+          id: m.id,
+          question: m.question,
+          outcomePrices: m.outcomePrices || ["0.5", "0.5"],
+          volume: m.volume || 0,
+          timeframe: "Live",
+          symbol: "CRYPTO",
+          change: "0%"
+        }));
+
+      setMarkets(formatted);
+    } catch (err) {
+      console.error("Failed to load markets:", err);
+    }
+
+    setLoadingMarkets(false);
+  };
+
+  fetchMarkets();
+}, []);
 
 function Badge({ children, color = T.blue }) {
   return <span style={{ fontSize: 10, fontWeight: 600, color, background: `${color}18`, padding: '3px 8px', borderRadius: 20, border: `1px solid ${color}28` }}>{children}</span>
@@ -659,7 +692,7 @@ export default function App() {
 
   const renderPage = () => {
     if (view === 'dashboard') return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} />
-    if (view === 'markets')   return <MarketsPage prices={CRYPTO_MARKETS} selected={selected} setSelected={setSelected} />
+    if (view === 'markets')   return <MarketsPage prices={markets} selected={selected} setSelected={setSelected} />
     if (view === 'copy')      return <CopyTradingPage kycStatus={kycStatus} />
     if (view === 'deposits')  return <DepositsPage user={user} onDepositSuccess={handleDepositSuccess} kycStatus={kycStatus} />
     if (view === 'profile')   return <Profile user={user} kycStatus={kycStatus} onKycUpdate={status => setKycStatus(status)} />
