@@ -569,40 +569,19 @@ export default function App() {
 useEffect(() => {
   const fetchMarkets = async () => {
     try {
-      const res = await fetch("https://gamma-api.polymarket.com/markets");
-      const data = await res.json();
+      const res = await fetch("https://gamma-api.polymarket.com/markets")
+      const data = await res.json()
 
-      const cryptoKeywords = [
-        "bitcoin","btc","ethereum","eth","solana","sol",
-        "crypto","doge","bnb","xrp"
-      ];
-
-      const formatted = data
-        .filter(m => {
-          const q = m.question?.toLowerCase() || "";
-          return m.active && cryptoKeywords.some(k => q.includes(k));
-        })
-        .slice(0, 20)
-        .map(m => ({
-          id: m.id,
-          question: m.question,
-          outcomePrices: m.outcomePrices || ["0.5","0.5"],
-          volume: m.volume || 0,
-          timeframe: "Live",
-          symbol: "CRYPTO",
-          change: "0%"
-        }));
-
-      setMarkets(formatted);
+      setMarkets(data.slice(0, 10)) // keep simple
     } catch (err) {
-      console.error("Failed to load markets:", err);
+      console.error("Failed to load markets:", err)
     }
 
-    setLoadingMarkets(false);
-  };
+    setLoadingMarkets(false)
+  }
 
-  fetchMarkets();
-}, []);
+  fetchMarkets()
+}, [])
 
   const loadUserData = async (userId) => {
   try {
@@ -691,17 +670,9 @@ useEffect(() => {
   const renderPage = () => {
     if (view === 'dashboard') return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} />  
     if (view === 'markets') {
-      if (loadingMarkets) {
-    return (
-      <div style={{ color: "white", padding: 20 }}>
-        Loading markets...
-      </div>
-    )
-  }
-
   return (
-    <div style={{ padding: 20 }}>
-      {(markets || []).map((m) => (
+    <div>
+      {markets.map(m => (
         <MarketCard key={m.id} market={m} />
       ))}
     </div>
