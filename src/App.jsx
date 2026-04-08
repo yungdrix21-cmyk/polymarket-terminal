@@ -569,12 +569,19 @@ export default function App() {
 useEffect(() => {
   const fetchMarkets = async () => {
     try {
-      const res = await fetch("https://gamma-api.polymarket.com/markets")
-      const data = await res.json()
+      console.log("🚀 Fetching markets...")
 
-      setMarkets(data.slice(0, 10)) // keep simple
+      const res = await fetch("/api/markets")
+      console.log("📡 Response:", res)
+
+      const data = await res.json()
+      console.log("📦 RAW DATA:", data)
+
+      // 🔥 TEMP: don't slice yet
+      setMarkets(data)
+
     } catch (err) {
-      console.error("Failed to load markets:", err)
+      console.error("❌ Failed to load markets:", err)
     }
 
     setLoadingMarkets(false)
