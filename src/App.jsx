@@ -2,7 +2,7 @@ import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
 import Profile from './components/Profile'
 import PolymarketMarkets from './components/PolymarketMarkets'
-import AdminKYCReview from './components/AdminKYCReview'
+import AdminKYCReview from './components/admin/AdminKYCReview'
 import React, { useState, useEffect } from "react";
 
 const T = {
