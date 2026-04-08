@@ -121,48 +121,49 @@ function AdminKYCReview() {
 }
 // ============================================================
 
-const [markets, setMarkets] = useState([]);
-const [loadingMarkets, setLoadingMarkets] = useState(true);
+export default function App() {
+  const [markets, setMarkets] = useState([]);
+  const [loadingMarkets, setLoadingMarkets] = useState(true);
 
-useEffect(() => {
-  const fetchMarkets = async () => {
-    try {
-      const res = await fetch("https://gamma-api.polymarket.com/markets");
-      const data = await res.json();
+  useEffect(() => {
+    const fetchMarkets = async () => {
+      try {
+        const res = await fetch("https://gamma-api.polymarket.com/markets");
+        const data = await res.json();
 
-      const cryptoKeywords = [
-        "bitcoin", "btc",
-        "ethereum", "eth",
-        "solana", "sol",
-        "crypto", "doge", "bnb", "xrp"
-      ];
+        const cryptoKeywords = [
+          "bitcoin", "btc",
+          "ethereum", "eth",
+          "solana", "sol",
+          "crypto", "doge", "bnb", "xrp"
+        ];
 
-      const formatted = data
-        .filter(m => {
-          const q = m.question?.toLowerCase() || "";
-          return m.active && cryptoKeywords.some(k => q.includes(k));
-        })
-        .slice(0, 20)
-        .map(m => ({
-          id: m.id,
-          question: m.question,
-          outcomePrices: m.outcomePrices || ["0.5", "0.5"],
-          volume: m.volume || 0,
-          timeframe: "Live",
-          symbol: "CRYPTO",
-          change: "0%"
-        }));
+        const formatted = data
+          .filter(m => {
+            const q = m.question?.toLowerCase() || "";
+            return m.active && cryptoKeywords.some(k => q.includes(k));
+          })
+          .slice(0, 20)
+          .map(m => ({
+            id: m.id,
+            question: m.question,
+            outcomePrices: m.outcomePrices || ["0.5", "0.5"],
+            volume: m.volume || 0,
+            timeframe: "Live",
+            symbol: "CRYPTO",
+            change: "0%"
+          }));
 
-      setMarkets(formatted);
-    } catch (err) {
-      console.error("Failed to load markets:", err);
-    }
+        setMarkets(formatted);
+      } catch (err) {
+        console.error("Failed to load markets:", err);
+      }
 
-    setLoadingMarkets(false);
-  };
+      setLoadingMarkets(false);
+    };
 
-  fetchMarkets();
-}, []);
+    fetchMarkets();
+  }, []);
 
 function Badge({ children, color = T.blue }) {
   return <span style={{ fontSize: 10, fontWeight: 600, color, background: `${color}18`, padding: '3px 8px', borderRadius: 20, border: `1px solid ${color}28` }}>{children}</span>
