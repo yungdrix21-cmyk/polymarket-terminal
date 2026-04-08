@@ -361,13 +361,18 @@ function MarketsPage({ prices, selected, setSelected }) {
                 {[{ label: 'YES', val: selectedLive.outcomePrices[0], color: T.teal }, { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red }].map(item => (
                   <div key={item.label} style={{ textAlign: 'center', background: `${item.color}10`, border: `1px solid ${item.color}30`, padding: '10px 22px', borderRadius: 12, minWidth: 88 }}>
                     <div style={{ fontSize: 10, color: item.color, fontWeight: 700 }}>{item.label}</div>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: item.color, fontFamily: T.mono }}>{
-                    const valNum = typeof item.val === "number"
-  ? item.val
-  : Number(item.val) || 0.5
-
-(valNum * 100).toFixed(0)}%</div>
-                  </div>
+                    <div
+  style={{
+    fontSize: 22,
+    fontWeight: 700,
+    color: item.color,
+    fontFamily: T.mono
+  }}
+>
+  {((typeof item.val === "number"
+    ? item.val
+    : Number(item.val) || 0.5) * 100).toFixed(0)}%
+</div>
                 ))}
               </div>
             </div>
