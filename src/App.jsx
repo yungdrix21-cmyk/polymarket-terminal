@@ -86,7 +86,7 @@ function AdminKYCReview() {
         <p style={{ color: T.text2 }}>No KYC submissions yet.</p>
       ) : (
         submissions.map(item => (
-          <div key={`${item.user_id}-${item.submitted_at}`} style={{
+          <div key={`${item.id}-${item.submitted_at}`} style={{
             background: T.bgCard,
             borderRadius: 14,
             padding: 20,
@@ -95,18 +95,18 @@ function AdminKYCReview() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ color: T.text0, fontWeight: 600 }}>User ID: {item.user_id}</div>
+                <div style={{ color: T.text0, fontWeight: 600 }}>User ID: {item.id}</div>
                 <div style={{ color: T.text2, fontSize: 13 }}>Status: {item.status}</div>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button 
-                  onClick={() => alert('Approve clicked for ' + item.user_id)}
+                  onClick={() => updateKYC(item.id, 'approved')}
                   style={{ padding: '8px 16px', background: T.teal, color: '#000', border: 'none', borderRadius: 8 }}
                 >
                   Approve
                 </button>
                 <button 
-                  onClick={() => alert('Reject clicked for ' + item.user_id)}
+                  onClick={() => updateKYC(item.id, 'rejected')}
                   style={{ padding: '8px 16px', background: T.red, color: '#fff', border: 'none', borderRadius: 8 }}
                 >
                   Reject
