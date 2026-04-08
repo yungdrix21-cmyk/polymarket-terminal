@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
 import Profile from './components/Profile'
 import PolymarketMarkets from './components/PolymarketMarkets'
-import MarketCard from './MarketCard'
+import React, { useState, useEffect } from "react";
 
 const T = {
   bg0: '#0d0e14', bg1: '#12131c', bg2: '#181922', bg3: '#1e2030', bgCard: '#14151f',
@@ -87,7 +86,7 @@ function AdminKYCReview() {
         <p style={{ color: T.text2 }}>No KYC submissions yet.</p>
       ) : (
         submissions.map(item => (
-          <div key={item.user_id} style={{
+          <div key={`${item.user_id}-${item.submitted_at}`} style={{
             background: T.bgCard,
             borderRadius: 14,
             padding: 20,
@@ -305,7 +304,7 @@ function DashboardPage({ user, balance, transactions, kycStatus, markets }) {
 }
 
 function MarketsPage({ prices, selected, setSelected }) {
-  const selectedLive = prices.find(m => m.id === selected?.id)
+  const selectedLive = prices?.find(m => m.id === selected?.id)
   return (
     <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
       <div style={{ width: 300, borderRight: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', background: T.bg1 }}>
@@ -317,7 +316,7 @@ function MarketsPage({ prices, selected, setSelected }) {
           <Badge color={T.purple}>7 active</Badge>
         </div>
         <div style={{ overflowY: 'auto', flex: 1 }}>
-          {markets?.map(market => {
+          {prices?.map(market => {
             const rawYes = market?.outcomePrices?.[0]
             const yesPrice = typeof rawYes === "number"
             ? rawYes
@@ -358,7 +357,7 @@ function MarketsPage({ prices, selected, setSelected }) {
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 {[
-  { label: 'YES', val: selectedLive.outcomePrices[0], color: T.teal },
+  { label: 'YES', val: Number(selectedLive?.outcomePrices?.[0] ?? 0.5), color: T.teal },
   { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red }
 ].map(item => (
   <div
@@ -407,10 +406,11 @@ function MarketsPage({ prices, selected, setSelected }) {
 }
 
 function DepositsPage({ user, onDepositSuccess, kycStatus }) {
-  if (kycStatus !== 'approved') return <LockedPage title="Deposits" />
   const [selectedCrypto, setSelectedCrypto] = useState(null)
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
+
+  if (kycStatus !== 'approved') return <LockedPage title="Deposits" />
 
   const cryptos = [
     { symbol: 'BTC', name: 'Bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', address: 'bc1qxy2kdyz3f3y3f3y3f3y3f3y3f3y3f3y3f', color: '#f7931a' },
@@ -420,36 +420,58 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
   ]
 
   const handleDeposit = async () => {
-    if (!amount || !user) return
-    setLoading(true)
-    try {
-      const depositAmount = parseFloat(amount)
-      const { error: txError } = await supabase.from('transactions').insert({
+  if (!amount || !user) return
+
+  setLoading(true)
+
+  try {
+    const depositAmount = parseFloat(amount)
+
+    // 1. Save transaction
+    const { error: txError } = await supabase
+      .from('transactions')
+      .insert({
         user_id: user.id,
         type: 'deposit',
         crypto: selectedCrypto.symbol,
         amount: depositAmount,
         status: 'Completed',
       })
-      if (txError) throw txError
-      const { data: profileData } = await supabase.from('profiles').select('balance').eq('id', user.id).single()
-      const newBalance = (Number(profileData?.balance) || 0) + depositAmount
-      const { error: balError } = await supabase.from('profiles').update({ balance: newBalance }).eq('id', user.id)
-      if (balError) throw balError
-      onDepositSuccess(newBalance, {
+
+    if (txError) throw txError
+
+    // 2. Atomic balance update
+    const { error: rpcError } = await supabase.rpc('increment_balance', {
+      user_id: user.id,
+      amount: depositAmount
+    })
+
+    if (rpcError) throw rpcError
+
+    // 3. Update UI instantly
+    setBalance(prev => Number(prev) + depositAmount)
+
+    // 4. Add transaction locally
+    onDepositSuccess(
+      Number(balance) + depositAmount,
+      {
         id: Date.now(),
         crypto: selectedCrypto.symbol,
         amount: depositAmount,
         status: 'Completed',
         created_at: new Date().toISOString(),
-      })
-      setSelectedCrypto(null)
-      setAmount('')
-    } catch (err) {
-      console.error('Deposit error:', err)
-    }
-    setLoading(false)
+      }
+    )
+
+    setSelectedCrypto(null)
+    setAmount('')
+  } catch (err) {
+    console.error(err)
+    alert("Deposit failed")
   }
+
+  setLoading(false)
+}
 
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
@@ -496,8 +518,8 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
 }
 
 function CopyTradingPage({ kycStatus }) {
-  if (kycStatus !== 'approved') return <LockedPage title="Copy Trading" />
   const [searchTerm, setSearchTerm] = useState('')
+  if (kycStatus !== 'approved') return <LockedPage title="Copy Trading" />
   const traders = [
     { name: "beachboy4", profit: "+$3,660,645", winRate: "87%", followers: "12.4K", rank: 1 },
     { name: "HorizonSplendidView", profit: "+$4,016,108", winRate: "91%", followers: "8.9K", rank: 2 },
@@ -563,6 +585,7 @@ export default function App() {
     volume: 8000,
   }
 ];
+  const [markets, setMarkets] = useState(fakeMarkets);
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [showLanding, setShowLanding] = useState(true)
@@ -572,8 +595,6 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [kycStatus, setKycStatus] = useState(null)
   const [balance, setBalance] = useState(0)
-  const [markets, setMarkets] = useState([fakeMarkets])
-  const [loadingMarkets, setLoadingMarkets] = useState(true)
 
   // ── FIX: timeout prevents infinite loading if Supabase hangs ──
  useEffect(() => {
@@ -692,7 +713,7 @@ export default function App() {
     { id: 'markets',   label: 'Markets',    icon: 'markets'   },
     { id: 'copy',      label: 'Copy Trade', icon: 'users',    locked: kycStatus !== 'approved' },
     { id: 'deposits',  label: 'Deposits',   icon: 'deposit',  locked: kycStatus !== 'approved' },
-    ...(user && user.id === '7feed100-4d48-4993-a898-13046a6392a9' ? [{ id: 'admin', label: 'Admin Panel', icon: 'shield' }] : []),
+    ...(user && profiles.role === 'admin' ? [{ id: 'admin', label: 'Admin Panel', icon: 'shield' }] : []),
   ]
 
   const BOTTOM_ITEMS = [
@@ -805,7 +826,7 @@ export default function App() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 700, color: T.teal }}>
-              ${Number(balance).toFixed(2)}
+              ${(Number(balance) || 0).toFixed(2)}
             </div>
             <Icon name="bell" size={16} color={T.text2} />
             <div onClick={() => setView('profile')} style={{ width: 30, height: 30, borderRadius: 8, background: `${T.purple}20`, border: `1px solid ${T.purple}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
