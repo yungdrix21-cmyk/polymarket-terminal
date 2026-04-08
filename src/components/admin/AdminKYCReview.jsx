@@ -31,27 +31,25 @@ function AdminKYCReview() {
   const updateKYC = async (id, status) => {
   console.log("UPDATE CALLED:", id, status)
 
-  try {
-    const { error } = await supabase
-      .from('kyc_documents')
-      .update({ status })
-      .eq('id', id)   // ✅ CORRECT
+  const { data, error } = await supabase
+    .from('kyc_documents')
+    .update({ status })
+    .eq('id', id)
+    .select() // 👈 ADD THIS
 
-    if (error) throw error
+  console.log("RESPONSE:", data, error)
 
-    console.log("UPDATED SUCCESS")
-
-    // ✅ FIX STATE UPDATE HERE
-    setSubmissions(prev =>
-      prev.map(s =>
-        s.id === id ? { ...s, status } : s
-      )
-    )
-
-  } catch (err) {
-    console.error("UPDATE FAILED:", err)
-    alert("Failed to update KYC")
+  if (error) {
+    console.error(error)
+    alert("Update failed")
+    return
   }
+
+  setSubmissions(prev =>
+    prev.map(s =>
+      s.id === id ? { ...s, status } : s
+    )
+  )
 }
 
   useEffect(() => {
