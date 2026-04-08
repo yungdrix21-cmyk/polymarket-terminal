@@ -430,7 +430,7 @@ function MarketsPage({ prices, selected, setSelected, isMobile }) {
           </div>
           <Badge color={T.purple}>{prices?.length || 0} active</Badge>
         </div>
-        <div style={{ overflowY: 'auto', flex: 1, maxHeight: isMobile ? 340 : undefined }}>
+        <div style={{ overflowY: 'auto', flex: 1, maxHeight: isMobile ? 'calc(100vh - 160px)' : undefined }}>
           {prices?.map(market => {
             const rawYes = market?.outcomePrices?.[0]
             const yesPrice = typeof rawYes === "number" ? rawYes : Number(rawYes) || 0.5
