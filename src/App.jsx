@@ -2,6 +2,7 @@ import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
 import Profile from './components/Profile'
 import PolymarketMarkets from './components/PolymarketMarkets'
+import AdminKYCReview from './components/AdminKYCReview'
 import React, { useState, useEffect } from "react";
 
 const T = {
@@ -50,78 +51,7 @@ const Icon = ({ name, size = 16, color = 'currentColor', strokeWidth = 1.6 }) =>
   )
 }
 
-// ==================== ADMIN KYC REVIEW PAGE ====================
-function AdminKYCReview() {
-  const [submissions, setSubmissions] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  const loadKYC = async () => {
-    setLoading(true);
-    try {
-      const { data } = await supabase
-        .from('kyc_documents')
-        .select('user_id, doc_type, status, submitted_at')
-        .order('submitted_at', { ascending: false });
-
-      setSubmissions(data || []);
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    loadKYC();
-  }, []);
-
-  return (
-    <div style={{ padding: '28px' }}>
-      <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 700, marginBottom: 20 }}>
-        👑 Admin KYC Review
-      </h2>
-
-      {loading ? (
-        <p style={{ color: T.text2 }}>Loading...</p>
-      ) : submissions.length === 0 ? (
-        <p style={{ color: T.text2 }}>No KYC submissions yet.</p>
-      ) : (
-        submissions.map(item => (
-          <div key={`${item.id}-${item.submitted_at}`} style={{
-            background: T.bgCard,
-            borderRadius: 14,
-            padding: 20,
-            marginBottom: 16,
-            border: `1px solid ${T.border}`
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ color: T.text0, fontWeight: 600 }}>
-  User: {item.profiles?.email || item.user_id}
-</div>
-                <div style={{ color: T.text2, fontSize: 13 }}>Status: {item.status}</div>
-              </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button 
-                  onClick={() => updateKYC(item.id, 'approved')}
-                  style={{ padding: '8px 16px', background: T.teal, color: '#000', border: 'none', borderRadius: 8 }}
-                >
-                  Approve
-                </button>
-                <button 
-                  onClick={() => updateKYC(item.id, 'rejected')}
-                  style={{ padding: '8px 16px', background: T.red, color: '#fff', border: 'none', borderRadius: 8 }}
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
-          </div>
-        ))
-      )}
-    </div>
-  );
-}
-// ============================================================
 
 function Badge({ children, color = T.blue }) {
   return <span style={{ fontSize: 10, fontWeight: 600, color, background: `${color}18`, padding: '3px 8px', borderRadius: 20, border: `1px solid ${color}28` }}>{children}</span>
@@ -429,7 +359,6 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
   try {
     const depositAmount = parseFloat(amount)
 
-    // 1. Save transaction
     const { error: txError } = await supabase
       .from('transactions')
       .insert({
@@ -442,7 +371,6 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
 
     if (txError) throw txError
 
-    // 2. Atomic balance update
     const { error: rpcError } = await supabase.rpc('increment_balance', {
       user_id: user.id,
       amount: depositAmount
@@ -450,16 +378,13 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
 
     if (rpcError) throw rpcError
 
-    // 3. Update UI instantly
-
-    // 4. Add transaction locally
     onDepositSuccess({
-  id: Date.now(),
-  crypto: selectedCrypto.symbol,
-  amount: depositAmount,
-  status: 'Completed',
-  created_at: new Date().toISOString(),
-})
+      id: Date.now(),
+      crypto: selectedCrypto.symbol,
+      amount: depositAmount,
+      status: 'Completed',
+      created_at: new Date().toISOString(),
+    })
 
     setSelectedCrypto(null)
     setAmount('')
@@ -595,8 +520,7 @@ export default function App() {
   const [kycStatus, setKycStatus] = useState(null)
   const [balance, setBalance] = useState(0)
 
-  // ── FIX: timeout prevents infinite loading if Supabase hangs ──
- useEffect(() => {
+  useEffect(() => {
   let mounted = true
 
   const initAuth = async () => {
@@ -613,7 +537,6 @@ export default function App() {
     } catch (err) {
       console.error("Auth crash:", err)
     } finally {
-      // 🔥 ALWAYS stop loading no matter what
       if (mounted) setLoading(false)
     }
   }
@@ -633,20 +556,16 @@ export default function App() {
   }
 }, [])
 
-// useEffect(() => {
-//   fetchMarkets();
-// }, []);
-
   const loadUserData = async (userId) => {
   try {
     const { data: profileData } = await supabase
-  .from('profiles')
-  .select('balance, role') // ✅ include role
-  .eq('id', userId)
-  .maybeSingle()
+      .from('profiles')
+      .select('balance, role')
+      .eq('id', userId)
+      .maybeSingle()
 
-setProfile(profileData) // ✅ SAVE PROFILE
-setBalance(profileData?.balance ?? 0)
+    setProfile(profileData)
+    setBalance(profileData?.balance ?? 0)
 
     const { data: kycData } = await supabase
       .from('kyc_documents')
@@ -658,18 +577,11 @@ setBalance(profileData?.balance ?? 0)
 
     setKycStatus(kycData?.status ?? 'not_started')
 
-    const { data } = await supabase
-  .from('kyc_documents')
-  .select(`
-    id,
-    user_id,
-    status,
-    submitted_at,
-    profiles (
-      email
-    )
-  `)
-  .order('submitted_at', { ascending: false });
+    const { data: txData } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
 
     setTransactions(txData ?? [])
   } catch (e) {
@@ -739,7 +651,7 @@ setBalance(profileData?.balance ?? 0)
     balance={balance} 
     transactions={transactions} 
     kycStatus={kycStatus}
-    markets={markets}   // ✅ ADD THIS
+    markets={markets}
   />
     if (view === 'markets') {
   return (
