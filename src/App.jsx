@@ -511,7 +511,7 @@ export default function App() {
   const [markets, setMarkets] = useState(fakeMarkets);
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showLanding, setShowLanding] = useState(true)
+  const [showLanding, setShowLanding] = useState(false)  // ✅ don't assume logged out
   const [view, setView] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(null)
@@ -524,22 +524,26 @@ export default function App() {
   let mounted = true
 
   const initAuth = async () => {
-    try {
-      const { data, error } = await supabase.auth.getSession()
+  try {
+    const { data, error } = await supabase.auth.getSession()
+    if (error) console.error("Session error:", error)
 
-      if (error) {
-        console.error("Session error:", error)
+    if (mounted) {
+      if (data?.session?.user) {
+        setUser(data.session.user)
+        await loadUserData(data.session.user.id)
+        setShowLanding(false)
+      } else {
+        setShowLanding(true)
       }
-
-      if (mounted) {
-        setUser(data?.session?.user ?? null)
-      }
-    } catch (err) {
-      console.error("Auth crash:", err)
-    } finally {
-      if (mounted) setLoading(false)
     }
+  } catch (err) {
+    console.error("Auth crash:", err)
+    if (mounted) setShowLanding(true)
+  } finally {
+    if (mounted) setLoading(false)
   }
+}
 
   initAuth()
 
@@ -568,12 +572,12 @@ export default function App() {
     setBalance(profileData?.balance ?? 0)
 
     const { data: kycData } = await supabase
-      .from('kyc_documents')
-      .select('status')
-      .eq('id', userId)
-      .order('submitted_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+  .from('kyc_documents')
+  .select('status')
+  .eq('user_id', userId)   // ✅ correct
+  .order('submitted_at', { ascending: false })
+  .limit(1)
+  .maybeSingle()
 
     setKycStatus(kycData?.status ?? 'not_started')
 
