@@ -524,7 +524,9 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [kycStatus, setKycStatus] = useState(null)
   const [balance, setBalance] = useState(0)
-
+  const [markets, setMarkets] = useState([])
+  const [loadingMarkets, setLoadingMarkets] = useState(true)
+  
   // ── FIX: timeout prevents infinite loading if Supabase hangs ──
  useEffect(() => {
   let mounted = true
