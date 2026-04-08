@@ -318,7 +318,6 @@ function MarketsPage({ prices, selected, setSelected }) {
         </div>
         <div style={{ overflowY: 'auto', flex: 1 }}>
           {prices.map(market => {
-            const yesPrice = Number(market.outcomePrices?.[0] ?? 0.5)
             const rawYes = market?.outcomePrices?.[0]
             const yesPrice = typeof rawYes === "number"
             ? rawYes
