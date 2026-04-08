@@ -95,7 +95,9 @@ function AdminKYCReview() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ color: T.text0, fontWeight: 600 }}>User ID: {item.id}</div>
+                <div style={{ color: T.text0, fontWeight: 600 }}>
+  {JSON.stringify(item, null, 2)}
+</div>
                 <div style={{ color: T.text2, fontSize: 13 }}>Status: {item.status}</div>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
