@@ -317,7 +317,7 @@ function MarketsPage({ prices, selected, setSelected }) {
           <Badge color={T.purple}>7 active</Badge>
         </div>
         <div style={{ overflowY: 'auto', flex: 1 }}>
-          {prices.map(market => {
+          {markets.map(market => {
             const rawYes = market?.outcomePrices?.[0]
             const yesPrice = typeof rawYes === "number"
             ? rawYes
@@ -547,6 +547,29 @@ function CopyTradingPage({ kycStatus }) {
 }
 
 export default function App() {
+  const fakeMarkets = [
+  {
+    id: 1,
+    question: "Will BTC be above $70K in 5 minutes?",
+    timeframe: "5m",
+    outcomePrices: [0.62, 0.38],
+    volume: 12000,
+  },
+  {
+    id: 2,
+    question: "Will ETH go up in 5 minutes?",
+    timeframe: "5m",
+    outcomePrices: [0.48, 0.52],
+    volume: 8000,
+  },
+  {
+    id: 3,
+    question: "Will SOL pump in 5 minutes?",
+    timeframe: "5m",
+    outcomePrices: [0.71, 0.29],
+    volume: 15000,
+  }
+];
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [showLanding, setShowLanding] = useState(true)
@@ -556,7 +579,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [kycStatus, setKycStatus] = useState(null)
   const [balance, setBalance] = useState(0)
-  const [markets, setMarkets] = useState([])
+  const [markets, setMarkets] = useState([fakeMarkets])
   const [loadingMarkets, setLoadingMarkets] = useState(true)
 
   // ── FIX: timeout prevents infinite loading if Supabase hangs ──
@@ -597,54 +620,9 @@ export default function App() {
   }
 }, [])
 
-useEffect(() => {
-  const fetchMarkets = async () => {
-    try {
-      console.log("🚀 Fetching markets...")
-
-      const res = await fetch("/api/markets")
-      const data = await res.json()
-
-      console.log("📦 RAW DATA:", data)
-
-      // 🔥 FILTER CRYPTO ONLY
-      // 🔥 FILTER + FORMAT MARKETS
-const filtered = data.filter(market => {
-  const q = market.question?.toLowerCase() || ""
-
-  return (
-    q.includes("btc") ||
-    q.includes("bitcoin") ||
-    q.includes("eth") ||
-    q.includes("ethereum") ||
-    q.includes("crypto")
-  )
-})
-
-const formatted = filtered.slice(0, 10).map(m => ({
-  id: m.id,
-  question: m.question,
-  outcomePrices: m.outcomePrices || m.outcomes?.map(o => o.price) || [0.5, 0.5],
-  change: "+0.0%",
-  volume: m.volume || 0,
-  timeframe: "5m"
-}))
-
-setMarkets(formatted)
-console.log("✅ FINAL MARKETS:", formatted)
-
-      // 🔥 LIMIT TO ~10 (simulate short-term markets)
-      setMarkets(filtered.slice(0, 10))
-
-    } catch (err) {
-      console.error("❌ Failed to load markets:", err)
-    }
-
-    setLoadingMarkets(false)
-  }
-
-  fetchMarkets()
-}, [])
+// useEffect(() => {
+//   fetchMarkets();
+// }, []);
 
   const loadUserData = async (userId) => {
   try {
