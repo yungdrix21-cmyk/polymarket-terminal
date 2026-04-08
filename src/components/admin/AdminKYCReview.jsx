@@ -29,6 +29,8 @@ function AdminKYCReview() {
   };
 
   const updateKYC = async (id, status) => {
+  console.log("CLICKED", id, status) // 👈 ADD THIS
+
   try {
     const { error } = await supabase
       .from('kyc_documents')
@@ -37,7 +39,8 @@ function AdminKYCReview() {
 
     if (error) throw error
 
-    // ✅ 🔥 INSTANT UI UPDATE (ADD THIS HERE)
+    console.log("UPDATED SUCCESS") // 👈 ADD THIS
+
     setSubmissions(prev =>
       prev.map(s =>
         s.id === id ? { ...s, status } : s
@@ -45,7 +48,7 @@ function AdminKYCReview() {
     )
 
   } catch (err) {
-    console.error(err)
+    console.error("UPDATE FAILED:", err)
     alert("Failed to update KYC")
   }
 };
@@ -76,7 +79,7 @@ function AdminKYCReview() {
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ color: T.text0, fontWeight: 600 }}>
-                  User: {item.profiles?.email || item.user_id}
+                  User: {item.user_id}
                 </div>
                 <div style={{ color: T.text2, fontSize: 13 }}>
                   Status: {item.status}
