@@ -319,6 +319,11 @@ function MarketsPage({ prices, selected, setSelected }) {
         <div style={{ overflowY: 'auto', flex: 1 }}>
           {prices.map(market => {
             const yesPrice = Number(market.outcomePrices?.[0] ?? 0.5)
+            const rawYes = market?.outcomePrices?.[0]
+            const yesPrice = typeof rawYes === "number"
+            ? rawYes
+            : Number(rawYes) || 0.5
+
             const yes = (yesPrice * 100).toFixed(0)
             const change = market.change || "+0.0%"
             const isUp = change.startsWith('+')
@@ -356,7 +361,12 @@ function MarketsPage({ prices, selected, setSelected }) {
                 {[{ label: 'YES', val: selectedLive.outcomePrices[0], color: T.teal }, { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red }].map(item => (
                   <div key={item.label} style={{ textAlign: 'center', background: `${item.color}10`, border: `1px solid ${item.color}30`, padding: '10px 22px', borderRadius: 12, minWidth: 88 }}>
                     <div style={{ fontSize: 10, color: item.color, fontWeight: 700 }}>{item.label}</div>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: item.color, fontFamily: T.mono }}>{(parseFloat(item.val) * 100).toFixed(0)}%</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: item.color, fontFamily: T.mono }}>{
+                    const valNum = typeof item.val === "number"
+  ? item.val
+  : Number(item.val) || 0.5
+
+(valNum * 100).toFixed(0)}%</div>
                   </div>
                 ))}
               </div>
