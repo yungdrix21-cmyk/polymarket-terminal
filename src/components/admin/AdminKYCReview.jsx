@@ -29,7 +29,7 @@ function AdminKYCReview() {
   };
 
   const updateKYC = async (id, status) => {
-  console.log("CLICKED", id, status)
+  console.log("UPDATE CALLED:", id, status)
 
   try {
     const { error } = await supabase
