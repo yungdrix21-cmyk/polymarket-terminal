@@ -561,13 +561,6 @@ export default function App() {
     timeframe: "5m",
     outcomePrices: [0.48, 0.52],
     volume: 8000,
-  },
-  {
-    id: 3,
-    question: "Will SOL pump in 5 minutes?",
-    timeframe: "5m",
-    outcomePrices: [0.71, 0.29],
-    volume: 15000,
   }
 ];
   const [transactions, setTransactions] = useState([])
