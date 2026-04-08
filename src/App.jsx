@@ -369,9 +369,13 @@ function MarketsPage({ prices, selected, setSelected }) {
     fontFamily: T.mono
   }}
 >
-  {((typeof item.val === "number"
-    ? item.val
-    : Number(item.val) || 0.5) * 100).toFixed(0)}%
+  {
+  ((
+    typeof item.val === "number"
+      ? item.val
+      : Number(item.val) || 0.5
+  ) * 100).toFixed(0)
+}%
 </div>
                 ))}
               </div>
