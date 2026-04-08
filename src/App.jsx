@@ -707,13 +707,15 @@ setBalance(profileData?.balance ?? 0)
   if (showLanding) return <Auth onLogin={handleLogin} />
 
   const NAV_ITEMS = [
-    { id: 'dashboard', label: 'Dashboard',  icon: 'dashboard' },
-    { id: 'markets',   label: 'Markets',    icon: 'markets'   },
-    { id: 'copy',      label: 'Copy Trade', icon: 'users',    locked: kycStatus !== 'approved' },
-    { id: 'deposits',  label: 'Deposits',   icon: 'deposit',  locked: kycStatus !== 'approved' },
-    ...(user && profile?.role === 'admin'
-  ? [{ id: 'admin', label: 'Admin Panel', icon: 'shield' }]
-  : []),
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'markets', label: 'Markets', icon: 'markets' },
+  { id: 'copy', label: 'Copy Trade', icon: 'users', locked: kycStatus !== 'approved' },
+  { id: 'deposits', label: 'Deposits', icon: 'deposit', locked: kycStatus !== 'approved' },
+
+  ...(user && profile?.role === 'admin'
+    ? [{ id: 'admin', label: 'Admin Panel', icon: 'shield' }]
+    : [])
+];
 
   const BOTTOM_ITEMS = [
     { id: 'profile',  label: 'Profile',  icon: 'profile'  },
