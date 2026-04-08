@@ -319,7 +319,8 @@ function MarketsPage({ prices, selected, setSelected }) {
         <div style={{ overflowY: 'auto', flex: 1 }}>
           {prices.map(market => {
             const yes = (parseFloat(market.outcomePrices[0]) * 100).toFixed(0)
-            const isUp = market.change.startsWith('+')
+            const change = market.change || "+0.0%"
+            const isUp = change.startsWith('+')
             const isSelected = selected?.id === market.id
             return (
               <div key={market.id} onClick={() => setSelected(market)}
@@ -332,7 +333,7 @@ function MarketsPage({ prices, selected, setSelected }) {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 18, fontWeight: 700, color: parseFloat(yes) > 50 ? T.teal : T.red, fontFamily: T.mono }}>{yes}%</span>
-                  <span style={{ fontSize: 11, color: isUp ? T.teal : T.red, background: isUp ? T.tealDim : T.redDim, padding: '3px 8px', borderRadius: 6 }}>{market.change}</span>
+                  <span style={{ fontSize: 11, color: isUp ? T.teal : T.red, background: isUp ? T.tealDim : T.redDim, padding: '3px 8px', borderRadius: 6 }}>{change}</span>
                 </div>
                 <div style={{ marginTop: 6, fontSize: 11, color: T.text2 }}>Vol ${(market.volume / 1000).toFixed(0)}K</div>
               </div>
