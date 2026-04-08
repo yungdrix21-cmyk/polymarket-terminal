@@ -318,7 +318,8 @@ function MarketsPage({ prices, selected, setSelected }) {
         </div>
         <div style={{ overflowY: 'auto', flex: 1 }}>
           {prices.map(market => {
-            const yes = (parseFloat(market.outcomePrices[0]) * 100).toFixed(0)
+            const yesPrice = Number(market.outcomePrices?.[0] ?? 0.5)
+            const yes = (yesPrice * 100).toFixed(0)
             const change = market.change || "+0.0%"
             const isUp = change.startsWith('+')
             const isSelected = selected?.id === market.id
