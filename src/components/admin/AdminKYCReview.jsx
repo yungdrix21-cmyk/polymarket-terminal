@@ -8,15 +8,15 @@ function AdminKYCReview() {
       const { data, error } = await supabase
   .from('kyc_documents')
   .select(`
-    id,
-    user_id,
-    status,
-    document_url,
-    submitted_at,
-    profiles:profiles!kyc_documents_user_id_fkey (
-      email
-    )
-  `)
+  id,
+  user_id,
+  status,
+  document_url,
+  submitted_at,
+  profiles:profiles!kyc_documents_user_id_fkey (
+    email
+  )
+`)
   .order('submitted_at', { ascending: false });
 
       if (error) throw error;
