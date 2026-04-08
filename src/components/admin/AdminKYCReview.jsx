@@ -6,18 +6,18 @@ function AdminKYCReview() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('kyc_documents')
-        .select(`
-          id,
-          user_id,
-          status,
-          document_url,
-          submitted_at,
-          profiles (
-            email
-          )
-        `)
-        .order('submitted_at', { ascending: false });
+  .from('kyc_documents')
+  .select(`
+    id,
+    user_id,
+    status,
+    document_url,
+    submitted_at,
+    profiles:profiles!kyc_documents_user_id_fkey (
+      email
+    )
+  `)
+  .order('submitted_at', { ascending: false });
 
       if (error) throw error;
 
@@ -28,22 +28,22 @@ function AdminKYCReview() {
     setLoading(false);
   };
 
-  const updateKYC = async (id, status) => {
-  console.log("CLICKED", id, status) // 👈 ADD THIS
+  const updateKYC = async (userId, status) => {
+  console.log("CLICKED", userId, status)
 
   try {
     const { error } = await supabase
       .from('kyc_documents')
       .update({ status })
-      .eq('id', id)
+      .eq('user_id', userId)   // ✅ FIX HERE
 
     if (error) throw error
 
-    console.log("UPDATED SUCCESS") // 👈 ADD THIS
+    console.log("UPDATED SUCCESS")
 
     setSubmissions(prev =>
       prev.map(s =>
-        s.id === id ? { ...s, status } : s
+        s.user_id === userId ? { ...s, status } : s
       )
     )
 
@@ -51,7 +51,7 @@ function AdminKYCReview() {
     console.error("UPDATE FAILED:", err)
     alert("Failed to update KYC")
   }
-};
+}
 
   useEffect(() => {
     loadKYC();
@@ -79,7 +79,7 @@ function AdminKYCReview() {
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ color: T.text0, fontWeight: 600 }}>
-                  User: {item.user_id}
+                  User: {item.profiles?.email || item.user_id}
                 </div>
                 <div style={{ color: T.text2, fontSize: 13 }}>
                   Status: {item.status}
