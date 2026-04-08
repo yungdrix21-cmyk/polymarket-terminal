@@ -376,11 +376,53 @@ Give a very short 2-3 sentence analysis. Mention the current lean, what could sh
   )
 }
 
-function MarketsPage({ prices, selected, setSelected }) {
+function MarketsPage({ prices, selected, setSelected, isMobile }) {
   const selectedLive = prices?.find(m => m.id === selected?.id)
+
+  // Mobile: show full screen chart when market is selected
+  if (isMobile && selectedLive) {
+    return (
+      <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: '12px 16px', borderBottom: `1px solid ${T.border}`, background: T.bg1, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={() => setSelected(null)}
+            style={{ background: T.bg3, border: 'none', color: T.text1, borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontFamily: T.font }}
+          >
+            ← Back
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 600, color: T.text0, flex: 1, lineHeight: 1.4 }}>{selectedLive.question}</span>
+        </div>
+        <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+            {[
+              { label: 'YES', val: Number(selectedLive?.outcomePrices?.[0] ?? 0.5), color: T.teal },
+              { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red }
+            ].map(item => (
+              <div key={item.label} style={{ flex: 1, textAlign: 'center', background: `${item.color}10`, border: `1px solid ${item.color}30`, padding: '10px', borderRadius: 12 }}>
+                <div style={{ fontSize: 10, color: item.color, fontWeight: 700 }}>{item.label}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: item.color, fontFamily: T.mono }}>
+                  {(Number(item.val ?? 0.5) * 100).toFixed(0)}%
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 10, color: T.text2, marginBottom: 8, letterSpacing: '0.08em' }}>LIVE PROBABILITY CHART</div>
+          <Chart market={selectedLive} />
+          <AIInsights market={selectedLive} />
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-      <div style={{ width: 300, borderRight: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', background: T.bg1 }}>
+    <div style={{ display: 'flex', flex: 1, overflow: 'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
+      <div style={{
+        width: isMobile ? '100%' : 300,
+        borderRight: isMobile ? 'none' : `1px solid ${T.border}`,
+        borderBottom: isMobile ? `1px solid ${T.border}` : 'none',
+        display: 'flex', flexDirection: 'column', background: T.bg1,
+        flex: isMobile ? 'none' : undefined,
+      }}>
         <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', background: T.red, boxShadow: `0 0 5px ${T.red}` }} />
@@ -388,13 +430,10 @@ function MarketsPage({ prices, selected, setSelected }) {
           </div>
           <Badge color={T.purple}>{prices?.length || 0} active</Badge>
         </div>
-        <div style={{ overflowY: 'auto', flex: 1 }}>
+        <div style={{ overflowY: 'auto', flex: 1, maxHeight: isMobile ? 340 : undefined }}>
           {prices?.map(market => {
             const rawYes = market?.outcomePrices?.[0]
-            const yesPrice = typeof rawYes === "number"
-            ? rawYes
-            : Number(rawYes) || 0.5
-
+            const yesPrice = typeof rawYes === "number" ? rawYes : Number(rawYes) || 0.5
             const yes = (yesPrice * 100).toFixed(0)
             const change = market.change || "+0.0%"
             const isUp = change.startsWith('+')
@@ -418,63 +457,47 @@ function MarketsPage({ prices, selected, setSelected }) {
           })}
         </div>
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {selectedLive ? (
-          <>
-            <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, background: T.bg1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: T.text0 }}>{selectedLive.question}</div>
-                <div style={{ fontSize: 11, color: T.text2, marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Icon name="clock" size={11} color={T.text2} /> {selectedLive.timeframe} · Polymarket Crypto
+
+      {/* Desktop chart panel - only show when not mobile */}
+      {!isMobile && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {selectedLive ? (
+            <>
+              <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, background: T.bg1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: T.text0 }}>{selectedLive.question}</div>
+                  <div style={{ fontSize: 11, color: T.text2, marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Icon name="clock" size={11} color={T.text2} /> {selectedLive.timeframe} · Polymarket Crypto
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {[
+                    { label: 'YES', val: Number(selectedLive?.outcomePrices?.[0] ?? 0.5), color: T.teal },
+                    { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red }
+                  ].map(item => (
+                    <div key={item.label} style={{ textAlign: 'center', background: `${item.color}10`, border: `1px solid ${item.color}30`, padding: '10px 22px', borderRadius: 12, minWidth: 88 }}>
+                      <div style={{ fontSize: 10, color: item.color, fontWeight: 700 }}>{item.label}</div>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: item.color, fontFamily: T.mono }}>
+                        {(Number(item.val ?? 0.5) * 100).toFixed(0)}%
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {[
-  { label: 'YES', val: Number(selectedLive?.outcomePrices?.[0] ?? 0.5), color: T.teal },
-  { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red }
-].map(item => (
-  <div
-    key={item.label}
-    style={{
-      textAlign: 'center',
-      background: `${item.color}10`,
-      border: `1px solid ${item.color}30`,
-      padding: '10px 22px',
-      borderRadius: 12,
-      minWidth: 88
-    }}
-  >
-    <div style={{ fontSize: 10, color: item.color, fontWeight: 700 }}>
-      {item.label}
-    </div>
-
-    <div
-      style={{
-        fontSize: 22,
-        fontWeight: 700,
-        color: item.color,
-        fontFamily: T.mono
-      }}
-    >
-      {(Number(item.val ?? 0.5) * 100).toFixed(0)}%
-    </div>
-  </div>
-))}
-              </div>
-            </div>
-            <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+              <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
   <div style={{ fontSize: 10, color: T.text2, marginBottom: 8, letterSpacing: '0.08em' }}>LIVE PROBABILITY CHART</div>
   <Chart market={selectedLive} />
   <AIInsights market={selectedLive} />
 </div>
-          </>
-        ) : (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
-            <div style={{ opacity: 0.4 }}><Icon name="markets" size={48} color={T.text2} /></div>
-            <div style={{ fontSize: 14 }}>Select a market to view chart</div>
-          </div>
-        )}
-      </div>
+            </>
+          ) : (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
+              <div style={{ opacity: 0.4 }}><Icon name="markets" size={48} color={T.text2} /></div>
+              <div style={{ fontSize: 14 }}>Select a market to view chart</div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -584,6 +607,18 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
 
 function CopyTradingPage({ kycStatus }) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [copying, setCopying] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('copyingTraders') || '[]') } catch { return [] }
+  })
+
+  const toggleCopy = (name) => {
+    setCopying(prev => {
+      const next = prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+      localStorage.setItem('copyingTraders', JSON.stringify(next))
+      return next
+    })
+  }
+
   if (kycStatus !== 'approved') return <LockedPage title="Copy Trading" />
   const traders = [
     { name: "beachboy4", profit: "+$3,660,645", winRate: "87%", followers: "12.4K", rank: 1 },
@@ -621,11 +656,22 @@ function CopyTradingPage({ kycStatus }) {
               <Badge color={T.blue}>{trader.winRate} win rate</Badge>
               <Badge color={T.purple}>{trader.followers} followers</Badge>
             </div>
-            <button style={{ width: '100%', padding: '11px', background: T.tealDim, color: T.teal, border: `1px solid ${T.teal}30`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: T.font }}
-              onMouseEnter={e => { e.currentTarget.style.background = T.teal; e.currentTarget.style.color = '#0d0e14' }}
-              onMouseLeave={e => { e.currentTarget.style.background = T.tealDim; e.currentTarget.style.color = T.teal }}>
-              <Icon name="copy" size={13} /> Copy Trader
-            </button>
+            <button
+  onClick={() => toggleCopy(trader.name)}
+  style={{
+    width: '100%', padding: '11px',
+    background: copying.includes(trader.name) ? T.teal : T.tealDim,
+    color: copying.includes(trader.name) ? '#0d0e14' : T.teal,
+    border: `1px solid ${T.teal}30`, borderRadius: 10, fontWeight: 600,
+    fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', gap: 6, fontFamily: T.font
+  }}
+  onMouseEnter={e => { e.currentTarget.style.background = copying.includes(trader.name) ? T.tealDim : T.teal; e.currentTarget.style.color = copying.includes(trader.name) ? T.teal : '#0d0e14' }}
+  onMouseLeave={e => { e.currentTarget.style.background = copying.includes(trader.name) ? T.teal : T.tealDim; e.currentTarget.style.color = copying.includes(trader.name) ? '#0d0e14' : T.teal }}
+>
+  <Icon name="copy" size={13} />
+  {copying.includes(trader.name) ? 'Copying Trades ✓' : 'Copy Trader'}
+</button>
           </div>
         ))}
       </div>
@@ -670,7 +716,28 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [showLanding, setShowLanding] = useState(true)
   const [view, setView] = useState('dashboard')
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(window.innerWidth < 768)
+const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+useEffect(() => {
+  const handleResize = () => {
+    const mobile = window.innerWidth < 768
+    setIsMobile(mobile)
+    if (mobile) setCollapsed(true)
+  }
+  window.addEventListener('resize', handleResize)
+  return () => window.removeEventListener('resize', handleResize)
+}, [])
+
+useEffect(() => {
+  const handleResize = () => {
+    const mobile = window.innerWidth < 768
+    setIsMobile(mobile)
+    setCollapsed(mobile)
+  }
+  window.addEventListener('resize', handleResize)
+  return () => window.removeEventListener('resize', handleResize)
+}, [])
   const [selected, setSelected] = useState(null)
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
@@ -836,7 +903,8 @@ export default function App() {
     <MarketsPage 
       prices={markets} 
       selected={selected} 
-      setSelected={setSelected} 
+      setSelected={setSelected}
+      isMobile={isMobile}
     />
   )
 }
