@@ -143,7 +143,7 @@ function StatCard({ label, value, color, icon, sub }) {
 function Chart({ market }) {
   const [candles, setCandles] = useState([])
   useEffect(() => {
-    let price = parseFloat(market.outcomePrices[0])
+    let price = parseFloat(market.outcomePrices?.[0] ?? 0.5)
     const initial = Array.from({ length: 42 }, () => {
       const open = price
       const change = (Math.random() - 0.48) * 0.04
@@ -317,7 +317,7 @@ function MarketsPage({ prices, selected, setSelected }) {
           <Badge color={T.purple}>7 active</Badge>
         </div>
         <div style={{ overflowY: 'auto', flex: 1 }}>
-          {markets.map(market => {
+          {markets?.map(market => {
             const rawYes = market?.outcomePrices?.[0]
             const yesPrice = typeof rawYes === "number"
             ? rawYes
