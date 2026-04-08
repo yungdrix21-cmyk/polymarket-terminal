@@ -3,6 +3,7 @@ import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
 import Profile from './components/Profile'
 import PolymarketMarkets from './components/PolymarketMarkets'
+import MarketCard from './MarketCard'
 
 const T = {
   bg0: '#0d0e14', bg1: '#12131c', bg2: '#181922', bg3: '#1e2030', bgCard: '#14151f',
@@ -526,7 +527,7 @@ export default function App() {
   const [balance, setBalance] = useState(0)
   const [markets, setMarkets] = useState([])
   const [loadingMarkets, setLoadingMarkets] = useState(true)
-  
+
   // ── FIX: timeout prevents infinite loading if Supabase hangs ──
  useEffect(() => {
   let mounted = true
@@ -688,8 +689,24 @@ useEffect(() => {
   ]
 
   const renderPage = () => {
-    if (view === 'dashboard') return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} />
-    if (view === 'markets')   return <MarketsPage prices={markets} selected={selected} setSelected={setSelected} />
+    if (view === 'dashboard') return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} />  
+    if (view === 'markets') {
+      if (loadingMarkets) {
+    return (
+      <div style={{ color: "white", padding: 20 }}>
+        Loading markets...
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ padding: 20 }}>
+      {(markets || []).map((m) => (
+        <MarketCard key={m.id} market={m} />
+      ))}
+    </div>
+  )
+}
     if (view === 'copy')      return <CopyTradingPage kycStatus={kycStatus} />
     if (view === 'deposits')  return <DepositsPage user={user} onDepositSuccess={handleDepositSuccess} kycStatus={kycStatus} />
     if (view === 'profile')   return <Profile user={user} kycStatus={kycStatus} onKycUpdate={status => setKycStatus(status)} />
