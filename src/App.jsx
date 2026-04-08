@@ -222,7 +222,7 @@ function LockedPage({ title }) {
   )
 }
 
-function DashboardPage({ user, balance, transactions, kycStatus }) {
+function DashboardPage({ user, balance, transactions, kycStatus, markets }) {
   return (
     <div style={{ padding: '28px 28px 40px', overflowY: 'auto', flex: 1 }}>
       <KYCBanner kycStatus={kycStatus} />
@@ -241,7 +241,7 @@ function DashboardPage({ user, balance, transactions, kycStatus }) {
         <StatCard label="Account Balance" value={`$${Number(balance).toFixed(2)}`} color={T.text0} icon={<Icon name="wallet" size={15} />} sub="Available funds" />
         <StatCard label="Total P&L" value="$0.00" color={T.text2} icon={<Icon name="trending" size={15} color={T.text2} />} sub="No trades yet" />
         <StatCard label="Open Positions" value="0" color={T.blue} icon={<Icon name="zap" size={15} color={T.blue} />} sub="Active markets" />
-        <StatCard label="Live Markets" value={markets.length} color={T.purple} icon={<Icon name="markets" size={15} color={T.purple} />} sub="Available now" />
+        <StatCard label="Live Markets" value={markets?.length || 0} color={T.purple} icon={<Icon name="markets" size={15} color={T.purple} />} sub="Available now" />
       </div>
 
       <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: '20px 24px', marginBottom: 20 }}>
@@ -668,7 +668,14 @@ useEffect(() => {
   ]
 
   const renderPage = () => {
-    if (view === 'dashboard') return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} />  
+   if (view === 'dashboard') 
+  return <DashboardPage 
+    user={user} 
+    balance={balance} 
+    transactions={transactions} 
+    kycStatus={kycStatus}
+    markets={markets}   // ✅ ADD THIS
+  />
     if (view === 'markets') {
   return (
     <div>
