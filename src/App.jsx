@@ -121,50 +121,6 @@ function AdminKYCReview() {
 }
 // ============================================================
 
-export default function App() {
-  const [markets, setMarkets] = useState([]);
-  const [loadingMarkets, setLoadingMarkets] = useState(true);
-
-  useEffect(() => {
-    const fetchMarkets = async () => {
-      try {
-        const res = await fetch("https://gamma-api.polymarket.com/markets");
-        const data = await res.json();
-
-        const cryptoKeywords = [
-          "bitcoin", "btc",
-          "ethereum", "eth",
-          "solana", "sol",
-          "crypto", "doge", "bnb", "xrp"
-        ];
-
-        const formatted = data
-          .filter(m => {
-            const q = m.question?.toLowerCase() || "";
-            return m.active && cryptoKeywords.some(k => q.includes(k));
-          })
-          .slice(0, 20)
-          .map(m => ({
-            id: m.id,
-            question: m.question,
-            outcomePrices: m.outcomePrices || ["0.5", "0.5"],
-            volume: m.volume || 0,
-            timeframe: "Live",
-            symbol: "CRYPTO",
-            change: "0%"
-          }));
-
-        setMarkets(formatted);
-      } catch (err) {
-        console.error("Failed to load markets:", err);
-      }
-
-      setLoadingMarkets(false);
-    };
-
-    fetchMarkets();
-  }, []);
-
 function Badge({ children, color = T.blue }) {
   return <span style={{ fontSize: 10, fontWeight: 600, color, background: `${color}18`, padding: '3px 8px', borderRadius: 20, border: `1px solid ${color}28` }}>{children}</span>
 }
@@ -284,7 +240,7 @@ function DashboardPage({ user, balance, transactions, kycStatus }) {
         <StatCard label="Account Balance" value={`$${Number(balance).toFixed(2)}`} color={T.text0} icon={<Icon name="wallet" size={15} />} sub="Available funds" />
         <StatCard label="Total P&L" value="$0.00" color={T.text2} icon={<Icon name="trending" size={15} color={T.text2} />} sub="No trades yet" />
         <StatCard label="Open Positions" value="0" color={T.blue} icon={<Icon name="zap" size={15} color={T.blue} />} sub="Active markets" />
-        <StatCard label="Live Markets" value={CRYPTO_MARKETS.length} color={T.purple} icon={<Icon name="markets" size={15} color={T.purple} />} sub="Available now" />
+        <StatCard label="Live Markets" value={markets.length} color={T.purple} icon={<Icon name="markets" size={15} color={T.purple} />} sub="Available now" />
       </div>
 
       <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: '20px 24px', marginBottom: 20 }}>
@@ -559,15 +515,15 @@ function CopyTradingPage({ kycStatus }) {
 }
 
 export default function App() {
-  const [user, setUser] = useState(null)
-  const [kycStatus, setKycStatus] = useState(null)
-  const [balance, setBalance] = useState(0)
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [showLanding, setShowLanding] = useState(true)
   const [view, setView] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [user, setUser] = useState(null)
+  const [kycStatus, setKycStatus] = useState(null)
+  const [balance, setBalance] = useState(0)
 
   // ── FIX: timeout prevents infinite loading if Supabase hangs ──
  useEffect(() => {
@@ -606,6 +562,44 @@ export default function App() {
     listener?.subscription?.unsubscribe()
   }
 }, [])
+
+useEffect(() => {
+  const fetchMarkets = async () => {
+    try {
+      const res = await fetch("https://gamma-api.polymarket.com/markets");
+      const data = await res.json();
+
+      const cryptoKeywords = [
+        "bitcoin","btc","ethereum","eth","solana","sol",
+        "crypto","doge","bnb","xrp"
+      ];
+
+      const formatted = data
+        .filter(m => {
+          const q = m.question?.toLowerCase() || "";
+          return m.active && cryptoKeywords.some(k => q.includes(k));
+        })
+        .slice(0, 20)
+        .map(m => ({
+          id: m.id,
+          question: m.question,
+          outcomePrices: m.outcomePrices || ["0.5","0.5"],
+          volume: m.volume || 0,
+          timeframe: "Live",
+          symbol: "CRYPTO",
+          change: "0%"
+        }));
+
+      setMarkets(formatted);
+    } catch (err) {
+      console.error("Failed to load markets:", err);
+    }
+
+    setLoadingMarkets(false);
+  };
+
+  fetchMarkets();
+}, []);
 
   const loadUserData = async (userId) => {
   try {
