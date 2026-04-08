@@ -28,21 +28,27 @@ function AdminKYCReview() {
     setLoading(false);
   };
 
-  const updateStatus = async (id, newStatus) => {
-    try {
-      const { error } = await supabase
-        .from('kyc_documents')
-        .update({ status: newStatus })
-        .eq('id', id);
+  const updateKYC = async (id, status) => {
+  try {
+    const { error } = await supabase
+      .from('kyc_documents')
+      .update({ status })
+      .eq('id', id)
 
-      if (error) throw error;
+    if (error) throw error
 
-      // refresh list
-      loadKYC();
-    } catch (e) {
-      console.error('Update failed:', e);
-    }
-  };
+    // ✅ 🔥 INSTANT UI UPDATE (ADD THIS HERE)
+    setSubmissions(prev =>
+      prev.map(s =>
+        s.id === id ? { ...s, status } : s
+      )
+    )
+
+  } catch (err) {
+    console.error(err)
+    alert("Failed to update KYC")
+  }
+};
 
   useEffect(() => {
     loadKYC();
@@ -87,33 +93,46 @@ function AdminKYCReview() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  onClick={() => updateStatus(item.id, 'approved')}
-                  style={{
-                    padding: '8px 16px',
-                    background: T.teal,
-                    color: '#000',
-                    border: 'none',
-                    borderRadius: 8
-                  }}
-                >
-                  Approve
-                </button>
+              {item.status === 'pending' ? (
+  <div style={{ display: 'flex', gap: 10 }}>
+    <button 
+      onClick={() => updateKYC(item.id, 'approved')}
+      style={{
+        padding: '8px 16px',
+        background: T.teal,
+        color: '#000',
+        border: 'none',
+        borderRadius: 8
+      }}
+    >
+      Approve
+    </button>
 
-                <button
-                  onClick={() => updateStatus(item.id, 'rejected')}
-                  style={{
-                    padding: '8px 16px',
-                    background: T.red,
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8
-                  }}
-                >
-                  Reject
-                </button>
-              </div>
+    <button 
+      onClick={() => updateKYC(item.id, 'rejected')}
+      style={{
+        padding: '8px 16px',
+        background: T.red,
+        color: '#fff',
+        border: 'none',
+        borderRadius: 8
+      }}
+    >
+      Reject
+    </button>
+  </div>
+) : (
+  <div style={{
+    padding: '6px 12px',
+    borderRadius: 8,
+    fontSize: 12,
+    fontWeight: 600,
+    background: item.status === 'approved' ? T.tealDim : T.redDim,
+    color: item.status === 'approved' ? T.teal : T.red
+  }}>
+    {item.status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+  </div>
+)}
             </div>
           </div>
         ))
