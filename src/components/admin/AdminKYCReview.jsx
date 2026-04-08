@@ -103,7 +103,10 @@ function AdminKYCReview() {
               {item.status === 'pending' ? (
   <div style={{ display: 'flex', gap: 10 }}>
     <button 
-      onClick={() => updateKYC(item.id, 'approved')}
+      onClick={() => {
+  console.log("BUTTON CLICKED", item.id)
+  updateKYC(item.id, 'approved')
+}}
       style={{
         padding: '8px 16px',
         background: T.teal,
