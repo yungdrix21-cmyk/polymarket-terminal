@@ -7,9 +7,18 @@ function AdminKYCReview() {
     try {
       const { data, error } = await supabase
   .from('kyc_documents')
-  .select('*') // ✅ TEMP FIX
+  .select(`
+    id,
+    user_id,
+    status,
+    document_url,
+    submitted_at,
+    profiles (
+      email
+    )
+  `)
   .order('submitted_at', { ascending: false });
-
+  
       if (error) throw error;
 
       setSubmissions(data || []);
@@ -26,17 +35,17 @@ function AdminKYCReview() {
     const { error } = await supabase
       .from('kyc_documents')
       .update({ status })
-      .eq('user_id', userId)   // ✅ FIX HERE
+      .eq('id', userId)  // ✅ FIX HERE
 
     if (error) throw error
 
     console.log("UPDATED SUCCESS")
 
     setSubmissions(prev =>
-      prev.map(s =>
-        s.user_id === userId ? { ...s, status } : s
-      )
-    )
+  prev.map(s =>
+    s.id === userId ? { ...s, status } : s
+  )
+)
 
   } catch (err) {
     console.error("UPDATE FAILED:", err)

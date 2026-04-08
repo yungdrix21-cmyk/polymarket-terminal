@@ -96,7 +96,7 @@ function AdminKYCReview() {
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ color: T.text0, fontWeight: 600 }}>
-  {JSON.stringify(item, null, 2)}
+  User: {item.profiles?.email || item.user_id}
 </div>
                 <div style={{ color: T.text2, fontSize: 13 }}>Status: {item.status}</div>
               </div>
@@ -651,18 +651,25 @@ setBalance(profileData?.balance ?? 0)
     const { data: kycData } = await supabase
       .from('kyc_documents')
       .select('status')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .order('submitted_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
     setKycStatus(kycData?.status ?? 'not_started')
 
-    const { data: txData } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+    const { data } = await supabase
+  .from('kyc_documents')
+  .select(`
+    id,
+    user_id,
+    status,
+    submitted_at,
+    profiles (
+      email
+    )
+  `)
+  .order('submitted_at', { ascending: false });
 
     setTransactions(txData ?? [])
   } catch (e) {
