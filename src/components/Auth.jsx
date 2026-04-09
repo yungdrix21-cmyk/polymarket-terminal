@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
@@ -38,23 +40,186 @@ const SOLUTIONS = [
   'Track live, improve results',
   'Unified platform: explore → direct → trade',
 ]
+
+// ─── SVG ICONS ────────────────────────────────────────────────────────────────
+
+function SvgGrid({ color }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <rect x="2"  y="2"  width="7" height="7" rx="1.5" fill={color} />
+      <rect x="11" y="2"  width="7" height="7" rx="1.5" fill={color} opacity=".55" />
+      <rect x="2"  y="11" width="7" height="7" rx="1.5" fill={color} opacity=".55" />
+      <rect x="11" y="11" width="7" height="7" rx="1.5" fill={color} opacity=".3" />
+    </svg>
+  )
+}
+
+function SvgStarburst({ color }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="2"   fill={color} />
+      <circle cx="10" cy="3"  r="1.2" fill={color} opacity=".9" />
+      <circle cx="10" cy="17" r="1.2" fill={color} opacity=".9" />
+      <circle cx="3"  cy="10" r="1.2" fill={color} opacity=".9" />
+      <circle cx="17" cy="10" r="1.2" fill={color} opacity=".9" />
+      <circle cx="4.9"  cy="4.9"  r="1" fill={color} opacity=".6" />
+      <circle cx="15.1" cy="4.9"  r="1" fill={color} opacity=".6" />
+      <circle cx="4.9"  cy="15.1" r="1" fill={color} opacity=".6" />
+      <circle cx="15.1" cy="15.1" r="1" fill={color} opacity=".6" />
+    </svg>
+  )
+}
+
+function SvgBolt({ color }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <path d="M11.5 2L4 11h7l-2.5 7L18 9h-7l.5-7z" fill={color} strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function SvgShield({ color }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <path d="M10 2L3 5.5V10c0 3.87 2.96 7.5 7 8.5 4.04-1 7-4.63 7-8.5V5.5L10 2z"
+        stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round" />
+      <path d="M7 10l2 2 4-4" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function SvgRotate({ color }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2 7a5 5 0 1 0 1-3" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M1 2v3h3" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function SvgTarget({ color }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="7" cy="7" r="6"   stroke={color} strokeWidth="1.3" />
+      <circle cx="7" cy="7" r="2.2" fill={color} />
+    </svg>
+  )
+}
+
+function SvgCheck({ color }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+      <circle cx="8" cy="8" r="7" fill={color + '25'} />
+      <path d="M5 8l2.2 2.2L11 5.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function SvgLock({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <rect x="3" y="7" width="12" height="9" rx="2" stroke={color} strokeWidth="1.4" />
+      <path d="M6 7V5a3 3 0 016 0v2" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="9" cy="12" r="1.2" fill={color} />
+    </svg>
+  )
+}
+
+function SvgCode({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M6 5l-4 4 4 4M12 5l4 4-4 4" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 3l-2 12" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function SvgZap({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M10.5 2L4 10h6l-2 6L16 8h-6l.5-6z" fill={color} strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function SvgOrbit({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <circle cx="9" cy="9" r="2.5" fill={color} opacity=".7" />
+      <circle cx="9" cy="9" r="6"   stroke={color} strokeWidth="1.3" fill="none" />
+      <path d="M9 2v2M9 14v2M2 9h2M14 9h2" stroke={color} strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function SvgBarChart({ color }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <rect x="3"   y="11" width="2.5" height="4"  rx="1" fill={color} />
+      <rect x="7.5" y="7"  width="2.5" height="8"  rx="1" fill={color} opacity=".8" />
+      <rect x="12"  y="4"  width="2.5" height="11" rx="1" fill={color} opacity=".6" />
+      <path d="M3 8l4-3 4 2 4-4" stroke={color} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+
 const FEATURES = [
-  { icon: '🌐', title: 'Web Interface', color: T.teal, points: ['Dashboard overview', 'AI + MCP', 'Probability on demand', 'Live import'] },
-  { icon: '🤖', title: 'Directed Bot Trading', color: T.blue, points: ['Utilize live RLHF/LLM', 'Train on your market', 'Learn from preferences', 'Non-stop improvement'] },
-  { icon: '⚡', title: 'AI-Powered Analysis', color: T.purple, points: ['Real-time market event alerts', 'Smart QA on current P&L', 'Optimal win analysis', 'Probability simulation'] },
-  { icon: '🛡️', title: 'Risk Protection', color: T.yellow, points: ['Automatic hedging up to 85%', 'Automatic hedge badge', 'Loss limit at 20%'] },
+  {
+    svgIcon: (c) => <SvgGrid color={c} />,
+    title: 'Web interface',
+    color: T.teal,
+    points: ['Dashboard overview', 'AI + MCP', 'Probability on demand', 'Live import'],
+  },
+  {
+    svgIcon: (c) => <SvgStarburst color={c} />,
+    title: 'Directed bot trading',
+    color: T.blue,
+    points: ['Utilize live RLHF/LLM', 'Train on your market', 'Learn from preferences', 'Non-stop improvement'],
+  },
+  {
+    svgIcon: (c) => <SvgBolt color={c} />,
+    title: 'AI-powered analysis',
+    color: T.purple,
+    points: ['Real-time market event alerts', 'Smart QA on current P&L', 'Optimal win analysis', 'Probability simulation'],
+  },
+  {
+    svgIcon: (c) => <SvgShield color={c} />,
+    title: 'Risk protection',
+    color: T.yellow,
+    points: ['Automatic hedging up to 85%', 'Automatic hedge badge', 'Loss limit at 20%'],
+  },
 ]
+
 const MODES = [
-  { icon: '🔁', title: 'Autonomous Mode', color: T.teal, sub: 'Set it and forget it', tag: 'For busy traders, passive income', points: ['Bot finds markets based on your criteria', 'AI analyzes and makes decisions', 'Automatic order placement'] },
-  { icon: '🎯', title: 'Managed Mode', color: T.purple, sub: 'Stay in your control', tag: 'For active traders, targeted bets', points: ['You select markets via web interface', 'You set your specific market list', 'Bot analyzes your selection'] },
+  {
+    badgeIcon: (c) => <SvgRotate color={c} />,
+    badgeLabel: 'Autonomous mode',
+    color: T.teal,
+    title: 'Set it and forget it',
+    subtitle: 'For busy traders, passive income',
+    points: ['Bot finds markets based on your criteria', 'AI analyzes and makes decisions', 'Automatic order placement'],
+  },
+  {
+    badgeIcon: (c) => <SvgTarget color={c} />,
+    badgeLabel: 'Managed mode',
+    color: T.purple,
+    title: 'Stay in control',
+    subtitle: 'For active traders, targeted bets',
+    points: ['You select markets via web interface', 'You set your specific market list', 'Bot analyzes your selection'],
+  },
 ]
+
 const TRUST = [
-  { icon: '🔒', text: 'Non-custodial — you always control your funds' },
-  { icon: '👨‍💻', text: 'Built by traders, for traders' },
-  { icon: '⚡', text: 'Execution-first, not narratives' },
-  { icon: '🤖', text: 'AI-driven probability analysis for decision making' },
-  { icon: '📊', text: 'Transparent simulation and risk management logic' },
+  { svgIcon: (c) => <SvgLock color={c} />,     color: T.blue,   text: 'Non-custodial — you always control your funds' },
+  { svgIcon: (c) => <SvgCode color={c} />,     color: T.purple, text: 'Built by traders, for traders' },
+  { svgIcon: (c) => <SvgZap color={c} />,      color: T.teal,   text: 'Execution-first, not narratives' },
+  { svgIcon: (c) => <SvgOrbit color={c} />,    color: T.yellow, text: 'AI-driven probability analysis for decision making' },
+  { svgIcon: (c) => <SvgBarChart color={c} />, color: T.red,    text: 'Transparent simulation and risk management logic' },
 ]
+
+// ─── REUSABLE FORM COMPONENTS ─────────────────────────────────────────────────
 
 function Field({ label, type = 'text', value, onChange, placeholder, required }) {
   return (
@@ -70,7 +235,6 @@ function Field({ label, type = 'text', value, onChange, placeholder, required })
   )
 }
 
-// Only 2 steps now
 function Steps({ current }) {
   const steps = ['Account', 'Personal Details']
   return (
@@ -129,6 +293,105 @@ function PrimaryBtn({ onClick, disabled, loading, children }) {
   )
 }
 
+// ─── FEATURE / MODE / TRUST CARD COMPONENTS ──────────────────────────────────
+
+function FeatureCard({ feature }) {
+  const { svgIcon, title, color, points } = feature
+  return (
+    <div style={{
+      background: '#1a1d24',
+      border: '0.5px solid rgba(255,255,255,0.08)',
+      borderRadius: 14,
+      padding: '18px 18px 22px',
+      transition: 'border-color 0.2s',
+    }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = color + '50'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+    >
+      {/* Icon box */}
+      <div style={{
+        width: 42, height: 42, borderRadius: 10,
+        background: color + '18',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: 14,
+      }}>
+        {svgIcon(color)}
+      </div>
+
+      <p style={{ fontSize: 15, fontWeight: 500, color: T.text0, margin: '0 0 10px 0' }}>{title}</p>
+
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {points.map((pt) => (
+          <li key={pt} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: T.text1 }}>
+            <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#4d4d4a', marginTop: 6, flexShrink: 0, display: 'inline-block' }} />
+            {pt}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function ModeCard({ mode }) {
+  const { badgeIcon, badgeLabel, color, title, subtitle, points } = mode
+  return (
+    <div style={{
+      background: '#1a1d24',
+      border: '0.5px solid rgba(255,255,255,0.08)',
+      borderRadius: 14,
+      padding: '18px 20px 22px',
+    }}>
+      {/* Badge */}
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '4px 10px', borderRadius: 20,
+        background: color + '20', color,
+        fontSize: 12, fontWeight: 500, marginBottom: 14,
+      }}>
+        {badgeIcon(color)}
+        {badgeLabel}
+      </div>
+
+      <p style={{ fontSize: 17, fontWeight: 500, color: T.text0, margin: '0 0 4px 0' }}>{title}</p>
+      <p style={{ fontSize: 12, color: T.text2, margin: '0 0 14px 0' }}>{subtitle}</p>
+
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {points.map((pt) => (
+          <li key={pt} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, fontSize: 13, color: T.text1 }}>
+            <SvgCheck color={T.teal} />
+            {pt}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function TrustCard({ item }) {
+  const { svgIcon, color, text } = item
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 12,
+      background: '#1a1d24',
+      border: '0.5px solid rgba(255,255,255,0.08)',
+      borderRadius: 12,
+      padding: '14px 16px',
+    }}>
+      <div style={{
+        width: 34, height: 34, borderRadius: 8,
+        background: color + '18',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        {svgIcon(color)}
+      </div>
+      <p style={{ fontSize: 13, fontWeight: 500, color: '#c2c0b6', lineHeight: 1.4, margin: 0 }}>{text}</p>
+    </div>
+  )
+}
+
+// ─── KYC PENDING ──────────────────────────────────────────────────────────────
+
 export function KYCPending({ user, kycStatus, onLogout }) {
   return (
     <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
@@ -159,6 +422,8 @@ export function KYCPending({ user, kycStatus, onLogout }) {
     </div>
   )
 }
+
+// ─── MAIN AUTH COMPONENT ──────────────────────────────────────────────────────
 
 export default function Auth({ onLogin }) {
   const [mode, setMode] = useState('landing')
@@ -245,7 +510,6 @@ export default function Auth({ onLogin }) {
     }
   }
 
-  // Step 2 now goes straight to dashboard
   const handleDetailsStep = async () => {
     if (!firstName || !lastName || !phone || !address || !city || !country) {
       setError('Please fill in all required fields.'); return
@@ -263,8 +527,6 @@ export default function Auth({ onLogin }) {
         })
       )
       if (profileError) throw profileError
-
-      // Go straight to dashboard
       const currentUser = user || signupUser
       setSuccess('✅ Account created! Taking you to your dashboard...')
       setTimeout(() => onLogin(currentUser), 1200)
@@ -275,6 +537,7 @@ export default function Auth({ onLogin }) {
     }
   }
 
+  // ── Check Email screen ──
   if (mode === 'check_email') {
     return (
       <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
@@ -286,7 +549,7 @@ export default function Auth({ onLogin }) {
             Click the link to activate your account, then sign in to continue.
           </p>
           <button onClick={() => { setMode('signin'); reset() }}
-            style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, marginBottom: 14 }}>
+            style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, marginBottom: 14 }}>
             Go to Sign In →
           </button>
           <p style={{ color: T.text2, fontSize: 12 }}>
@@ -298,6 +561,7 @@ export default function Auth({ onLogin }) {
     )
   }
 
+  // ── Sign In screen ──
   if (mode === 'signin') {
     return (
       <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
@@ -325,6 +589,7 @@ export default function Auth({ onLogin }) {
     )
   }
 
+  // ── Sign Up screen ──
   if (mode === 'signup') {
     return (
       <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20, overflowY: 'auto' }}>
@@ -375,8 +640,8 @@ export default function Auth({ onLogin }) {
                 <ErrorBox msg={error} />
                 <SuccessBox msg={success} />
                 <PrimaryBtn onClick={handleDetailsStep} loading={loading}>
-  {loading ? 'Saving...' : 'Continue →'}
-</PrimaryBtn>
+                  {loading ? 'Saving...' : 'Continue →'}
+                </PrimaryBtn>
               </>
             )}
           </div>
@@ -385,10 +650,15 @@ export default function Auth({ onLogin }) {
     )
   }
 
+  // ── Landing page ──
   return (
     <div style={{ minHeight: '100vh', background: T.bg0, fontFamily: T.font, color: T.text0, overflowX: 'hidden' }}>
+
+      {/* Background glows */}
       <div style={{ position: 'fixed', top: '-5%', left: '50%', transform: 'translateX(-50%)', width: 900, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(79,142,255,0.08) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', top: '30%', right: '-10%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,212,170,0.05) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+
+      {/* Nav */}
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', height: 60, borderBottom: `1px solid ${T.border}`, background: 'rgba(13,14,20,0.9)', backdropFilter: 'blur(16px)', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>P</div>
@@ -399,6 +669,8 @@ export default function Auth({ onLogin }) {
           <button onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ padding: '7px 18px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: T.font }}>Trade →</button>
         </div>
       </nav>
+
+      {/* Hero */}
       <section style={{ position: 'relative', textAlign: 'center', padding: '110px 24px 100px', zIndex: 1 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: T.tealDim, border: `1px solid rgba(0,212,170,0.2)`, borderRadius: 20, padding: '5px 14px', marginBottom: 28 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: T.teal, boxShadow: `0 0 6px ${T.teal}` }} />
@@ -414,6 +686,8 @@ export default function Auth({ onLogin }) {
           Trade →
         </button>
       </section>
+
+      {/* Problems & Solutions */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, margin: 0 }}>Problems & <span style={{ color: T.teal }}>Solutions</span></h2>
@@ -429,50 +703,41 @@ export default function Auth({ onLogin }) {
           </div>
         </div>
       </section>
+
+      {/* ── KEY FEATURES (redesigned) ── */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, margin: '0 0 10px' }}>Key <span style={{ color: T.teal }}>Features</span></h2>
-          <p style={{ color: T.text2, fontSize: 14 }}>Complete toolkit for professional Polymarket trading</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-          {FEATURES.map((f, i) => (
-            <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: '24px 22px', transition: 'border-color 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = f.color + '50'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = T.border}>
-              <div style={{ width: 40, height: 40, borderRadius: 11, background: f.color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 14 }}>{f.icon}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.text0, marginBottom: 12 }}>{f.title}</div>
-              {f.points.map((p, j) => <div key={j} style={{ display: 'flex', gap: 8, marginBottom: 6 }}><span style={{ color: f.color, fontSize: 11 }}>→</span><span style={{ color: T.text1, fontSize: 12 }}>{p}</span></div>)}
-            </div>
-          ))}
+        <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 14px 0' }}>
+          Core features
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+          {FEATURES.map((f, i) => <FeatureCard key={i} feature={f} />)}
         </div>
       </section>
-      <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, textAlign: 'center', margin: '0 0 48px' }}>Two Operating <span style={{ color: T.teal }}>Modes</span></h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-          {MODES.map((m, i) => (
-            <div key={i} style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${m.color}25`, padding: '32px 28px' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: `${m.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 16 }}>{m.icon}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: T.text0, marginBottom: 4 }}>{m.title}</div>
-              <div style={{ fontSize: 13, color: T.text2, marginBottom: 18 }}>{m.sub}</div>
-              {m.points.map((p, j) => <div key={j} style={{ display: 'flex', gap: 10, marginBottom: 10 }}><span style={{ color: m.color }}>✓</span><span style={{ color: T.text1, fontSize: 13 }}>{p}</span></div>)}
-              <div style={{ marginTop: 16, display: 'inline-block', background: `${m.color}12`, border: `1px solid ${m.color}25`, borderRadius: 20, padding: '5px 14px' }}>
-                <span style={{ fontSize: 11, color: m.color, fontWeight: 600 }}>{m.tag}</span>
-              </div>
-            </div>
-          ))}
+
+      {/* ── TWO OPERATING MODES (redesigned) ── */}
+      <section style={{ padding: '0 24px 80px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 14px 0' }}>
+          Two operating modes
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+          {MODES.map((m, i) => <ModeCard key={i} mode={m} />)}
         </div>
       </section>
-      <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, textAlign: 'center', margin: '0 0 48px' }}>Why traders trust <span style={{ color: T.teal }}>PolyTrader?</span></h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
-          {TRUST.map((t, i) => (
-            <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: T.bgCard, borderRadius: 14, border: `1px solid ${T.border}`, padding: '18px 20px' }}>
-              <span style={{ fontSize: 20 }}>{t.icon}</span>
-              <span style={{ color: T.text1, fontSize: 13, lineHeight: 1.6 }}>{t.text}</span>
-            </div>
-          ))}
+
+      {/* ── WHY TRADERS TRUST (redesigned) ── */}
+      <section style={{ padding: '0 24px 80px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 14px 0' }}>
+          Why traders trust PolyTrader
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 }}>
+          {TRUST.slice(0, 3).map((t, i) => <TrustCard key={i} item={t} />)}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+          {TRUST.slice(3).map((t, i) => <TrustCard key={i} item={t} />)}
         </div>
       </section>
+
+      {/* CTA */}
       <section style={{ padding: '60px 24px 100px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', background: 'linear-gradient(135deg, rgba(79,142,255,0.08), rgba(155,125,255,0.08))', border: `1px solid rgba(79,142,255,0.2)`, borderRadius: 24, padding: '56px 40px' }}>
           <h2 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, margin: '0 0 14px' }}>Start your edge today</h2>
@@ -483,6 +748,8 @@ export default function Auth({ onLogin }) {
           </button>
         </div>
       </section>
+
+      {/* Footer */}
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, background: T.bg1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#fff' }}>P</div>
@@ -492,6 +759,7 @@ export default function Auth({ onLogin }) {
           {['Privacy Policy', 'Terms of Service', 'Contact'].map(l => <span key={l} style={{ fontSize: 12, color: T.text2, cursor: 'pointer' }}>{l}</span>)}
         </div>
       </footer>
+
     </div>
   )
 }
