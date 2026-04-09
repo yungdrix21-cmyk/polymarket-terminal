@@ -16,15 +16,12 @@ const T = {
 
 function withTimeout(promise, ms = 15000) {
   let timeoutId
-
   const timeout = new Promise((_, reject) => {
     timeoutId = setTimeout(() => {
       reject(new Error('Request timed out. Please try again.'))
     }, ms)
   })
-
-  return Promise.race([promise, timeout])
-    .finally(() => clearTimeout(timeoutId))
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId))
 }
 
 const PROBLEMS = [
@@ -73,8 +70,9 @@ function Field({ label, type = 'text', value, onChange, placeholder, required })
   )
 }
 
+// Only 2 steps now
 function Steps({ current }) {
-  const steps = ['Account', 'Personal Details', 'KYC Verification']
+  const steps = ['Account', 'Personal Details']
   return (
     <div style={{ display: 'flex', alignItems: 'center', marginBottom: 28 }}>
       {steps.map((s, i) => (
@@ -144,16 +142,8 @@ export function KYCPending({ user, kycStatus, onLogout }) {
           <p style={{ color: T.text1, fontSize: 14, lineHeight: 1.7, margin: '0 0 24px' }}>
             {kycStatus === 'rejected'
               ? 'Your documents were rejected. Please contact support to resubmit.'
-              : <>Your documents are under review. Usually takes <strong style={{ color: T.yellow }}>1–2 business days</strong>. You can browse markets while pending.</>}
+              : <>Your documents are under review. Usually takes <strong style={{ color: T.yellow }}>1–2 business days</strong>.</>}
           </p>
-          <div style={{ background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 12, padding: '14px 18px', marginBottom: 24, textAlign: 'left' }}>
-            <div style={{ fontSize: 12, color: T.yellow, fontWeight: 600, marginBottom: 8 }}>While pending you can:</div>
-            <div style={{ fontSize: 13, color: T.text1, lineHeight: 1.9 }}>
-              ✓ Browse all live markets<br />
-              ✗ Deposits locked<br />
-              ✗ Trading locked
-            </div>
-          </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => window.location.reload()}
               style={{ flex: 1, padding: '12px', background: T.blueDim, color: T.blue, border: `1px solid ${T.blue}30`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: T.font }}>
@@ -182,84 +172,48 @@ export default function Auth({ onLogin }) {
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
   const [country, setCountry] = useState('')
-  const [kycFile, setKycFile] = useState(null)
-  const [docType, setDocType] = useState('passport')
-  const [dragOver, setDragOver] = useState(false)
-  const fileRef = useRef()
   const timeoutRef = useRef(null)
 
   useEffect(() => {
-  return () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-  }
-}, [])
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current) }
+  }, [])
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [signupUser, setSignupUser] = useState(null)
-  const [signupSession, setSignupSession] = useState(null)
 
   const reset = () => { setError(''); setSuccess('') }
 
-  // ── FIX: handleSignIn now wrapped with withTimeout so it can't hang forever ──
   const handleSignIn = async () => {
-  if (!email || !password) {
-    setError('Please fill in all fields.')
-    return
-  }
-
-  setLoading(true)
-  reset()
-
-  try {
-    console.log("Signing in...")
-
-    const { data, error: err } = await withTimeout(
-      supabase.auth.signInWithPassword({ email, password }),
-      15000
-    )
-
-    console.log("Response:", data, err)
-
-    if (err) {
-      if (err.message.toLowerCase().includes('email not confirmed')) {
-        setError('Please confirm your email first. Check your inbox.')
-      } else if (
-        err.message.toLowerCase().includes('invalid') ||
-        err.message.toLowerCase().includes('credentials')
-      ) {
-        setError('Wrong email or password.')
-      } else {
-        setError(err.message)
+    if (!email || !password) { setError('Please fill in all fields.'); return }
+    setLoading(true); reset()
+    try {
+      const { data, error: err } = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password }), 15000
+      )
+      if (err) {
+        if (err.message.toLowerCase().includes('email not confirmed')) {
+          setError('Please confirm your email first. Check your inbox.')
+        } else if (err.message.toLowerCase().includes('invalid') || err.message.toLowerCase().includes('credentials')) {
+          setError('Wrong email or password.')
+        } else {
+          setError(err.message)
+        }
+        return
       }
-      return
+      if (!data?.user) { setError('Login failed. No user returned.'); return }
+      if (onLogin && typeof onLogin === 'function') {
+        await Promise.resolve(onLogin(data.user))
+      } else {
+        window.location.href = '/dashboard'
+      }
+    } catch (e) {
+      setError(e.message || 'Something went wrong.')
+    } finally {
+      setLoading(false)
     }
-
-    if (!data?.user) {
-      setError('Login failed. No user returned.')
-      return
-    }
-
-    // 🔥 prevents hanging if onLogin breaks
-    if (onLogin && typeof onLogin === 'function') {
-  await Promise.resolve(onLogin(data.user))
-} else {
-  console.warn('onLogin is not defined')
-
-  // fallback so it NEVER gets stuck
-  window.location.href = '/dashboard'
-}
-
-  } catch (e) {
-    console.error("Login error:", e)
-    setError(e.message || 'Something went wrong.')
-  } finally {
-    setLoading(false)
   }
-}
 
   const handleAccountStep = async () => {
     if (!email || !password || !confirmPassword) { setError('Please fill in all fields.'); return }
@@ -283,7 +237,6 @@ export default function Auth({ onLogin }) {
         return
       }
       setSignupUser(user)
-      setSignupSession(data.session)
       if (data.session) { setStep(1) } else { setMode('check_email') }
     } catch (e) {
       setError(e.message || 'Signup failed.')
@@ -292,6 +245,7 @@ export default function Auth({ onLogin }) {
     }
   }
 
+  // Step 2 now goes straight to dashboard
   const handleDetailsStep = async () => {
     if (!firstName || !lastName || !phone || !address || !city || !country) {
       setError('Please fill in all required fields.'); return
@@ -309,38 +263,13 @@ export default function Auth({ onLogin }) {
         })
       )
       if (profileError) throw profileError
-      setStep(2)
+
+      // Go straight to dashboard
+      const currentUser = user || signupUser
+      setSuccess('✅ Account created! Taking you to your dashboard...')
+      setTimeout(() => onLogin(currentUser), 1200)
     } catch (e) {
       setError(e.message || 'Failed to save details.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleKYCStep = async () => {
-    if (!kycFile) { setError('Please upload your government ID.'); return }
-    setLoading(true); reset()
-    try {
-      const formData = new FormData()
-      formData.append('file', kycFile)
-      formData.append('docType', docType)
-
-      const { data, error: fnError } = await withTimeout(
-        supabase.functions.invoke('submit-kyc', { body: formData }),
-        30000
-      )
-
-      console.log('Edge function response:', data, fnError)
-      if (fnError) throw new Error(fnError.message || 'Upload failed')
-
-      const { data: { user } } = await supabase.auth.getUser()
-      const currentUser = user || signupUser
-
-      setSuccess('✅ KYC submitted! Taking you to your dashboard...')
-      setTimeout(() => onLogin(currentUser), 1800)
-    } catch (e) {
-      console.error('KYC error:', e)
-      setError('Upload failed: ' + (e.message || 'Please try again.'))
     } finally {
       setLoading(false)
     }
@@ -444,53 +373,10 @@ export default function Auth({ onLogin }) {
                   </div>
                 </div>
                 <ErrorBox msg={error} />
-                <PrimaryBtn onClick={handleDetailsStep} loading={loading}>{loading ? 'Saving...' : 'Continue →'}</PrimaryBtn>
-              </>
-            )}
-            {step === 2 && (
-              <>
-                <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 800 }}>Verify Your Identity</h2>
-                <p style={{ color: T.text2, margin: '0 0 20px', fontSize: 13, lineHeight: 1.6 }}>Upload a government-issued ID to unlock deposits and trading.</p>
-                <div style={{ marginBottom: 18 }}>
-                  <label style={{ color: T.text1, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', display: 'block', marginBottom: 8, textTransform: 'uppercase' }}>Document Type</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {[{ id: 'passport', label: '🛂 Passport' }, { id: 'national_id', label: '🪪 National ID' }, { id: 'drivers_license', label: '🚗 License' }].map(d => (
-                      <div key={d.id} onClick={() => setDocType(d.id)}
-                        style={{ flex: 1, padding: '9px 6px', textAlign: 'center', borderRadius: 10, border: `1px solid ${docType === d.id ? T.blue : T.border}`, background: docType === d.id ? T.blueDim : 'transparent', cursor: 'pointer', fontSize: 11, color: docType === d.id ? T.blue : T.text1, fontWeight: docType === d.id ? 600 : 400, transition: 'all 0.15s' }}>
-                        {d.label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div
-                  onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-                  onDragLeave={() => setDragOver(false)}
-                  onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) setKycFile(f) }}
-                  onClick={() => fileRef.current.click()}
-                  style={{ border: `2px dashed ${dragOver ? T.blue : kycFile ? T.teal : T.border}`, borderRadius: 14, padding: '28px 20px', textAlign: 'center', cursor: 'pointer', background: dragOver ? T.blueDim : kycFile ? T.tealDim : 'rgba(255,255,255,0.02)', transition: 'all 0.2s', marginBottom: 16 }}>
-                  <input ref={fileRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => setKycFile(e.target.files[0])} />
-                  {kycFile ? (
-                    <>
-                      <div style={{ fontSize: 28, marginBottom: 6 }}>✅</div>
-                      <div style={{ color: T.teal, fontWeight: 600, fontSize: 13 }}>{kycFile.name}</div>
-                      <div style={{ color: T.text2, fontSize: 11, marginTop: 3 }}>{(kycFile.size / 1024 / 1024).toFixed(2)} MB · Click to change</div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
-                      <div style={{ color: T.text1, fontWeight: 600, fontSize: 13, marginBottom: 4 }}>Drop document here or click to browse</div>
-                      <div style={{ color: T.text2, fontSize: 11 }}>JPG, PNG, PDF · Max 10MB</div>
-                    </>
-                  )}
-                </div>
-                <ErrorBox msg={error} />
                 <SuccessBox msg={success} />
-                <PrimaryBtn onClick={handleKYCStep} disabled={!kycFile} loading={loading}>
-                  {loading ? '⏳ Uploading...' : '🔐 Submit for Verification'}
-                </PrimaryBtn>
-                <div style={{ textAlign: 'center', marginTop: 12, fontSize: 11, color: T.text2 }}>
-                  🔒 Encrypted and only used for identity verification
-                </div>
+                <PrimaryBtn onClick={handleDetailsStep} loading={loading}>
+  {loading ? 'Saving...' : 'Continue →'}
+</PrimaryBtn>
               </>
             )}
           </div>
