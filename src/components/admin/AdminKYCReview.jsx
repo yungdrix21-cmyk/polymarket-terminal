@@ -28,41 +28,48 @@ function KYCTab() {
   const [previewUrl, setPreviewUrl] = useState(null);
 
   const loadKYC = async () => {
-  setLoading(true);
-  try {
-    const { data, error } = await supabase
-      .from('kyc_documents')
-      .select(`
-        id,
-        user_id,
-        status,
-        document_url,
-        submitted_at,
-        profiles (
-          first_name,
-          last_name,
-          email
-        )
-      `)
-      .eq('status', 'pending')
-      .order('submitted_at', { ascending: false });
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('kyc_documents')
+        .select(`
+          id,
+          user_id,
+          status,
+          file_url,
+          doc_type,
+          submitted_at,
+          profiles (
+            first_name,
+            last_name
+          )
+        `)
+        .eq('status', 'pending')
+        .order('submitted_at', { ascending: false });
 
-    console.log('kyc data:', data);
-    console.log('kyc error:', error);
+      // Also fetch emails separately from profiles_with_email
+      const userIds = (data || []).map(d => d.user_id);
+      let emailMap = {};
+      if (userIds.length > 0) {
+        const { data: emailData } = await supabase
+          .from('profiles_with_email')
+          .select('id, email')
+          .in('id', userIds);
+        if (emailData) emailData.forEach(e => { emailMap[e.id] = e.email });
+      }
 
-    if (error) throw error;
-
-    setSubmissions(data || []);
-  } catch (e) {
-    console.error(e);
-  }
-
-  setLoading(false);
-};
+      const enriched = (data || []).map(d => ({ ...d, email: emailMap[d.user_id] || null }));
+      if (error) throw error;
+      setSubmissions(enriched);
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  };
 
   const updateKYC = async (id, status) => {
-    const { error } = await supabase.from('kyc_documents').update({ status }).eq('id', id).select();
-    if (error) { alert("Update failed"); return; }
+    const { error } = await supabase.from('kyc_documents').update({ status }).eq('id', id);
+    if (error) { alert("Update failed: " + error.message); return; }
     setSubmissions(prev => prev.filter(s => s.id !== id));
   };
 
@@ -86,12 +93,18 @@ function KYCTab() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
               <div>
                 <div style={{ color: T.text0, fontWeight: 600 }}>
-                  User: {item.profiles?.first_name && item.profiles?.last_name ? `${item.profiles.first_name} ${item.profiles.last_name}` : item.user_id}
+                  {item.profiles?.first_name && item.profiles?.last_name
+                    ? `${item.profiles.first_name} ${item.profiles.last_name}`
+                    : 'Unknown User'}
                 </div>
-                <div style={{ color: T.text2, fontSize: 13, marginTop: 4 }}>Submitted: {new Date(item.submitted_at).toLocaleString()}</div>
-                {item.document_url && (
+                {item.email && <div style={{ color: T.blue, fontSize: 12, marginTop: 2 }}>{item.email}</div>}
+                <div style={{ color: T.text2, fontSize: 12, marginTop: 2 }}>Doc type: {item.doc_type || 'N/A'}</div>
+                <div style={{ color: T.text2, fontSize: 12, marginTop: 2 }}>
+                  Submitted: {item.submitted_at ? new Date(item.submitted_at).toLocaleString() : 'N/A'}
+                </div>
+                {item.file_url && (
                   <div style={{ marginTop: 12 }}>
-                    <img src={item.document_url} alt="KYC Document" onClick={() => setPreviewUrl(item.document_url)}
+                    <img src={item.file_url} alt="KYC Document" onClick={() => setPreviewUrl(item.file_url)}
                       style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 8, cursor: 'zoom-in', border: `1px solid ${T.border}` }}
                       onMouseEnter={e => e.target.style.opacity = '0.8'} onMouseLeave={e => e.target.style.opacity = '1'} />
                     <div style={{ color: T.text2, fontSize: 11, marginTop: 4 }}>Click to enlarge</div>
@@ -175,8 +188,11 @@ function EditBalanceTab() {
 
   const fetchUsers = async () => {
     setLoading(true)
-    const { data } = await supabase.from('profiles').select('id, first_name, last_name, balance').order('balance', { ascending: false })
-    setSubmissions(data ?? [])
+    const { data } = await supabase
+      .from('profiles_with_email')
+      .select('id, email, first_name, last_name, balance')
+      .order('balance', { ascending: false })
+    setUsers(data ?? [])
     setLoading(false)
   }
 
@@ -187,7 +203,7 @@ function EditBalanceTab() {
     setSaving(true)
     const { error } = await supabase.from('profiles').update({ balance: parseFloat(newBalance) }).eq('id', userId)
     if (error) { alert('Failed to update balance'); setSaving(false); return }
-    setSubmissions(prev => prev.map(u => u.id === userId ? { ...u, balance: parseFloat(newBalance) } : u))
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, balance: parseFloat(newBalance) } : u))
     setEditingId(null)
     setNewBalance('')
     setSaving(false)
@@ -205,6 +221,7 @@ function EditBalanceTab() {
                 <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>
                   {u.first_name && u.last_name ? `${u.first_name} ${u.last_name}` : 'Unknown User'}
                 </div>
+                {u.email && <div style={{ color: T.blue, fontSize: 12, marginTop: 2 }}>{u.email}</div>}
                 <div style={{ color: T.text2, fontSize: 11, marginTop: 3 }}>ID: {u.id}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -255,7 +272,6 @@ function AdminPanel({ defaultTab = 'kyc' }) {
 
   return (
     <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-      {/* Admin sidebar */}
       <div style={{ width: 200, background: T.bg1, borderRight: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', padding: '20px 10px', gap: 4, flexShrink: 0 }}>
         <div style={{ color: T.text2, fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 8px', marginBottom: 8 }}>Admin Panel</div>
         {tabs.map(tab => (
@@ -267,8 +283,6 @@ function AdminPanel({ defaultTab = 'kyc' }) {
           </div>
         ))}
       </div>
-
-      {/* Tab content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {activeTab === 'kyc' && <KYCTab />}
         {activeTab === 'deposits' && <DepositsTab />}
