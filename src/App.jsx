@@ -1250,6 +1250,7 @@ export default function App() {
     if (view === 'admin-balance')  return <AdminBalancePage />
     if (view === 'admin-pnl')       return <AdminPnLPage />
     if (view === 'admin-positions') return <AdminPositionsPage />
+    if (view === 'settings') return <SettingsPage user={user} />
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
         <Icon name={BOTTOM_NAV.find(i => i.id === view)?.icon || 'dashboard'} size={40} color={T.text2} />
@@ -1389,7 +1390,7 @@ export default function App() {
           </div>
         </div>
         <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          if (view === 'settings') return <SettingsPage user={user} />
+          {renderPage()}
         </div>
       </div>
     </div>
