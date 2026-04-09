@@ -1152,7 +1152,7 @@ function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
             <div style={{ fontSize: 13, color: T.text1, lineHeight: 1.7, marginBottom: 8 }}>
               Your withdrawal of <span style={{ color: T.teal, fontWeight: 700, fontFamily: T.mono }}>${Number(amount).toFixed(2)}</span> in <span style={{ color: T.text0, fontWeight: 600 }}>{selectedCrypto?.symbol}</span> has been submitted.
             </div>
-            <div style={{ fontSize: 12, color: T.text2, marginBottom: 28 }}>It will appear in your transaction history and is under admin review.</div>
+
             <button onClick={() => { setShowSuccess(false); setAddress(''); setAmount(''); setSelectedCrypto(null) }}
               style={{ width: '100%', padding: '13px', background: T.teal, color: '#0d0e14', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font }}>
               Done
