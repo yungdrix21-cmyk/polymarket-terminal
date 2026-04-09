@@ -190,26 +190,45 @@ function LockedPage({ title }) {
 function AdminKYCPage() {
   const [submissions, setSubmissions] = useState([])
   const [loading, setLoading] = useState(true)
-  useEffect(() => {
-  const load = async () => {
-    const { data, error } = await supabase
-      .from('profiles_with_email')
-      .select('id, email, balance, role')
-      .order('email', { ascending: true })
 
-    console.log('users:', data, 'error:', error)
-    setSubmissions(data ?? [])
-    setLoading(false)
-  }
-  load()
-}, [])
+  useEffect(() => {
+    const load = async () => {
+      const { data, error } = await supabase
+        .from('kyc_documents')
+        .select(`
+          id, user_id, status, document_type, submitted_at, document_url,
+          profiles ( first_name, last_name )
+        `)
+        .eq('status', 'pending')
+        .order('submitted_at', { ascending: false })
+
+      if (error) { console.error(error); setLoading(false); return }
+
+      const userIds = (data || []).map(d => d.user_id)
+      let emailMap = {}
+      if (userIds.length > 0) {
+        const { data: emailData } = await supabase
+          .from('profiles_with_email')
+          .select('id, email')
+          .in('id', userIds)
+        if (emailData) emailData.forEach(e => { emailMap[e.id] = e.email })
+      }
+
+      const enriched = (data || []).map(d => ({ ...d, email: emailMap[d.user_id] || null }))
+      setSubmissions(enriched)
+      setLoading(false)
+    }
+    load()
+  }, [])
+
   const handleDecision = async (id, userId, decision) => {
     await supabase.from('kyc_documents').update({ status: decision }).eq('id', id)
     setSubmissions(prev => prev.filter(s => s.id !== id))
   }
+
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
-      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}> KYC Review</h2>
+      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>KYC Review</h2>
       <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Approve or decline pending identity verifications</p>
       {loading ? (
         <div style={{ color: T.text2, fontSize: 13 }}>Loading...</div>
@@ -223,9 +242,18 @@ function AdminKYCPage() {
             <div key={sub.id} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: '20px 24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>{sub.profiles?.email ?? sub.user_id}</div>
-                  <div style={{ color: T.text2, fontSize: 12, marginTop: 4 }}>Submitted: {new Date(sub.submitted_at).toLocaleString()}</div>
-                  <div style={{ color: T.text2, fontSize: 12, marginTop: 2 }}>Doc type: {sub.document_type ?? 'N/A'}</div>
+                  <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>
+                    {sub.profiles?.first_name && sub.profiles?.last_name
+                      ? `${sub.profiles.first_name} ${sub.profiles.last_name}`
+                      : 'Unknown User'}
+                  </div>
+                  {sub.email && <div style={{ color: T.blue, fontSize: 12, marginTop: 2 }}>{sub.email}</div>}
+                  <div style={{ color: T.text2, fontSize: 12, marginTop: 4 }}>
+                    Submitted: {sub.submitted_at ? new Date(sub.submitted_at).toLocaleString() : 'N/A'}
+                  </div>
+                  <div style={{ color: T.text2, fontSize: 12, marginTop: 2 }}>
+                    Doc type: {sub.document_type ?? 'N/A'}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={() => handleDecision(sub.id, sub.user_id, 'approved')}
