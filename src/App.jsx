@@ -198,7 +198,7 @@ function AdminKYCPage() {
       .order('email', { ascending: true })
 
     console.log('users:', data, 'error:', error)
-    setSubmissions(data ?? [])
+    setUsers(data ?? [])
     setLoading(false)
   }
   load()
@@ -353,7 +353,7 @@ function AdminBalancePage() {
     if (val === undefined || val === '') return
     setSaving(prev => ({ ...prev, [userId]: true }))
     await supabase.from('profiles').update({ balance: parseFloat(val) }).eq('id', userId)
-    setSubmissions(prev => prev.map(u => u.id === userId ? { ...u, balance: parseFloat(val) } : u))
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, balance: parseFloat(val) } : u))
     setSaving(prev => ({ ...prev, [userId]: false }))
     setSaved(prev => ({ ...prev, [userId]: true }))
     setTimeout(() => setSaved(prev => ({ ...prev, [userId]: false })), 2000)
