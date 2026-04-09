@@ -791,7 +791,7 @@ export default function App() {
         const pctChange = ((newYes - current) * 100).toFixed(1)
         return { ...m, outcomePrices: [newYes, newNo], change: `${pctChange >= 0 ? '+' : ''}${pctChange}%`, volume: m.volume + Math.floor(Math.random() * 500) }
       }))
-    }, )
+    }, 3000)
     return () => clearInterval(interval)
   }, [])
   useEffect(() => {
