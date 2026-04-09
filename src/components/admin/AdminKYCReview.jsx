@@ -32,14 +32,31 @@ function KYCTab() {
   try {
     const { data, error } = await supabase
       .from('kyc_documents')
-      .select(`id, user_id, status, document_url, submitted_at, profiles (first_name, last_name)`)
+      .select(`
+        id,
+        user_id,
+        status,
+        document_url,
+        submitted_at,
+        profiles (
+          first_name,
+          last_name,
+          email
+        )
+      `)
       .eq('status', 'pending')
       .order('submitted_at', { ascending: false });
-    console.log('kyc data:', data)  // ← add this
-    console.log('kyc error:', error) // ← add this
+
+    console.log('kyc data:', data);
+    console.log('kyc error:', error);
+
     if (error) throw error;
+
     setSubmissions(data || []);
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
+
   setLoading(false);
 };
 
