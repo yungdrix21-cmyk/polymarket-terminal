@@ -763,9 +763,8 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
       </div>
       <div style={{ fontSize: 20, fontWeight: 700, color: T.text0, marginBottom: 10 }}>Deposit Pending</div>
       <div style={{ fontSize: 13, color: T.text1, lineHeight: 1.7, marginBottom: 8 }}>
-        Your deposit has been submitted and is under admin review.
+        Your deposit has been submitted.
       </div>
-      <div style={{ fontSize: 12, color: T.text2, marginBottom: 28 }}>It will appear in your transaction history. Approval takes 1–2 business days.</div>
       <button onClick={() => { setShowSuccess(false); setSelectedCrypto(null); setAmount('') }}
         style={{ width: '100%', padding: '13px', background: T.teal, color: '#0d0e14', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font }}>
         Done
@@ -1134,7 +1133,7 @@ function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
             </div>
           </div>
           <div style={{ background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 12, color: T.yellow, lineHeight: 1.6 }}>
-            ⚠ Withdrawals are reviewed manually. Please allow 1–3 business days for processing.
+            ⚠ Withdrawals are reviewed. Please allow 24 hours for processing.
           </div>
           <button onClick={handleSubmit} disabled={!address || !amount || submitting}
             style={{ width: '100%', padding: '14px', background: address && amount ? T.teal : T.bg3, color: address && amount ? '#0d0e14' : T.text2, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: address && amount ? 'pointer' : 'not-allowed', fontFamily: T.font }}>
