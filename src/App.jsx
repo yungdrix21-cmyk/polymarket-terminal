@@ -1512,10 +1512,18 @@ export default function App() {
       {/* -- SIDEBAR -- */}
       <div style={{ width: collapsed ? 60 : 220, borderRight: `1px solid ${T.border}`, background: T.bg1, display: 'flex', flexDirection: 'column', transition: 'width 0.25s ease', flexShrink: 0 }}>
         {/* Logo */}
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@900&display=swap');`}</style>
         <div style={{ padding: collapsed ? '18px 12px' : '18px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10, justifyContent: collapsed ? 'center' : 'space-between' }}>
           {!collapsed && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>P</div>
+              <svg width="32" height="32" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="lg1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#4f8eff"/><stop offset="100%" stopColor="#9b7dff"/></linearGradient>
+  </defs>
+  <path d="M16,2 L28,8 L28,18 Q28,27 16,30 Q4,27 4,18 L4,8 Z" fill="#1e2030" stroke="#4f8eff" strokeWidth="1.5"/>
+  <path d="M16,5 L25,10 L25,18 Q25,25 16,27 Q7,25 7,18 L7,10 Z" fill="none" stroke="#9b7dff" strokeWidth="0.8" opacity="0.4"/>
+  <text x="16" y="20" textAnchor="middle" fontSize="11" fontWeight="900" fontFamily="'Roboto Slab', serif" fill="url(#lg1)" letterSpacing="0.5">PT</text>
+</svg>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: T.text0, lineHeight: 1 }}>PolyTrader</div>
                 <div style={{ fontSize: 9, color: T.text2, letterSpacing: '0.05em' }}>PREDICTION MARKETS</div>
