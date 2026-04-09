@@ -685,6 +685,7 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   if (kycStatus !== 'approved') return <LockedPage title="Deposits" />
   const cryptos = [
     { symbol: 'BTC', name: 'Bitcoin', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', address: 'bc1qhvwnm32jpsn7msk58jnem04zyzfh6x4em6ya06', color: '#f7931a', network: 'Bitcoin Network' },
@@ -700,8 +701,7 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
       const { error } = await supabase.from('transactions').insert({ user_id: user.id, type: 'deposit', crypto: selectedCrypto.symbol, amount: depositAmount, status: 'pending' })
       if (error) throw error
       onDepositSuccess({ id: Date.now(), crypto: selectedCrypto.symbol, amount: depositAmount, status: 'pending', created_at: new Date().toISOString() })
-      setSelectedCrypto(null)
-      setAmount('')
+      setShowSuccess(true)
     } catch (err) {
       console.error(err)
       alert("Deposit failed")
@@ -755,6 +755,24 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
           </div>
         </div>
       )}
+      {showSuccess && (
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+    <div style={{ background: T.bg2, padding: 36, borderRadius: 22, width: '90%', maxWidth: 420, textAlign: 'center', border: `1px solid ${T.borderHi}` }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', background: T.yellowDim, border: `1px solid ${T.yellow}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+        <Icon name="clock" size={28} color={T.yellow} />
+      </div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: T.text0, marginBottom: 10 }}>Deposit Pending</div>
+      <div style={{ fontSize: 13, color: T.text1, lineHeight: 1.7, marginBottom: 8 }}>
+        Your deposit has been submitted and is under admin review.
+      </div>
+      <div style={{ fontSize: 12, color: T.text2, marginBottom: 28 }}>It will appear in your transaction history. Approval takes 1–2 business days.</div>
+      <button onClick={() => { setShowSuccess(false); setSelectedCrypto(null); setAmount('') }}
+        style={{ width: '100%', padding: '13px', background: T.teal, color: '#0d0e14', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font }}>
+        Done
+      </button>
+    </div>
+  </div>
+)}
     </div>
   )
 }
