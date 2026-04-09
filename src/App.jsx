@@ -193,9 +193,10 @@ function AdminKYCPage() {
   useEffect(() => {
   const load = async () => {
     const { data, error } = await supabase
-      .from('profiles_with_email')
-      .select('id, email, balance, role')
-      .order('email', { ascending: true })
+  .from('kyc_documents')
+  .select('*, profiles(first_name, last_name)')
+  .eq('status', 'pending')
+  .order('submitted_at', { ascending: false })
 
     console.log('users:', data, 'error:', error)
     setSubmissions(data ?? [])
@@ -343,7 +344,7 @@ function AdminBalancePage() {
         .from('profiles')
         .select('id, email, balance, role')
         .order('email', { ascending: true })
-      setSubmissions(data ?? [])
+      setUsers(data ?? [])
       setLoading(false)
     }
     load()
