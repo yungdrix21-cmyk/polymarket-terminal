@@ -341,7 +341,7 @@ function AdminBalancePage() {
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
-        .from('profiles')
+        .from('profiles_with_email')
         .select('id, email, balance, role')
         .order('email', { ascending: true })
       setUsers(data ?? [])
