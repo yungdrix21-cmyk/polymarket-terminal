@@ -193,10 +193,9 @@ function AdminKYCPage() {
   useEffect(() => {
   const load = async () => {
     const { data, error } = await supabase
-  .from('kyc_documents')
-  .select('*, profiles(first_name, last_name)')
-  .eq('status', 'pending')
-  .order('submitted_at', { ascending: false })
+      .from('profiles_with_email')
+      .select('id, email, balance, role')
+      .order('email', { ascending: true })
 
     console.log('users:', data, 'error:', error)
     setSubmissions(data ?? [])
@@ -257,18 +256,31 @@ function AdminDepositsPage() {
   const [deposits, setDeposits] = useState([])
   const [loading, setLoading] = useState(true)
   useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from('transactions')
-        .select('*, profiles(email)')
-        .eq('status', 'pending')
-        .eq('type', 'deposit')
-        .order('created_at', { ascending: false })
-      setDeposits(data ?? [])
-      setLoading(false)
-    }
-    load()
-  }, [])
+  const load = async () => {
+    const { data } = await supabase
+      .from('transactions')
+      .select('*, profiles(email)')
+      .eq('status', 'pending')
+      .eq('type', 'deposit')
+      .order('created_at', { ascending: false })
+    setDeposits(data ?? [])
+    setLoading(false)
+  }
+  load()
+
+  // Real-time subscription
+  const channel = supabase
+    .channel('deposits')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'transactions',
+      filter: 'status=eq.pending'
+    }, () => { load() })
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}, [])
   const handleDecision = async (tx, decision) => {
     await supabase.from('transactions').update({ status: decision }).eq('id', tx.id)
     if (decision === 'completed') {
@@ -341,7 +353,7 @@ function AdminBalancePage() {
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
-        .from('profiles_with_email')
+        .from('profiles')
         .select('id, email, balance, role')
         .order('email', { ascending: true })
       setUsers(data ?? [])
