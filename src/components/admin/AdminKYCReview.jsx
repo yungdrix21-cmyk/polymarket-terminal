@@ -159,10 +159,10 @@ function EditBalanceTab() {
   const fetchUsers = async () => {
     setLoading(true)
     const { data } = await supabase.from('profiles').select('id, first_name, last_name, balance').order('balance', { ascending: false })
-    setUsers(data ?? [])
+    setSubmissions(data ?? [])
     setLoading(false)
   }
-  
+
   useEffect(() => { fetchUsers() }, [])
 
   const handleSave = async (userId) => {
@@ -170,7 +170,7 @@ function EditBalanceTab() {
     setSaving(true)
     const { error } = await supabase.from('profiles').update({ balance: parseFloat(newBalance) }).eq('id', userId)
     if (error) { alert('Failed to update balance'); setSaving(false); return }
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, balance: parseFloat(newBalance) } : u))
+    setSubmissions(prev => prev.map(u => u.id === userId ? { ...u, balance: parseFloat(newBalance) } : u))
     setEditingId(null)
     setNewBalance('')
     setSaving(false)
