@@ -452,7 +452,7 @@ function AdminBalancePage() {
     </div>
   )
 }
-function DashboardPage({ user, balance, transactions, kycStatus, marketsCount }) {
+function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, positions, pnl }) {
   return (
     <div style={{ padding: '28px 28px 40px', overflowY: 'auto', flex: 1 }}>
       <KYCBanner kycStatus={kycStatus} />
@@ -468,8 +468,8 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount })
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 28 }}>
         <StatCard label="Account Balance" value={`$${Number(balance).toFixed(2)}`} color={T.text0} icon={<Icon name="wallet" size={15} />} sub="Available funds" />
-        <StatCard label="Total P&L" value="$0.00" color={T.text2} icon={<Icon name="trending" size={15} color={T.text2} />} sub="No trades yet" />
-        <StatCard label="Open Positions" value="0" color={T.blue} icon={<Icon name="zap" size={15} color={T.blue} />} sub="Active markets" />
+        <StatCard label="Total P&L" value={`${(pnl ?? 0) >= 0 ? '+' : ''}$${Number(pnl ?? 0).toFixed(2)}`} color={(pnl ?? 0) >= 0 ? T.teal : T.red} icon={<Icon name="trending" size={15} color={(pnl ?? 0) >= 0 ? T.teal : T.red} />} sub="All time trading" />
+        <StatCard label="Open Positions" value={positions?.length || 0} color={T.blue} icon={<Icon name="zap" size={15} color={T.blue} />} sub="Active markets" />
         <StatCard label="Live Markets" value={marketsCount || 0} color={T.purple} icon={<Icon name="markets" size={15} color={T.purple} />} sub="Available now" />
       </div>
       <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
@@ -503,6 +503,35 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount })
           ))
         )}
       </div>
+
+      {positions?.length > 0 && (
+        <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden', marginTop: 20 }}>
+          <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Icon name="zap" size={15} color={T.blue} />
+            <span style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>Open Positions</span>
+          </div>
+          {positions.map((p, i) => (
+            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', borderBottom: i < positions.length - 1 ? `1px solid ${T.border}` : 'none' }}
+              onMouseEnter={e => e.currentTarget.style.background = T.bgHover}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              <div>
+                <div style={{ color: T.text0, fontSize: 13, fontWeight: 500 }}>{p.market}</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: p.side === 'YES' ? T.teal : T.red, background: p.side === 'YES' ? T.tealDim : T.redDim, padding: '2px 8px', borderRadius: 20 }}>{p.side}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: T.blue, background: T.blueDim, padding: '2px 8px', borderRadius: 20 }}>open</span>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: T.text1, fontSize: 12 }}>Invested: <span style={{ color: T.text0, fontFamily: T.mono }}>${Number(p.amount).toFixed(2)}</span></div>
+                <div style={{ color: (p.pnl ?? 0) >= 0 ? T.teal : T.red, fontWeight: 700, fontSize: 15, fontFamily: T.mono }}>
+                  {(p.pnl ?? 0) >= 0 ? '+' : ''}${Number(p.pnl ?? 0).toFixed(2)}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
     </div>
   )
 }
@@ -787,13 +816,15 @@ function AdminPnLPage() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState({})
   const [saving, setSaving] = useState({})
+  const [saved, setSaved] = useState({})
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from('profiles_with_email')
-        .select('id, email, first_name, last_name, pnl')
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, balance, pnl, role')
         .order('email')
+      console.log('pnl users:', data, error)
       setUsers(data ?? [])
       setLoading(false)
     }
@@ -804,43 +835,63 @@ function AdminPnLPage() {
     const val = editing[userId]
     if (val === undefined || val === '') return
     setSaving(prev => ({ ...prev, [userId]: true }))
-    await supabase.from('profiles').update({ pnl: parseFloat(val) }).eq('id', userId)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ pnl: parseFloat(val) })
+      .eq('id', userId)
+    console.log('save error:', error)
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, pnl: parseFloat(val) } : u))
     setEditing(prev => { const n = { ...prev }; delete n[userId]; return n })
     setSaving(prev => ({ ...prev, [userId]: false }))
+    setSaved(prev => ({ ...prev, [userId]: true }))
+    setTimeout(() => setSaved(prev => ({ ...prev, [userId]: false })), 2000)
   }
 
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Edit P&L</h2>
-      <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Set profit & loss for each user. Positive = green, negative = red.</p>
-      {loading ? <div style={{ color: T.text2 }}>Loading...</div> : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {users.map(u => (
-            <div key={u.id} style={{ background: T.bgCard, borderRadius: 14, border: `1px solid ${T.border}`, padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-              <div>
-                <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>
-                  {u.first_name && u.last_name ? `${u.first_name} ${u.last_name}` : 'Unknown User'}
-                </div>
-                {u.email && <div style={{ color: T.blue, fontSize: 12, marginTop: 2 }}>{u.email}</div>}
-                <div style={{ 
-                  color: (u.pnl ?? 0) >= 0 ? T.teal : T.red, 
-                  fontWeight: 700, fontSize: 15, fontFamily: T.mono, marginTop: 4 
-                }}>
-                  {(u.pnl ?? 0) >= 0 ? '+' : ''}${Number(u.pnl ?? 0).toFixed(2)}
-                </div>
+      <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Set total trading profit & loss for each user.</p>
+      {loading ? (
+        <div style={{ color: T.text2, fontSize: 13 }}>Loading users...</div>
+      ) : users.length === 0 ? (
+        <div style={{ color: T.red, fontSize: 13 }}>No users found. Check console for errors.</div>
+      ) : (
+        <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 24px', borderBottom: `1px solid ${T.border}`, display: 'flex', gap: 24 }}>
+            <span style={{ fontSize: 11, color: T.text2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', flex: 2 }}>User</span>
+            <span style={{ fontSize: 11, color: T.text2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>Current P&L</span>
+            <span style={{ fontSize: 11, color: T.text2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', flex: 2 }}>Set New P&L</span>
+          </div>
+          {users.map((u, i) => (
+            <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '14px 24px', borderBottom: i < users.length - 1 ? `1px solid ${T.border}` : 'none' }}
+              onMouseEnter={e => e.currentTarget.style.background = T.bgHover}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              <div style={{ flex: 2 }}>
+                <div style={{ color: T.text0, fontSize: 13, fontWeight: 500 }}>{u.email ?? u.id}</div>
+                {u.role === 'admin' && <Badge color={T.purple}>Admin</Badge>}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ flex: 1, fontWeight: 700, fontFamily: T.mono, fontSize: 14, color: (u.pnl ?? 0) >= 0 ? T.teal : T.red }}>
+                {(u.pnl ?? 0) >= 0 ? '+' : ''}${Number(u.pnl ?? 0).toFixed(2)}
+              </div>
+              <div style={{ flex: 2, display: 'flex', gap: 8, alignItems: 'center' }}>
                 <input
                   type="number"
                   value={editing[u.id] ?? ''}
                   onChange={e => setEditing(prev => ({ ...prev, [u.id]: e.target.value }))}
                   placeholder="e.g. 500 or -200"
-                  style={{ width: 140, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }}
+                  style={{ flex: 1, background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none', minWidth: 0 }}
                 />
-                <button onClick={() => handleSave(u.id)} disabled={saving[u.id]}
-                  style={{ padding: '8px 16px', background: T.teal, color: '#000', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-                  {saving[u.id] ? '...' : '✓ Save'}
+                <button
+                  onClick={() => handleSave(u.id)}
+                  disabled={editing[u.id] === undefined || editing[u.id] === '' || saving[u.id]}
+                  style={{
+                    background: saved[u.id] ? T.tealDim : (editing[u.id] !== undefined && editing[u.id] !== '') ? T.teal : T.bg3,
+                    border: `1px solid ${saved[u.id] ? T.teal : T.border}`,
+                    color: saved[u.id] ? T.teal : (editing[u.id] !== undefined && editing[u.id] !== '') ? '#0d0e14' : T.text2,
+                    borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontWeight: 600, fontSize: 12, fontFamily: T.font,
+                    display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap'
+                  }}>
+                  {saved[u.id] ? <><Icon name="check" size={12} /> Saved!</> : saving[u.id] ? 'Saving...' : <><Icon name="edit" size={12} /> Save</>}
                 </button>
               </div>
             </div>
@@ -1001,6 +1052,7 @@ export default function App() {
   const [profile, setProfile] = useState(null)
   const [kycStatus, setKycStatus] = useState(null)
   const [balance, setBalance] = useState(0)
+  const [positions, setPositions] = useState([])
   useEffect(() => {
     const interval = setInterval(() => {
       setMarkets(prev => prev.map(m => {
@@ -1053,18 +1105,21 @@ export default function App() {
   }, [])
   const loadUserData = async (userId) => {
     try {
-      const { data: profileData } = await supabase.from('profiles').select('balance, role').eq('id', userId).maybeSingle()
+      const { data: profileData } = await supabase.from('profiles').select('balance, role, pnl').eq('id', userId).maybeSingle()
       setProfile(profileData)
       setBalance(profileData?.balance ?? 0)
       const { data: kycData } = await supabase.from('kyc_documents').select('status').eq('user_id', userId).order('submitted_at', { ascending: false }).limit(1).maybeSingle()
       setKycStatus(kycData?.status ?? 'not_started')
       const { data: txData } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false })
       setTransactions(txData ?? [])
+      const { data: posData } = await supabase.from('positions').select('*').eq('user_id', userId).eq('status', 'open').order('created_at', { ascending: false })
+      setPositions(posData ?? [])
     } catch (e) {
       console.warn('loadUserData failed:', e.message)
       setKycStatus('not_started')
       setBalance(0)
       setTransactions([])
+      setPositions([])
     }
   }
   const handleLogin = async (u) => { setUser(u); await loadUserData(u.id); setShowLanding(false) }
@@ -1102,7 +1157,7 @@ export default function App() {
 ]
 
   const renderPage = () => {
-    if (view === 'dashboard')      return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} marketsCount={markets.length} />
+    if (view === 'dashboard')      return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} marketsCount={markets.length} positions={positions} pnl={profile?.pnl} />
     if (view === 'markets') {
   return (
     <MarketsPage 
