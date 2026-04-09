@@ -113,7 +113,9 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
   }
 
   const uploadKYCDoc = async (file) => {
-    if (!file || !user) return
+  console.log('user:', user)        // add this
+  console.log('user.id:', user?.id) // add this
+  if (!file || !user) return
 
     setUploading(true)
     setUploadMsg('')
