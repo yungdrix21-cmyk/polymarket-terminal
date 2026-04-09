@@ -325,8 +325,8 @@ function AdminDepositsPage() {
   }
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
-      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}> Deposit Review</h2>
-      <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Approve or decline pending user deposits</p>
+      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Transaction Review</h2>
+<p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Approve or decline pending deposits and withdrawals</p>
       {loading ? (
         <div style={{ color: T.text2, fontSize: 13 }}>Loading...</div>
       ) : deposits.length === 0 ? (
@@ -340,6 +340,8 @@ function AdminDepositsPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                 <div>
                   <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>{tx.profiles?.email ?? tx.user_id}</div>
+<div style={{ fontSize: 11, color: tx.type === 'withdrawal' ? T.red : T.teal, marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tx.type}</div>
+{tx.wallet_address && <div style={{ fontSize: 11, color: T.text2, marginTop: 4, fontFamily: T.mono }}>To: {tx.wallet_address.slice(0,16)}...</div>}
                   <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
                     <Badge color={T.teal}>{tx.crypto}</Badge>
                     <Badge color={T.yellow}>Pending</Badge>
@@ -1025,6 +1027,124 @@ function AdminPositionsPage() {
     </div>
   )
 }
+function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
+  const [selectedCrypto, setSelectedCrypto] = useState(null)
+  const [address, setAddress] = useState('')
+  const [amount, setAmount] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+
+  if (kycStatus !== 'approved') return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: T.text2, padding: 40, textAlign: 'center' }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', background: T.yellowDim, border: `1px solid ${T.yellow}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name="lock" size={28} color={T.yellow} />
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: T.text0 }}>Withdraw Locked</div>
+      <div style={{ fontSize: 13, color: T.text1, maxWidth: 300, lineHeight: 1.6 }}>Complete KYC verification to unlock withdrawals.</div>
+    </div>
+  )
+
+  const cryptos = [
+    { symbol: 'BTC', name: 'Bitcoin', color: '#f7931a', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
+    { symbol: 'ETH', name: 'Ethereum', color: '#627eea', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' },
+    { symbol: 'USDT', name: 'Tether', color: '#26a17b', logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png' },
+    { symbol: 'USDC', name: 'USD Coin', color: '#2775ca', logo: 'https://assets.coingecko.com/coins/images/6319/large/usdc.png' },
+  ]
+
+  const handleSubmit = async () => {
+    if (!address || !amount || !user) return
+    setSubmitting(true)
+    const { data, error } = await supabase.from('transactions').insert({
+      user_id: user.id,
+      type: 'withdrawal',
+      crypto: selectedCrypto.symbol,
+      amount: parseFloat(amount),
+      status: 'pending',
+      wallet_address: address,
+    }).select().single()
+    setSubmitting(false)
+    if (!error) {
+      if (onWithdrawSuccess) onWithdrawSuccess(data)
+      setShowSuccess(true)
+    }
+  }
+
+  return (
+    <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
+      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Withdraw Funds</h2>
+      <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Select a crypto asset to withdraw to</p>
+
+      <div style={{ background: T.bgCard, borderRadius: 14, border: `1px solid ${T.border}`, padding: '16px 22px', marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ color: T.text1, fontSize: 13 }}>Available Balance</span>
+        <span style={{ color: T.teal, fontWeight: 700, fontSize: 20, fontFamily: T.mono }}>${Number(balance).toFixed(2)}</span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
+        {cryptos.map(c => (
+          <div key={c.symbol} onClick={() => setSelectedCrypto(c)}
+            style={{ background: selectedCrypto?.symbol === c.symbol ? `${c.color}15` : T.bgCard, padding: '18px 14px', borderRadius: 14, textAlign: 'center', cursor: 'pointer', border: `1px solid ${selectedCrypto?.symbol === c.symbol ? c.color + '60' : T.border}`, transition: 'all 0.2s' }}>
+            <img src={c.logo} alt={c.symbol} style={{ width: 40, height: 40, objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <div style={{ marginTop: 10, fontWeight: 700, color: T.text0, fontSize: 14 }}>{c.symbol}</div>
+            <div style={{ color: T.text2, fontSize: 11, marginTop: 2 }}>{c.name}</div>
+          </div>
+        ))}
+      </div>
+
+      {selectedCrypto && (
+        <div style={{ maxWidth: 560, background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, padding: '24px 28px' }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: T.text0, marginBottom: 20 }}>Withdraw {selectedCrypto.name}</div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: T.text1, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 7 }}>{selectedCrypto.symbol} Wallet Address</label>
+            <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Enter your wallet address"
+              style={{ width: '100%', padding: '11px 14px', background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none', boxSizing: 'border-box' }}
+              onFocus={e => e.target.style.borderColor = T.blue}
+              onBlur={e => e.target.style.borderColor = T.border} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: T.text1, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 7 }}>Amount (USD)</label>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00"
+                style={{ flex: 1, padding: '11px 14px', background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text0, fontSize: 14, fontFamily: T.mono, outline: 'none' }}
+                onFocus={e => e.target.style.borderColor = T.blue}
+                onBlur={e => e.target.style.borderColor = T.border} />
+              <button onClick={() => setAmount(String(balance))}
+                style={{ padding: '11px 16px', background: T.bg3, border: `1px solid ${T.border}`, color: T.text1, borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: T.font }}>
+                MAX
+              </button>
+            </div>
+          </div>
+          <div style={{ background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 12, color: T.yellow, lineHeight: 1.6 }}>
+            ⚠ Withdrawals are reviewed manually. Please allow 1–3 business days for processing.
+          </div>
+          <button onClick={handleSubmit} disabled={!address || !amount || submitting}
+            style={{ width: '100%', padding: '14px', background: address && amount ? T.teal : T.bg3, color: address && amount ? '#0d0e14' : T.text2, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: address && amount ? 'pointer' : 'not-allowed', fontFamily: T.font }}>
+            {submitting ? 'Submitting...' : 'Submit Withdrawal Request'}
+          </button>
+        </div>
+      )}
+
+      {showSuccess && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: T.bg2, padding: 36, borderRadius: 22, width: '90%', maxWidth: 420, textAlign: 'center', border: `1px solid ${T.borderHi}` }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: T.yellowDim, border: `1px solid ${T.yellow}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Icon name="clock" size={28} color={T.yellow} />
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: T.text0, marginBottom: 10 }}>Withdrawal Pending</div>
+            <div style={{ fontSize: 13, color: T.text1, lineHeight: 1.7, marginBottom: 8 }}>
+              Your withdrawal of <span style={{ color: T.teal, fontWeight: 700, fontFamily: T.mono }}>${Number(amount).toFixed(2)}</span> in <span style={{ color: T.text0, fontWeight: 600 }}>{selectedCrypto?.symbol}</span> has been submitted.
+            </div>
+            <div style={{ fontSize: 12, color: T.text2, marginBottom: 28 }}>It will appear in your transaction history and is under admin review.</div>
+            <button onClick={() => { setShowSuccess(false); setAddress(''); setAmount(''); setSelectedCrypto(null) }}
+              style={{ width: '100%', padding: '13px', background: T.teal, color: '#0d0e14', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font }}>
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function SettingsPage({ user }) {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -1251,6 +1371,7 @@ export default function App() {
     if (view === 'admin-pnl')       return <AdminPnLPage />
     if (view === 'admin-positions') return <AdminPositionsPage />
     if (view === 'settings') return <SettingsPage user={user} />
+    if (view === 'withdraw') return <WithdrawPage kycStatus={kycStatus} balance={balance} user={user} onWithdrawSuccess={handleDepositSuccess} />
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
         <Icon name={BOTTOM_NAV.find(i => i.id === view)?.icon || 'dashboard'} size={40} color={T.text2} />
