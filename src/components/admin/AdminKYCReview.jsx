@@ -161,6 +161,7 @@ function EditBalanceTab() {
   const fetchUsers = async () => {
     setLoading(true)
     const { data } = await supabase.from('profiles').select('id, first_name, last_name, balance').order('balance', { ascending: false })
+    setUsers(data ?? [])
     setLoading(false)
   }
 
