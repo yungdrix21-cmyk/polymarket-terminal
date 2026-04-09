@@ -283,7 +283,11 @@ function DashboardPage({ user, balance, transactions, kycStatus, markets }) {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ color: T.teal, fontWeight: 600, fontSize: 14, fontFamily: T.mono }}>+${Number(tx.amount).toFixed(2)}</div>
-                <Badge color={T.teal}>{tx.status}</Badge>
+                <Badge color={
+  tx.status === 'completed' ? T.teal :
+  tx.status === 'declined' ? T.red :
+  T.yellow
+}>{tx.status}</Badge>
               </div>
             </div>
           ))
@@ -506,15 +510,44 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
   const [selectedCrypto, setSelectedCrypto] = useState(null)
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   if (kycStatus !== 'approved') return <LockedPage title="Deposits" />
 
   const cryptos = [
-    { symbol: 'BTC', name: 'Bitcoin', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', address: 'bc1qxy2kdyz3f3y3f3y3f3y3f3y3f3y3f3y3f', color: '#f7931a' },
-    { symbol: 'ETH', name: 'Ethereum', logo: 'https://cryptologos.cc/logos/ethereum-eth-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', color: '#627eea' },
-    { symbol: 'USDT', name: 'Tether', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', color: '#26a17b' },
-    { symbol: 'USDC', name: 'USD Coin', logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', color: '#2775ca' },
-  ]
+  { 
+    symbol: 'BTC', 
+    name: 'Bitcoin', 
+    logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', 
+    address: 'bc1qhvwnm32jpsn7msk58jnem04zyzfh6x4em6ya06', 
+    color: '#f7931a',
+    network: 'Bitcoin Network'
+  },
+  { 
+    symbol: 'ETH', 
+    name: 'Ethereum', 
+    logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png', 
+    address: '0x8c3d836edc23cdeF4aee9f2895890562b57Ba4e5', 
+    color: '#627eea',
+    network: 'ERC-20'
+  },
+  { 
+    symbol: 'USDT', 
+    name: 'Tether', 
+    logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png', 
+    address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', 
+    color: '#26a17b',
+    network: 'Solana (SOL)'
+  },
+  { 
+    symbol: 'USDC', 
+    name: 'USD Coin', 
+    logo: 'https://assets.coingecko.com/coins/images/6319/large/usdc.png', 
+    address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', 
+    color: '#2775ca',
+    network: 'Solana (SOL)'
+  },
+]
 
   const handleDeposit = async () => {
   if (!amount || !user) return
@@ -531,17 +564,10 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
         type: 'deposit',
         crypto: selectedCrypto.symbol,
         amount: depositAmount,
-        status: 'completed',
+        status: 'pending',
       })
 
     if (txError) throw txError
-
-    const { error: rpcError } = await supabase.rpc('increment_balance', {
-      user_id: user.id,
-      amount: depositAmount
-    })
-
-    if (rpcError) throw rpcError
 
     onDepositSuccess({
       id: Date.now(),
@@ -586,8 +612,33 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
             <h3 style={{ color: T.text0, margin: '0 0 20px', fontSize: 18 }}>Deposit {selectedCrypto.name}</h3>
             <div style={{ background: T.bg3, borderRadius: 14, padding: 20, textAlign: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 12, color: T.text2, marginBottom: 8 }}>Send only {selectedCrypto.symbol} to this address</div>
-              <div style={{ width: 140, height: 140, margin: '0 auto 12px', background: '#fff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#333', fontWeight: 600 }}>QR Code</div>
-              <div style={{ fontSize: 11, color: T.text1, wordBreak: 'break-all', fontFamily: T.mono }}>{selectedCrypto.address}</div>
+<div style={{ fontSize: 11, color: T.yellow, marginBottom: 8, fontWeight: 600 }}>Network: {selectedCrypto.network}</div>
+              <img 
+  src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${selectedCrypto.address}`}
+  alt="QR Code"
+  style={{ width: 140, height: 140, borderRadius: 8, display: 'block', margin: '0 auto 12px' }}
+/>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+  <div style={{ fontSize: 11, color: T.text1, wordBreak: 'break-all', fontFamily: T.mono, textAlign: 'center' }}>{selectedCrypto.address}</div>
+  <button
+    onClick={() => {
+      navigator.clipboard.writeText(selectedCrypto.address)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }}
+    style={{
+      display: 'flex', alignItems: 'center', gap: 6,
+      background: copied ? T.tealDim : T.bg2,
+      border: `1px solid ${copied ? T.teal : T.border}`,
+      color: copied ? T.teal : T.text1,
+      borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+      fontSize: 12, fontFamily: T.font, fontWeight: 600
+    }}
+  >
+    <Icon name="copy" size={12} />
+    {copied ? 'Copied!' : 'Copy Address'}
+  </button>
+</div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
               <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00"
@@ -607,28 +658,46 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
 
 function CopyTradingPage({ kycStatus }) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [copying, setCopying] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('copyingTraders') || '[]') } catch { return [] }
-  })
+  const [copying, setCopying] = useState([])
 
   const toggleCopy = (name) => {
     setCopying(prev => {
       const next = prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
-      localStorage.setItem('copyingTraders', JSON.stringify(next))
       return next
     })
   }
 
-  if (kycStatus !== 'approved') return <LockedPage title="Copy Trading" />
   const traders = [
-    { name: "beachboy4", profit: "+$3,660,645", winRate: "87%", followers: "12.4K", rank: 1 },
-    { name: "HorizonSplendidView", profit: "+$4,016,108", winRate: "91%", followers: "8.9K", rank: 2 },
-    { name: "reachingthesky", profit: "+$3,742,635", winRate: "84%", followers: "6.2K", rank: 3 },
-    { name: "majorexploiter", profit: "+$2,416,975", winRate: "79%", followers: "4.1K", rank: 4 },
-    { name: "Theo4", profit: "+$2,053,953", winRate: "89%", followers: "15.7K", rank: 5 },
-    { name: "Fredi9999", profit: "+$1,983,898", winRate: "73%", followers: "9.3K", rank: 6 },
+    { name: "10xdE17f7144fbD0eddb2679132C10ff5e74B120988", profit: "+$727,451", winRate: "91%", followers: "8.2K", rank: 1 },
+    { name: "BoneReader", profit: "+$614,057", winRate: "87%", followers: "6.1K", rank: 2 },
+    { name: "k9Q2mX4L8A7ZP3R", profit: "+$535,926", winRate: "84%", followers: "4.9K", rank: 3 },
+    { name: "0x8dxd", profit: "+$534,805", winRate: "82%", followers: "4.3K", rank: 4 },
+    { name: "0xB27BC932bf8110D8F78e55da7d5f0497A18B5b82", profit: "+$411,861", winRate: "79%", followers: "3.7K", rank: 5 },
+    { name: "vidarx", profit: "+$403,477", winRate: "78%", followers: "3.2K", rank: 6 },
+    { name: "0x1f0ebc543B2d411f66947041625c0Aa1ce61CF86", profit: "+$386,132", winRate: "76%", followers: "2.8K", rank: 7 },
+    { name: "stingo43", profit: "+$323,175", winRate: "74%", followers: "2.4K", rank: 8 },
+    { name: "0xe1D6b51521Bd4365769199f392F9818661BD907", profit: "+$314,579", winRate: "72%", followers: "2.1K", rank: 9 },
+    { name: "Bonereaper", profit: "+$307,770", winRate: "71%", followers: "1.9K", rank: 10 },
+    { name: "0x2Eb5714FF6f20f5F9f7662c556DBEF5e1c9bf4D", profit: "+$274,366", winRate: "69%", followers: "1.7K", rank: 11 },
+    { name: "0xd1ebE815f921b3EbBD8d9e0a4192C6Ab18360F5c", profit: "+$225,565", winRate: "67%", followers: "1.5K", rank: 12 },
+    { name: "BoshBashBish", profit: "+$199,067", winRate: "65%", followers: "1.3K", rank: 13 },
+    { name: "vague-sourdough", profit: "+$198,295", winRate: "64%", followers: "1.2K", rank: 14 },
+    { name: "0x732F1", profit: "+$197,364", winRate: "63%", followers: "1.1K", rank: 15 },
+    { name: "guh123", profit: "+$193,895", winRate: "62%", followers: "980", rank: 16 },
+    { name: "0x04283f2Fef49d70D8C55ab240450D17A65bF85b", profit: "+$186,240", winRate: "61%", followers: "890", rank: 17 },
+    { name: "0x3A847382ad6FfF9be1db4e073FD9b869f6884D4", profit: "+$180,527", winRate: "60%", followers: "810", rank: 18 },
+    { name: "kingofcoinflips", profit: "+$171,880", winRate: "59%", followers: "740", rank: 19 },
+    { name: "ohanism", profit: "+$162,865", winRate: "58%", followers: "670", rank: 20 },
   ]
+
+  const shortName = (name) => name.startsWith('0x') || name.length > 20
+    ? name.slice(0, 6) + '...' + name.slice(-4)
+    : name
+
   const filtered = traders.filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()))
+
+  if (kycStatus !== 'approved') return <LockedPage title="Copy Trading" />
+
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Copy Trading</h2>
@@ -644,7 +713,7 @@ function CopyTradingPage({ kycStatus }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: `${T.purple}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: T.purple }}>{trader.name[0].toUpperCase()}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.text0 }}>{trader.name}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: T.text0 }}>{shortName(trader.name)}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <Icon name="star" size={12} color={T.yellow} />
@@ -657,21 +726,21 @@ function CopyTradingPage({ kycStatus }) {
               <Badge color={T.purple}>{trader.followers} followers</Badge>
             </div>
             <button
-  onClick={() => toggleCopy(trader.name)}
-  style={{
-    width: '100%', padding: '11px',
-    background: copying.includes(trader.name) ? T.teal : T.tealDim,
-    color: copying.includes(trader.name) ? '#0d0e14' : T.teal,
-    border: `1px solid ${T.teal}30`, borderRadius: 10, fontWeight: 600,
-    fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', gap: 6, fontFamily: T.font
-  }}
-  onMouseEnter={e => { e.currentTarget.style.background = copying.includes(trader.name) ? T.tealDim : T.teal; e.currentTarget.style.color = copying.includes(trader.name) ? T.teal : '#0d0e14' }}
-  onMouseLeave={e => { e.currentTarget.style.background = copying.includes(trader.name) ? T.teal : T.tealDim; e.currentTarget.style.color = copying.includes(trader.name) ? '#0d0e14' : T.teal }}
->
-  <Icon name="copy" size={13} />
-  {copying.includes(trader.name) ? 'Copying Trades ✓' : 'Copy Trader'}
-</button>
+              onClick={() => toggleCopy(trader.name)}
+              style={{
+                width: '100%', padding: '11px',
+                background: copying.includes(trader.name) ? T.teal : T.tealDim,
+                color: copying.includes(trader.name) ? '#0d0e14' : T.teal,
+                border: `1px solid ${T.teal}30`, borderRadius: 10, fontWeight: 600,
+                fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', gap: 6, fontFamily: T.font
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = copying.includes(trader.name) ? T.tealDim : T.teal; e.currentTarget.style.color = copying.includes(trader.name) ? T.teal : '#0d0e14' }}
+              onMouseLeave={e => { e.currentTarget.style.background = copying.includes(trader.name) ? T.teal : T.tealDim; e.currentTarget.style.color = copying.includes(trader.name) ? '#0d0e14' : T.teal }}
+            >
+              <Icon name="copy" size={13} />
+              {copying.includes(trader.name) ? 'Copying Trades ✓' : 'Copy Trader'}
+            </button>
           </div>
         ))}
       </div>
@@ -839,7 +908,6 @@ useEffect(() => {
   }
 
   const handleDepositSuccess = (newTx) => {
-  setBalance(prev => Number(prev) + Number(newTx.amount))
   setTransactions(prev => [newTx, ...prev])
 }
 
@@ -911,7 +979,11 @@ useEffect(() => {
     if (view === 'copy')      return <CopyTradingPage kycStatus={kycStatus} />
     if (view === 'deposits')  return <DepositsPage user={user} onDepositSuccess={handleDepositSuccess} kycStatus={kycStatus} />
     if (view === 'profile')   return <Profile user={user} kycStatus={kycStatus} onKycUpdate={status => setKycStatus(status)} />
-    if (view === 'admin')     return <AdminKYCReview />
+    if (view === 'admin') return (
+  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <AdminKYCReview />
+  </div>
+)
     
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
