@@ -1,0 +1,79 @@
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+
+const MOCK_TRADERS = [
+  { id: '0xabc1', username: '0xabc1...', profit_loss: 12400, win_rate: 74, trades_count: 38 },
+  { id: '0xdef2', username: '0xdef2...', profit_loss: 8900, win_rate: 68, trades_count: 55 },
+  { id: '0xghi3', username: '0xghi3...', profit_loss: 6200, win_rate: 61, trades_count: 29 },
+  { id: '0xjkl4', username: '0xjkl4...', profit_loss: 4100, win_rate: 58, trades_count: 43 },
+]
+
+export default function TraderList({ userId }) {
+  const [followed, setFollowed] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!userId) return
+    supabase
+      .from('followed_traders')
+      .select('trader_id')
+      .eq('user_id', userId)
+      .then(({ data }) => setFollowed(data?.map(d => d.trader_id) || []))
+  }, [userId])
+
+  async function handleFollow(traderId) {
+    if (!userId) return alert('Please sign in first')
+    if (followed.includes(traderId)) return
+
+    setLoading(true)
+    const { error } = await supabase
+      .from('followed_traders')
+      .insert({ user_id: userId, trader_id: traderId })
+
+    if (!error) setFollowed(prev => [...prev, traderId])
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ marginTop: '24px' }}>
+      <div style={{ color: '#fff', fontWeight: '600', marginBottom: '12px' }}>
+        🏆 Top Crypto Traders
+      </div>
+      {MOCK_TRADERS.map(trader => {
+        const isCopying = followed.includes(trader.id)
+        return (
+          <div key={trader.id} style={{
+            background: '#131722', border: '1px solid #2a2a2a',
+            borderRadius: '8px', padding: '12px', marginBottom: '8px',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+          }}>
+            <div>
+              <div style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                {trader.username}
+              </div>
+              <div style={{ color: '#26a69a', fontSize: '12px' }}>
+                +${trader.profit_loss.toLocaleString()}
+              </div>
+              <div style={{ color: '#555', fontSize: '11px' }}>
+                {trader.win_rate}% win · {trader.trades_count} trades
+              </div>
+            </div>
+            <button
+              onClick={() => handleFollow(trader.id)}
+              disabled={isCopying || loading}
+              style={{
+                background: isCopying ? '#1a3a38' : '#2962ff',
+                color: isCopying ? '#26a69a' : '#fff',
+                border: 'none', borderRadius: '6px',
+                padding: '6px 12px', fontSize: '11px',
+                fontWeight: '600', cursor: isCopying ? 'default' : 'pointer'
+              }}
+            >
+              {isCopying ? '✓ Copying' : 'Copy'}
+            </button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
