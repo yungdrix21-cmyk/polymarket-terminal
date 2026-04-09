@@ -28,18 +28,20 @@ function KYCTab() {
   const [previewUrl, setPreviewUrl] = useState(null);
 
   const loadKYC = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('kyc_documents')
-        .select(`id, user_id, status, document_url, submitted_at, profiles (first_name, last_name)`)
-        .eq('status', 'pending')
-        .order('submitted_at', { ascending: false });
-      if (error) throw error;
-      setSubmissions(data || []);
-    } catch (e) { console.error(e); }
-    setLoading(false);
-  };
+  setLoading(true);
+  try {
+    const { data, error } = await supabase
+      .from('kyc_documents')
+      .select(`id, user_id, status, document_url, submitted_at, profiles (first_name, last_name)`)
+      .eq('status', 'pending')
+      .order('submitted_at', { ascending: false });
+    console.log('kyc data:', data)  // ← add this
+    console.log('kyc error:', error) // ← add this
+    if (error) throw error;
+    setSubmissions(data || []);
+  } catch (e) { console.error(e); }
+  setLoading(false);
+};
 
   const updateKYC = async (id, status) => {
     const { error } = await supabase.from('kyc_documents').update({ status }).eq('id', id).select();
@@ -159,7 +161,6 @@ function EditBalanceTab() {
   const fetchUsers = async () => {
     setLoading(true)
     const { data } = await supabase.from('profiles').select('id, first_name, last_name, balance').order('balance', { ascending: false })
-    setUsers(data ?? [])
     setLoading(false)
   }
 
