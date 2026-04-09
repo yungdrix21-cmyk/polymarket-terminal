@@ -340,8 +340,8 @@ function AdminDepositsPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                 <div>
                   <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>{tx.profiles?.email ?? tx.user_id}</div>
-<div style={{ fontSize: 11, color: tx.type === 'withdrawal' ? T.red : T.teal, marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tx.type}</div>
-{tx.wallet_address && <div style={{ fontSize: 11, color: T.text2, marginTop: 4, fontFamily: T.mono }}>To: {tx.wallet_address.slice(0,16)}...</div>}
+                  <div style={{ fontSize: 11, color: tx.type === 'withdrawal' ? T.red : T.teal, marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tx.type}</div> 
+                  {tx.wallet_address && <div style={{ fontSize: 11, color: T.text2, marginTop: 4, fontFamily: T.mono }}>To: {tx.wallet_address.slice(0,16)}...</div>}
                   <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
                     <Badge color={T.teal}>{tx.crypto}</Badge>
                     <Badge color={T.yellow}>Pending</Badge>
@@ -489,16 +489,18 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
               onMouseEnter={e => e.currentTarget.style.background = T.bgHover}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: T.yellowDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="deposit" size={15} color={T.yellow} />
-                </div>
-                <div>
-                  <div style={{ color: T.text0, fontSize: 13, fontWeight: 500 }}>{tx.crypto} Deposit</div>
-                  <div style={{ color: T.text2, fontSize: 11, marginTop: 2 }}>{new Date(tx.created_at).toLocaleDateString()}</div>
-                </div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: tx.type === 'withdrawal' ? T.redDim : T.yellowDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name={tx.type === 'withdrawal' ? 'withdraw' : 'deposit'} size={15} color={tx.type === 'withdrawal' ? T.red : T.yellow} />
+                  </div>
+                  <div>
+                    <div style={{ color: T.text0, fontSize: 13, fontWeight: 500 }}>{tx.crypto} {tx.type === 'withdrawal' ? 'Withdrawal' : 'Deposit'}</div>
+                    <div style={{ color: T.text2, fontSize: 11, marginTop: 2 }}>{new Date(tx.created_at).toLocaleDateString()}</div>
+                    </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ color: T.teal, fontWeight: 600, fontSize: 14, fontFamily: T.mono }}>+${Number(tx.amount).toFixed(2)}</div>
+                <div style={{ color: tx.type === 'withdrawal' ? T.red : T.teal, fontWeight: 600, fontSize: 14, fontFamily: T.mono }}>
+                  {tx.type === 'withdrawal' ? '-' : '+'}${Number(tx.amount).toFixed(2)}
+                  </div>
                 <Badge color={tx.status === 'completed' ? T.teal : tx.status === 'declined' ? T.red : T.yellow}>{tx.status}</Badge>
               </div>
             </div>
