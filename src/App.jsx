@@ -874,10 +874,206 @@ export default function App() {
     { id: 'withdraw', label: 'Withdraw', icon: 'withdraw', locked: kycStatus !== 'approved' },
   ]
   const ADMIN_SUBNAV = [
-    { id: 'admin-kyc',     label: 'KYC Review',     icon: 'shield'  },
-    { id: 'admin-deposits',label: 'Deposit Review',  icon: 'deposit' },
-    { id: 'admin-balance', label: 'Edit Balance',    icon: 'wallet'  },
-  ]
+  { id: 'admin-kyc',       label: 'KYC Review',     icon: 'shield'  },
+  { id: 'admin-deposits',  label: 'Deposit Review',  icon: 'deposit' },
+  { id: 'admin-balance',   label: 'Edit Balance',    icon: 'wallet'  },
+  { id: 'admin-pnl',       label: 'Edit P&L',        icon: 'trending' },
+  { id: 'admin-positions', label: 'Open Positions',  icon: 'activity' },
+]
+function AdminPnLPage() {
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState({})
+  const [saving, setSaving] = useState({})
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from('profiles_with_email')
+        .select('id, email, first_name, last_name, pnl')
+        .order('email')
+      setUsers(data ?? [])
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const handleSave = async (userId) => {
+    const val = editing[userId]
+    if (val === undefined || val === '') return
+    setSaving(prev => ({ ...prev, [userId]: true }))
+    await supabase.from('profiles').update({ pnl: parseFloat(val) }).eq('id', userId)
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, pnl: parseFloat(val) } : u))
+    setEditing(prev => { const n = { ...prev }; delete n[userId]; return n })
+    setSaving(prev => ({ ...prev, [userId]: false }))
+  }
+
+  return (
+    <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
+      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Edit P&L</h2>
+      <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Set profit & loss for each user. Positive = green, negative = red.</p>
+      {loading ? <div style={{ color: T.text2 }}>Loading...</div> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {users.map(u => (
+            <div key={u.id} style={{ background: T.bgCard, borderRadius: 14, border: `1px solid ${T.border}`, padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div>
+                <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>
+                  {u.first_name && u.last_name ? `${u.first_name} ${u.last_name}` : 'Unknown User'}
+                </div>
+                {u.email && <div style={{ color: T.blue, fontSize: 12, marginTop: 2 }}>{u.email}</div>}
+                <div style={{ 
+                  color: (u.pnl ?? 0) >= 0 ? T.teal : T.red, 
+                  fontWeight: 700, fontSize: 15, fontFamily: T.mono, marginTop: 4 
+                }}>
+                  {(u.pnl ?? 0) >= 0 ? '+' : ''}${Number(u.pnl ?? 0).toFixed(2)}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input
+                  type="number"
+                  value={editing[u.id] ?? ''}
+                  onChange={e => setEditing(prev => ({ ...prev, [u.id]: e.target.value }))}
+                  placeholder="e.g. 500 or -200"
+                  style={{ width: 140, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }}
+                />
+                <button onClick={() => handleSave(u.id)} disabled={saving[u.id]}
+                  style={{ padding: '8px 16px', background: T.teal, color: '#000', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+                  {saving[u.id] ? '...' : '✓ Save'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AdminPositionsPage() {
+  const [users, setUsers] = useState([])
+  const [positions, setPositions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedUser, setSelectedUser] = useState('')
+  const [form, setForm] = useState({ market: '', side: 'YES', amount: '', pnl: '' })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      const [{ data: u }, { data: p }] = await Promise.all([
+        supabase.from('profiles_with_email').select('id, email, first_name, last_name'),
+        supabase.from('positions').select('*, profiles(email)').order('created_at', { ascending: false })
+      ])
+      setUsers(u ?? [])
+      setPositions(p ?? [])
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const handleAdd = async () => {
+    if (!selectedUser || !form.market) return
+    setSaving(true)
+    const { data, error } = await supabase.from('positions').insert({
+      user_id: selectedUser,
+      market: form.market,
+      side: form.side,
+      amount: parseFloat(form.amount) || 0,
+      pnl: parseFloat(form.pnl) || 0,
+      status: 'open'
+    }).select('*, profiles(email)').single()
+    if (!error) setPositions(prev => [data, ...prev])
+    setForm({ market: '', side: 'YES', amount: '', pnl: '' })
+    setSaving(false)
+  }
+
+  const handleDelete = async (id) => {
+    await supabase.from('positions').delete().eq('id', id)
+    setPositions(prev => prev.filter(p => p.id !== id))
+  }
+
+  const handleClose = async (id) => {
+    await supabase.from('positions').update({ status: 'closed' }).eq('id', id)
+    setPositions(prev => prev.map(p => p.id === id ? { ...p, status: 'closed' } : p))
+  }
+
+  return (
+    <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
+      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Open Positions</h2>
+      <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Manually add or manage user positions.</p>
+
+      {/* Add position form */}
+      <div style={{ background: T.bgCard, borderRadius: 14, border: `1px solid ${T.border}`, padding: '20px', marginBottom: 24 }}>
+        <div style={{ color: T.text0, fontWeight: 600, marginBottom: 14 }}>Add Position</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          <select value={selectedUser} onChange={e => setSelectedUser(e.target.value)}
+            style={{ padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.font, outline: 'none' }}>
+            <option value="">Select user...</option>
+            {users.map(u => (
+              <option key={u.id} value={u.id}>{u.email || `${u.first_name} ${u.last_name}`}</option>
+            ))}
+          </select>
+          <input value={form.market} onChange={e => setForm(p => ({ ...p, market: e.target.value }))}
+            placeholder="Market / question"
+            style={{ flex: 1, minWidth: 200, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, outline: 'none' }} />
+          <select value={form.side} onChange={e => setForm(p => ({ ...p, side: e.target.value }))}
+            style={{ padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.font, outline: 'none' }}>
+            <option value="YES">YES</option>
+            <option value="NO">NO</option>
+          </select>
+          <input value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
+            placeholder="Amount ($)" type="number"
+            style={{ width: 120, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }} />
+          <input value={form.pnl} onChange={e => setForm(p => ({ ...p, pnl: e.target.value }))}
+            placeholder="P&L ($)" type="number"
+            style={{ width: 120, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }} />
+          <button onClick={handleAdd} disabled={saving}
+            style={{ padding: '8px 18px', background: T.blue, color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+            {saving ? '...' : '+ Add'}
+          </button>
+        </div>
+      </div>
+
+      {/* Positions list */}
+      {loading ? <div style={{ color: T.text2 }}>Loading...</div> : positions.length === 0 ? (
+        <div style={{ color: T.text2, fontSize: 13 }}>No positions yet.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {positions.map(p => (
+            <div key={p.id} style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <div style={{ color: T.text0, fontWeight: 600, fontSize: 13 }}>{p.market}</div>
+                <div style={{ color: T.text2, fontSize: 11, marginTop: 2 }}>{p.profiles?.email ?? p.user_id}</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: p.side === 'YES' ? T.teal : T.red, background: p.side === 'YES' ? T.tealDim : T.redDim, padding: '2px 8px', borderRadius: 20 }}>{p.side}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: p.status === 'open' ? T.blue : T.text2, background: T.blueDim, padding: '2px 8px', borderRadius: 20 }}>{p.status}</span>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: T.text1, fontSize: 12 }}>Invested: <span style={{ color: T.text0, fontFamily: T.mono }}>${Number(p.amount).toFixed(2)}</span></div>
+                <div style={{ color: (p.pnl ?? 0) >= 0 ? T.teal : T.red, fontWeight: 700, fontSize: 14, fontFamily: T.mono }}>
+                  {(p.pnl ?? 0) >= 0 ? '+' : ''}${Number(p.pnl ?? 0).toFixed(2)}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {p.status === 'open' && (
+                  <button onClick={() => handleClose(p.id)}
+                    style={{ padding: '6px 14px', background: T.yellowDim, color: T.yellow, border: `1px solid ${T.yellow}30`, borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                    Close
+                  </button>
+                )}
+                <button onClick={() => handleDelete(p.id)}
+                  style={{ padding: '6px 14px', background: T.redDim, color: T.red, border: `1px solid ${T.red}30`, borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
   const renderPage = () => {
     if (view === 'dashboard')      return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} markets={markets} />
     if (view === 'markets')        return <MarketsPage prices={markets} selected={selected} setSelected={setSelected} isMobile={isMobile} />
@@ -887,6 +1083,8 @@ export default function App() {
     if (view === 'admin-kyc')      return <AdminKYCPage />
     if (view === 'admin-deposits') return <AdminDepositsPage />
     if (view === 'admin-balance')  return <AdminBalancePage />
+    if (view === 'admin-pnl')       return <AdminPnLPage />
+    if (view === 'admin-positions') return <AdminPositionsPage />
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
         <Icon name={BOTTOM_NAV.find(i => i.id === view)?.icon || 'dashboard'} size={40} color={T.text2} />
