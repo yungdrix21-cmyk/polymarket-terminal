@@ -343,7 +343,7 @@ function AdminBalancePage() {
         .from('profiles')
         .select('id, email, balance, role')
         .order('email', { ascending: true })
-      setSubmissions(data ?? [])
+      setUsers(data ?? [])
       setLoading(false)
     }
     load()
