@@ -775,10 +775,11 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
     </div>
   )
 }
-function CopyTradingPage({ kycStatus }) {
+function CopyTradingPage({ kycStatus, user }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [copying, setCopying] = useState([])
-  const toggleCopy = (name) => setCopying(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
+  const [loading, setLoading] = useState(true)
+
   const traders = [
     { name: "10xdE17f7144fbD0eddb2679132C10ff5e74B120988", profit: "+$727,451", winRate: "91%", followers: "8.2K", rank: 1 },
     { name: "BoneReader", profit: "+$614,057", winRate: "87%", followers: "6.1K", rank: 2 },
@@ -791,9 +792,53 @@ function CopyTradingPage({ kycStatus }) {
     { name: "0xe1D6b51521Bd4365769199f392F9818661BD907", profit: "+$314,579", winRate: "72%", followers: "2.1K", rank: 9 },
     { name: "Bonereaper", profit: "+$307,770", winRate: "71%", followers: "1.9K", rank: 10 },
   ]
+
+  useEffect(() => {
+    if (!user) return
+    const load = async () => {
+      const { data } = await supabase
+        .from('copy_trades')
+        .select('trader_name')
+        .eq('user_id', user.id)
+      setCopying((data ?? []).map(d => d.trader_name))
+      setLoading(false)
+    }
+    load()
+  }, [user])
+
+  const toggleCopy = async (name) => {
+    const isCopying = copying.includes(name)
+    if (isCopying) {
+      await supabase.from('copy_trades').delete().eq('user_id', user.id).eq('trader_name', name)
+      setCopying(prev => prev.filter(n => n !== name))
+    } else {
+      await supabase.from('copy_trades').insert({ user_id: user.id, trader_name: name })
+      setCopying(prev => [name, ...prev])
+    }
+  }
+
   const shortName = (name) => name.startsWith('0x') || name.length > 20 ? name.slice(0, 6) + '...' + name.slice(-4) : name
-  const filtered = traders.filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()))
-  if (kycStatus !== 'approved') return <LockedPage title="Copy Trading" />
+
+  const filtered = traders
+    .filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => {
+      const aCopying = copying.includes(a.name)
+      const bCopying = copying.includes(b.name)
+      if (aCopying && !bCopying) return -1
+      if (!aCopying && bCopying) return 1
+      return a.rank - b.rank
+    })
+
+  if (kycStatus !== 'approved') return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: T.text2, padding: 40, textAlign: 'center' }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', background: T.yellowDim, border: `1px solid ${T.yellow}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name="lock" size={28} color={T.yellow} />
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: T.text0, marginBottom: 6 }}>Copy Trading Locked</div>
+      <div style={{ fontSize: 13, color: T.text1, maxWidth: 300, lineHeight: 1.6 }}>Complete KYC verification to unlock this feature.</div>
+    </div>
+  )
+
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Copy Trading</h2>
@@ -803,32 +848,41 @@ function CopyTradingPage({ kycStatus }) {
         <input type="text" placeholder="Search traders..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
           style={{ width: '100%', padding: '12px 16px 12px 42px', background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 12, color: T.text0, fontSize: 13, outline: 'none', boxSizing: 'border-box', fontFamily: T.font }} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-        {filtered.map((trader, i) => (
-          <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: '20px 22px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: `${T.purple}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: T.purple }}>{trader.name[0].toUpperCase()}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.text0 }}>{shortName(trader.name)}</div>
+      {loading ? (
+        <div style={{ color: T.text2, fontSize: 13 }}>Loading...</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+          {filtered.map((trader, i) => {
+            const isCopying = copying.includes(trader.name)
+            return (
+              <div key={i} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${isCopying ? T.teal + '40' : T.border}`, padding: '20px 22px', transition: 'border 0.2s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 10, background: `${T.purple}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: T.purple }}>{trader.name[0].toUpperCase()}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.text0 }}>{shortName(trader.name)}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Icon name="star" size={12} color={T.yellow} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: T.yellow }}>#{trader.rank}</span>
+                  </div>
+                </div>
+                <div style={{ color: T.teal, fontSize: 20, fontWeight: 700, fontFamily: T.mono, marginBottom: 6 }}>{trader.profit}</div>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  <Badge color={T.blue}>{trader.winRate} win rate</Badge>
+                  <Badge color={T.purple}>{trader.followers} followers</Badge>
+                </div>
+                <button onClick={() => toggleCopy(trader.name)}
+                  style={{ width: '100%', padding: '11px', background: isCopying ? T.teal : T.tealDim, color: isCopying ? '#0d0e14' : T.teal, border: `1px solid ${T.teal}30`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: T.font }}>
+                  {isCopying
+                    ? <><Icon name="check" size={13} color="#0d0e14" /> Copying Trades</>
+                    : <><Icon name="copy" size={13} /> Copy Trader</>
+                  }
+                </button>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Icon name="star" size={12} color={T.yellow} />
-                <span style={{ fontSize: 11, fontWeight: 600, color: T.yellow }}>#{trader.rank}</span>
-              </div>
-            </div>
-            <div style={{ color: T.teal, fontSize: 20, fontWeight: 700, fontFamily: T.mono, marginBottom: 6 }}>{trader.profit}</div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              <Badge color={T.blue}>{trader.winRate} win rate</Badge>
-              <Badge color={T.purple}>{trader.followers} followers</Badge>
-            </div>
-            <button onClick={() => toggleCopy(trader.name)}
-              style={{ width: '100%', padding: '11px', background: copying.includes(trader.name) ? T.teal : T.tealDim, color: copying.includes(trader.name) ? '#0d0e14' : T.teal, border: `1px solid ${T.teal}30`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: T.font }}>
-              <Icon name="copy" size={13} />
-              {copying.includes(trader.name) ? 'Copying Trades ' : 'Copy Trader'}
-            </button>
-          </div>
-        ))}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -1381,7 +1435,7 @@ export default function App() {
     />
   )
 }
-    if (view === 'copy')           return <CopyTradingPage kycStatus={kycStatus} />
+    if (view === 'copy') return <CopyTradingPage kycStatus={kycStatus} user={user} />
     if (view === 'deposits')       return <DepositsPage user={user} onDepositSuccess={handleDepositSuccess} kycStatus={kycStatus} />
     if (view === 'profile')        return <Profile user={user} kycStatus={kycStatus} onKycUpdate={status => setKycStatus(status)} />
     if (view === 'admin-kyc')      return <AdminKYCPage />
