@@ -1522,7 +1522,7 @@ export default function App() {
               </div>
             </div>
           )}
-          {collapsed && <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>P</div>}
+          {collapsed && <div style={{ width: 32, height: 32 }} />}
           <div onClick={() => setCollapsed(!collapsed)} style={{ cursor: 'pointer', padding: 4, borderRadius: 6 }}>
             <Icon name="menu" size={16} color={T.text2} />
           </div>
