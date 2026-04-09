@@ -190,6 +190,19 @@ function LockedPage({ title }) {
 function AdminKYCPage() {
   const [submissions, setSubmissions] = useState([])
   const [loading, setLoading] = useState(true)
+  useEffect(() => {
+  const load = async () => {
+    const { data, error } = await supabase
+      .from('profiles_with_email')
+      .select('id, email, balance, role')
+      .order('email', { ascending: true })
+
+    console.log('users:', data, 'error:', error)
+    setUsers(data ?? [])
+    setLoading(false)
+  }
+  load()
+}, [])
   const handleDecision = async (id, userId, decision) => {
     await supabase.from('kyc_documents').update({ status: decision }).eq('id', id)
     setSubmissions(prev => prev.filter(s => s.id !== id))
