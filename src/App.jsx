@@ -452,7 +452,7 @@ function AdminBalancePage() {
     </div>
   )
 }
-function DashboardPage({ user, balance, transactions, kycStatus, markets }) {
+function DashboardPage({ user, balance, transactions, kycStatus, marketsCount }) {
   return (
     <div style={{ padding: '28px 28px 40px', overflowY: 'auto', flex: 1 }}>
       <KYCBanner kycStatus={kycStatus} />
@@ -470,7 +470,7 @@ function DashboardPage({ user, balance, transactions, kycStatus, markets }) {
         <StatCard label="Account Balance" value={`$${Number(balance).toFixed(2)}`} color={T.text0} icon={<Icon name="wallet" size={15} />} sub="Available funds" />
         <StatCard label="Total P&L" value="$0.00" color={T.text2} icon={<Icon name="trending" size={15} color={T.text2} />} sub="No trades yet" />
         <StatCard label="Open Positions" value="0" color={T.blue} icon={<Icon name="zap" size={15} color={T.blue} />} sub="Active markets" />
-        <StatCard label="Live Markets" value={markets?.length || 0} color={T.purple} icon={<Icon name="markets" size={15} color={T.purple} />} sub="Available now" />
+        <StatCard label="Live Markets" value={marketsCount || 0} color={T.purple} icon={<Icon name="markets" size={15} color={T.purple} />} sub="Available now" />
       </div>
       <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
         <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1103,8 +1103,17 @@ function AdminPositionsPage() {
 }
 
   const renderPage = () => {
-    if (view === 'dashboard')      return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} markets={markets} />
-    if (view === 'markets')        return <MarketsPage prices={markets} selected={selected} setSelected={setSelected} isMobile={isMobile} />
+    if (view === 'dashboard')      return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} marketsCount={markets} />
+    if (view === 'markets') {
+  return (
+    <MarketsPage 
+      prices={markets}   // this is fine, only renders when view === 'markets'
+      selected={selected} 
+      setSelected={setSelected}
+      isMobile={isMobile}
+    />
+  )
+}
     if (view === 'copy')           return <CopyTradingPage kycStatus={kycStatus} />
     if (view === 'deposits')       return <DepositsPage user={user} onDepositSuccess={handleDepositSuccess} kycStatus={kycStatus} />
     if (view === 'profile')        return <Profile user={user} kycStatus={kycStatus} onKycUpdate={status => setKycStatus(status)} />
