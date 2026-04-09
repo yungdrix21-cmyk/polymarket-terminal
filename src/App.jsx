@@ -1025,6 +1025,80 @@ function AdminPositionsPage() {
     </div>
   )
 }
+function SettingsPage({ user }) {
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [msg, setMsg] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handlePasswordUpdate = async () => {
+    if (!newPassword || newPassword !== confirmPassword) {
+      setMsg('Passwords do not match.'); return
+    }
+    setSaving(true)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    setSaving(false)
+    setMsg(error ? 'Error: ' + error.message : 'Password updated successfully!')
+    setNewPassword(''); setConfirmPassword('')
+    setTimeout(() => setMsg(''), 4000)
+  }
+
+  return (
+    <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
+      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Settings</h2>
+      <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Manage your account security</p>
+
+      {/* Change Password */}
+      <div style={{ maxWidth: 580 }}>
+        <div style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, padding: '24px 28px', marginBottom: 20 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: T.text0, marginBottom: 18 }}>Change Password</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: T.text1, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 7 }}>New Password</label>
+              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••"
+                style={{ width: '100%', padding: '11px 14px', background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text0, fontSize: 13, fontFamily: T.font, outline: 'none', boxSizing: 'border-box' }}
+                onFocus={e => e.target.style.borderColor = T.blue}
+                onBlur={e => e.target.style.borderColor = T.border} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: T.text1, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 7 }}>Confirm New Password</label>
+              <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••"
+                style={{ width: '100%', padding: '11px 14px', background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text0, fontSize: 13, fontFamily: T.font, outline: 'none', boxSizing: 'border-box' }}
+                onFocus={e => e.target.style.borderColor = T.blue}
+                onBlur={e => e.target.style.borderColor = T.border} />
+            </div>
+          </div>
+          {msg && (
+            <div style={{ marginTop: 14, padding: '12px 16px', borderRadius: 10, fontSize: 13, background: msg.includes('Error') || msg.includes('match') ? T.redDim : T.tealDim, color: msg.includes('Error') || msg.includes('match') ? T.red : T.teal, border: `1px solid ${msg.includes('Error') || msg.includes('match') ? T.red : T.teal}30` }}>{msg}</div>
+          )}
+          <button onClick={handlePasswordUpdate} disabled={saving}
+            style={{ marginTop: 20, padding: '12px 24px', background: saving ? T.bg3 : T.blue, color: saving ? T.text2 : '#fff', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: saving ? 'default' : 'pointer', fontFamily: T.font }}>
+            {saving ? 'Updating...' : 'Update Password'}
+          </button>
+        </div>
+
+        {/* Account Info */}
+        <div style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, padding: '24px 28px' }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: T.text0, marginBottom: 6 }}>Account Information</div>
+          <div style={{ fontSize: 13, color: T.text2, marginBottom: 18 }}>Your account details and registration info</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              ['Email', user?.email],
+              ['User ID', user?.id?.slice(0, 18) + '...'],
+              ['Account Created', user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'],
+              ['Last Sign In', user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : '—'],
+            ].map(([label, val]) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: T.bg3, borderRadius: 10 }}>
+                <span style={{ fontSize: 13, color: T.text1 }}>{label}</span>
+                <span style={{ fontSize: 12, color: T.text0, fontFamily: T.mono }}>{val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 // --- MAIN APP ----------------------------------------------------------------
 export default function App() {
   const INITIAL_MARKETS = [
@@ -1315,7 +1389,7 @@ export default function App() {
           </div>
         </div>
         <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          {renderPage()}
+          if (view === 'settings') return <SettingsPage user={user} />
         </div>
       </div>
     </div>

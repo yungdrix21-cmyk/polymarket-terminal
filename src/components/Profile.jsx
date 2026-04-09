@@ -200,7 +200,6 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: T.bgCard, padding: 4, borderRadius: 14, border: `1px solid ${T.border}`, width: 'fit-content' }}>
         <button style={tabStyle('details')} onClick={() => setTab('details')}>Personal Details</button>
         <button style={tabStyle('kyc')} onClick={() => setTab('kyc')}>KYC Verification</button>
-        <button style={tabStyle('security')} onClick={() => setTab('security')}>Security</button>
       </div>
 
       {/* PERSONAL DETAILS TAB */}
@@ -366,39 +365,6 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
         </div>
       )}
 
-      {/* SECURITY TAB */}
-      {tab === 'security' && (
-        <div style={{ maxWidth: 680 }}>
-          <div style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, padding: '24px 28px', marginBottom: 20 }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: T.text0, marginBottom: 18 }}>Change Password</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <Input label="New Password" value="" onChange={() => {}} placeholder="••••••••" type="password" />
-              <Input label="Confirm New Password" value="" onChange={() => {}} placeholder="••••••••" type="password" />
-            </div>
-            <button style={{ marginTop: 20, padding: '12px 24px', background: T.blue, color: '#fff', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: T.font }}>
-              Update Password
-            </button>
-          </div>
-
-          <div style={{ background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, padding: '24px 28px' }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: T.text0, marginBottom: 6 }}>Account Information</div>
-            <div style={{ fontSize: 13, color: T.text2, marginBottom: 18 }}>Your account details and registration info</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                ['Email', user?.email],
-                ['User ID', user?.id?.slice(0, 18) + '...'],
-                ['Account Created', user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'],
-                ['Last Sign In', user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : '—'],
-              ].map(([label, val]) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: T.bg3, borderRadius: 10 }}>
-                  <span style={{ fontSize: 13, color: T.text1 }}>{label}</span>
-                  <span style={{ fontSize: 12, color: T.text0, fontFamily: T.mono }}>{val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
