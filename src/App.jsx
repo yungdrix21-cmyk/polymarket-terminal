@@ -198,7 +198,7 @@ function AdminKYCPage() {
       .order('email', { ascending: true })
 
     console.log('users:', data, 'error:', error)
-    setUsers(data ?? [])
+    setSubmissions(data ?? [])
     setLoading(false)
   }
   load()
@@ -343,7 +343,7 @@ function AdminBalancePage() {
         .from('profiles')
         .select('id, email, balance, role')
         .order('email', { ascending: true })
-      setUsers(data ?? [])
+      setSubmissions(data ?? [])
       setLoading(false)
     }
     load()
