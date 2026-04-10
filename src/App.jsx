@@ -1629,7 +1629,7 @@ export default function App() {
           </div>
         )}
         {/* Nav */}
-        <div style={{ flex: 1, padding: '12px 8px', overflowY: 'auto' }}>
+        <div style={{ flex: 1, padding: '12px 8px', overflowY: 'auto', minHeight: 0 }}>
           {!collapsed && <div style={{ fontSize: 9, color: T.text2, letterSpacing: '0.1em', padding: '8px 8px 6px', textTransform: 'uppercase' }}>Main</div>}
           {MAIN_NAV.map(item => <NavItem key={item.id} item={item} />)}
           {/* Admin dropdown -- only for admins */}
