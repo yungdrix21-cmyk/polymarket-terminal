@@ -1356,19 +1356,28 @@ function SettingsPage({ user }) {
 }
 // --- MAIN APP ----------------------------------------------------------------
 export default function App() {
-  const INITIAL_MARKETS = [
-    { id: 1,  question: "Will BTC be above $70K in 5 minutes?",   timeframe: "5m", outcomePrices: [0.62, 0.38], volume: 124000 },
-    { id: 2,  question: "Will ETH be above $3K in 5 minutes?",    timeframe: "5m", outcomePrices: [0.48, 0.52], volume: 89000  },
-    { id: 3,  question: "Will SOL be above $150 in 5 minutes?",   timeframe: "5m", outcomePrices: [0.71, 0.29], volume: 56000  },
-    { id: 4,  question: "Will BNB be above $400 in 5 minutes?",   timeframe: "5m", outcomePrices: [0.55, 0.45], volume: 43000  },
-    { id: 5,  question: "Will MATIC be above $1 in 5 minutes?",   timeframe: "5m", outcomePrices: [0.38, 0.62], volume: 31000  },
-    { id: 6,  question: "Will DOGE be above $0.15 in 5 minutes?", timeframe: "5m", outcomePrices: [0.44, 0.56], volume: 67000  },
-    { id: 7,  question: "Will AVAX be above $30 in 5 minutes?",   timeframe: "5m", outcomePrices: [0.59, 0.41], volume: 28000  },
-    { id: 8,  question: "Will LINK be above $15 in 5 minutes?",   timeframe: "5m", outcomePrices: [0.66, 0.34], volume: 19000  },
-    { id: 9,  question: "Will XRP be above $0.60 in 5 minutes?",  timeframe: "5m", outcomePrices: [0.73, 0.27], volume: 92000  },
-    { id: 10, question: "Will ADA be above $0.45 in 5 minutes?",  timeframe: "5m", outcomePrices: [0.41, 0.59], volume: 35000  },
-  ]
-  const [markets, setMarkets] = useState(INITIAL_MARKETS)
+  const LIVE_MARKET_CONFIG = [
+  { id: 'btcusdt', question: "Will BTC be above $70K in 5 minutes?",   threshold: 70000, timeframe: "5m", volume: 124000 },
+  { id: 'ethusdt', question: "Will ETH be above $3K in 5 minutes?",    threshold: 3000,  timeframe: "5m", volume: 89000  },
+  { id: 'solusdt', question: "Will SOL be above $150 in 5 minutes?",   threshold: 150,   timeframe: "5m", volume: 56000  },
+  { id: 'bnbusdt', question: "Will BNB be above $400 in 5 minutes?",   threshold: 400,   timeframe: "5m", volume: 43000  },
+  { id: 'maticusdt', question: "Will MATIC be above $1 in 5 minutes?", threshold: 1,     timeframe: "5m", volume: 31000  },
+  { id: 'dogeusdt', question: "Will DOGE be above $0.15 in 5 minutes?",threshold: 0.15,  timeframe: "5m", volume: 67000  },
+  { id: 'avaxusdt', question: "Will AVAX be above $30 in 5 minutes?",  threshold: 30,    timeframe: "5m", volume: 28000  },
+  { id: 'linkusdt', question: "Will LINK be above $15 in 5 minutes?",  threshold: 15,    timeframe: "5m", volume: 19000  },
+  { id: 'xrpusdt',  question: "Will XRP be above $0.60 in 5 minutes?", threshold: 0.60,  timeframe: "5m", volume: 92000  },
+  { id: 'adausdt',  question: "Will ADA be above $0.45 in 5 minutes?", threshold: 0.45,  timeframe: "5m", volume: 35000  },
+]
+
+function calcYes(price, threshold) {
+  if (!price) return 0.5
+  const dist = (price - threshold) / threshold
+  return Math.min(0.97, Math.max(0.03, 0.5 + dist * 8))
+}
+
+const [markets, setMarkets] = useState(
+  LIVE_MARKET_CONFIG.map(m => ({ ...m, outcomePrices: [0.5, 0.5], change: '+0.0%' }))
+)
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [showLanding, setShowLanding] = useState(true)
@@ -1383,18 +1392,38 @@ export default function App() {
   const [balance, setBalance] = useState(0)
   const [positions, setPositions] = useState([])
   useEffect(() => {
-    const interval = setInterval(() => {
-      setMarkets(prev => prev.map(m => {
-        const current = m.outcomePrices[0]
-        const change = (Math.random() - 0.5) * 0.06
-        const newYes = Math.min(0.97, Math.max(0.03, current + change))
-        const newNo = parseFloat((1 - newYes).toFixed(4))
-        const pctChange = ((newYes - current) * 100).toFixed(1)
-        return { ...m, outcomePrices: [newYes, newNo], change: `${pctChange >= 0 ? '+' : ''}${pctChange}%`, volume: m.volume + Math.floor(Math.random() * 500) }
-      }))
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [])
+  const streams = LIVE_MARKET_CONFIG.map(m => `${m.id}@miniTicker`).join('/')
+  const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`)
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data)
+    if (!msg.data) return
+    const id = msg.stream.split('@')[0]
+    const price = parseFloat(msg.data.c)   // current price
+    const open  = parseFloat(msg.data.o)   // 24h open price
+    if (!price) return
+
+    setMarkets(prev => prev.map(m => {
+      if (m.id !== id) return m
+      const config = LIVE_MARKET_CONFIG.find(c => c.id === id)
+      const yes = calcYes(price, config.threshold)
+      const no  = parseFloat((1 - yes).toFixed(4))
+      const pctChange = open ? (((price - open) / open) * 100).toFixed(1) : '0.0'
+      return {
+        ...m,
+        outcomePrices: [yes, no],
+        change: `${pctChange >= 0 ? '+' : ''}${pctChange}%`,
+        volume: m.volume + Math.floor(Math.random() * 100),
+      }
+    }))
+  }
+
+  ws.onerror = () => ws.close()
+  const retry = () => { /* ws.onclose fires, React remounts on next render */ }
+  ws.onclose = retry
+
+  return () => ws.close()
+}, [])
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768
