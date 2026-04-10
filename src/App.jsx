@@ -910,7 +910,7 @@ function CopyTradingPage({ kycStatus, user }) {
                     <span style={{ fontSize: 11, fontWeight: 600, color: T.yellow }}>#{trader.rank}</span>
                   </div>
                 </div>
-                <div style={{ color: T.teal, fontSize: 20, fontWeight: 700, fontFamily: T.mono, marginBottom: 6 }}>{trader.profit}</div>
+                <div style={{ color: T.teal, fontSize: 28, fontWeight: 800, fontFamily: '"Manrope", sans-serif', letterSpacing: '-1px', marginBottom: 6 }}>{trader.profit}</div>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                   <Badge color={T.blue}>{trader.winRate} win rate</Badge>
                   <Badge color={T.purple}>{trader.followers} followers</Badge>
@@ -1581,7 +1581,7 @@ export default function App() {
         overflow: 'hidden',
       }}>
         {/* Logo */}
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@900&display=swap');`}</style>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@900&family=Manrope:wght@800&display=swap');`}</style>
         <div style={{ padding: collapsed ? '18px 12px' : '18px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10, justifyContent: collapsed ? 'center' : 'space-between' }}>
           {!collapsed && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1591,7 +1591,7 @@ export default function App() {
   </defs>
   <path d="M16,2 L28,8 L28,18 Q28,27 16,30 Q4,27 4,18 L4,8 Z" fill="#1e2030" stroke="#4f8eff" strokeWidth="1.5"/>
   <path d="M16,5 L25,10 L25,18 Q25,25 16,27 Q7,25 7,18 L7,10 Z" fill="none" stroke="#9b7dff" strokeWidth="0.8" opacity="0.4"/>
-  <text x="16" y="20" textAnchor="middle" fontSize="11" fontWeight="900" fontFamily="'Roboto Slab', serif" fill="url(#lg1)" letterSpacing="0.5">PT</text>
+  <text x="16" y="20" textAnchor="middle" fontSize="11" fontWeight="900" fontFamily="'Manrope', sans-serif" fill="url(#lg1)" letterSpacing="0.5">PT</text>
 </svg>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: T.text0, lineHeight: 1 }}>PolyTrader</div>
