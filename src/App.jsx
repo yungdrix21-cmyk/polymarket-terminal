@@ -1556,7 +1556,7 @@ export default function App() {
         {/* KYC badge */}
         {!collapsed && kycStatus && kycStatus !== 'approved' && (
           <div onClick={() => setView('profile')} style={{ margin: '10px 10px 0', background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-            <Icon name="shield" size={12} color={T.yellow} />'
+            <Icon name="shield" size={12} color={T.yellow} />
             <span style={{ fontSize: 11, color: T.yellow, fontWeight: 600 }}>KYC {kycStatus === 'pending' ? 'Pending' : 'Required'} &rarr;</span>
           </div>
         )}
