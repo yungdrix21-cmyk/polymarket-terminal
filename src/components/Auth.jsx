@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
@@ -632,7 +632,7 @@ export default function Auth({ onLogin, onNavigate }) {
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: isMobile ? '20px 16px' : '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, background: T.bg1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#fff' }}>P</div>
-          <span style={{ fontSize: 13, color: T.text2 }}> 2025 PolyTrader. All rights reserved.</span>
+          <span style={{ fontSize: 13, color: T.text2 }}> © 2025 PolyTrader. All rights reserved.</span>
         </div>
         <div style={{ display: 'flex', gap: 20 }}>
           {[
