@@ -648,14 +648,21 @@ export default function Auth({ onLogin, onNavigate }) {
       Contact
     </span>
   ),
-  onClick: () => window.location.href = 'mailto:admin.polytrader@gmail.com'
-},
-].map(({ label, onClick }, i) => (
-  <span key={i} onClick={onClick} style={{ fontSize: 12, color: T.text2, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+  { label: 'Contact', onClick: () => window.location.href = 'mailto:admin.polytrader@gmail.com', icon: true },
+].map(({ label, onClick, icon }, i) => (
+  <span key={i} onClick={onClick}
+    style={{ fontSize: 12, color: T.text2, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
     onMouseEnter={e => e.currentTarget.style.color = T.text1}
     onMouseLeave={e => e.currentTarget.style.color = T.text2}>
+    {icon && (
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <rect x="1" y="2.5" width="10" height="7" rx="1.2" stroke="currentColor" strokeWidth="1.1"/>
+        <path d="M1 4l5 3.5L11 4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
+      </svg>
+    )}
     {label}
   </span>
+))}
         </div>
       </footer>
     </div>
