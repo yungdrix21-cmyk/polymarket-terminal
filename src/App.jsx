@@ -513,7 +513,7 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
           ))}
         </div>
       )}
-      
+
       {closedPositions?.length > 0 && (
   <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden', marginBottom: 20 }}>
     <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1546,14 +1546,15 @@ const [markets, setMarkets] = useState(
       const { data: posData } = await supabase.from('positions').select('*').eq('user_id', userId).eq('status', 'open').order('created_at', { ascending: false })
 setPositions(posData ?? [])
 
-const { data: closedData } = await supabase.from('positions').select('*').eq('user_id', userId).eq('status', 'closed').order('created_at', { ascending: false })
 setClosedPositions(closedData ?? [])
+
     } catch (e) {
       console.warn('loadUserData failed:', e.message)
       setKycStatus('not_started')
       setBalance(0)
       setTransactions([])
       setPositions([])
+      setClosedPositions([])
     }
   }
   const handleLogin = async (u) => { setUser(u); await loadUserData(u.id); setShowLanding(false) }
