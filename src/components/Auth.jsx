@@ -667,4 +667,5 @@ export default function Auth({ onLogin, onNavigate }) {
       </footer>
     </div>
   )
-}
+} 
+ 
