@@ -485,42 +485,9 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
         <StatCard label="Open Positions" value={positions?.length || 0} color={T.blue} icon={<Icon name="zap" size={15} color={T.blue} />} sub="Active markets" />
         <StatCard label="Live Markets" value={marketsCount || 0} color={T.purple} icon={<Icon name="markets" size={15} color={T.purple} />} sub="Available now" />
       </div>
-      <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Icon name="deposit" size={15} color={T.yellow} />
-          <span style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>Recent Transactions</span>
-        </div>
-        {transactions.length === 0 ? (
-          <div style={{ padding: '32px 24px', textAlign: 'center', color: T.text2, fontSize: 13 }}>
-            No transactions yet. Make a deposit to get started.
-          </div>
-        ) : (
-          transactions.map((tx, i) => (
-            <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', borderBottom: i < transactions.length - 1 ? `1px solid ${T.border}` : 'none' }}
-              onMouseEnter={e => e.currentTarget.style.background = T.bgHover}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: tx.type === 'withdrawal' ? T.redDim : T.yellowDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name={tx.type === 'withdrawal' ? 'withdraw' : 'deposit'} size={15} color={tx.type === 'withdrawal' ? T.red : T.yellow} />
-                  </div>
-                  <div>
-                    <div style={{ color: T.text0, fontSize: 13, fontWeight: 500 }}>{tx.crypto} {tx.type === 'withdrawal' ? 'Withdrawal' : 'Deposit'}</div>
-                    <div style={{ color: T.text2, fontSize: 11, marginTop: 2 }}>{new Date(tx.created_at).toLocaleDateString()}</div>
-                    </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: tx.type === 'withdrawal' ? T.red : T.teal, fontWeight: 600, fontSize: 14, fontFamily: T.mono }}>
-                  {tx.type === 'withdrawal' ? '-' : '+'}${fmt(tx.amount).replace('$','')}
-                  </div>
-                <Badge color={tx.status === 'completed' ? T.teal : tx.status === 'declined' ? T.red : T.yellow}>{tx.status}</Badge>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
 
       {positions?.length > 0 && (
-        <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden', marginTop: 20 }}>
+        <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden', marginBottom: 20 }}>
           <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
             <Icon name="zap" size={15} color={T.blue} />
             <span style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>Open Positions</span>
@@ -540,13 +507,46 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
                 <div style={{ color: T.text1, fontSize: 12 }}>Invested: <span style={{ color: T.text0, fontFamily: T.mono }}>{fmt(p.amount)}</span></div>
                 <div style={{ color: (p.pnl ?? 0) >= 0 ? T.teal : T.red, fontWeight: 700, fontSize: 15, fontFamily: T.mono }}>
                   {(p.pnl ?? 0) >= 0 ? '+' : ''}{fmt(p.pnl ?? 0)}
-                  </div>
                 </div>
               </div>
-            
+            </div>
           ))}
         </div>
       )}
+
+      <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
+        <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Icon name="deposit" size={15} color={T.yellow} />
+          <span style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>Recent Transactions</span>
+        </div>
+        {transactions.length === 0 ? (
+          <div style={{ padding: '32px 24px', textAlign: 'center', color: T.text2, fontSize: 13 }}>
+            No transactions yet. Make a deposit to get started.
+          </div>
+        ) : (
+          transactions.map((tx, i) => (
+            <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', borderBottom: i < transactions.length - 1 ? `1px solid ${T.border}` : 'none' }}
+              onMouseEnter={e => e.currentTarget.style.background = T.bgHover}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: tx.type === 'withdrawal' ? T.redDim : T.yellowDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name={tx.type === 'withdrawal' ? 'withdraw' : 'deposit'} size={15} color={tx.type === 'withdrawal' ? T.red : T.yellow} />
+                </div>
+                <div>
+                  <div style={{ color: T.text0, fontSize: 13, fontWeight: 500 }}>{tx.crypto} {tx.type === 'withdrawal' ? 'Withdrawal' : 'Deposit'}</div>
+                  <div style={{ color: T.text2, fontSize: 11, marginTop: 2 }}>{new Date(tx.created_at).toLocaleDateString()}</div>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: tx.type === 'withdrawal' ? T.red : T.teal, fontWeight: 600, fontSize: 14, fontFamily: T.mono }}>
+                  {tx.type === 'withdrawal' ? '-' : '+'}${fmt(tx.amount).replace('$','')}
+                </div>
+                <Badge color={tx.status === 'completed' ? T.teal : tx.status === 'declined' ? T.red : T.yellow}>{tx.status}</Badge>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
 
     </div>
   )
