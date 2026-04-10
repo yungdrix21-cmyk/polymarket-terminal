@@ -1599,6 +1599,11 @@ export default function App() {
         {/* Topbar */}
         <div style={{ padding: '0 24px', height: 52, borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: T.bg1, flexShrink: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: T.text0, textTransform: 'capitalize', display: 'flex', alignItems: 'center', gap: 8 }}>
+            {isMobile && (
+              <div onClick={() => setCollapsed(false)} style={{ cursor: 'pointer', padding: '4px 8px 4px 0', marginRight: 4 }}>
+                <Icon name="menu" size={18} color={T.text1} />
+              </div>
+            )}
             <Icon name={currentIcon} size={14} color={T.blue} />
             {view.replace('admin-', 'Admin > ')}
           </div>
