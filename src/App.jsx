@@ -1403,7 +1403,7 @@ export default function App() {
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
-  if (showLanding) return <Auth onLogin={handleLogin} onNavigate={setView} />
+  if (showLanding && view !== 'legal') return <Auth onLogin={handleLogin} onNavigate={setView} />
   const isAdmin = user && profile?.role === 'admin'
   const MAIN_NAV = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
