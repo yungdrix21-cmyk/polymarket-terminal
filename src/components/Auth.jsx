@@ -632,20 +632,30 @@ export default function Auth({ onLogin, onNavigate }) {
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: isMobile ? '20px 16px' : '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, background: T.bg1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#fff' }}>P</div>
-          <span style={{ fontSize: 13, color: T.text2 }}>PolyTrader © 2025</span>
+          <span style={{ fontSize: 13, color: T.text2 }}>© 2025 PolyTrader. All rights reserved.</span>
         </div>
         <div style={{ display: 'flex', gap: 20 }}>
           {[
            { label: 'Privacy Policy', onClick: () => onNavigate('legal') },
 { label: 'Terms of Service', onClick: () => onNavigate('legal') },
-{ label: 'Contact', onClick: () => window.location.href = 'mailto:admin.polytrader@gmail.com' },
-].map(({ label, onClick }) => (
-  <span key={label} onClick={onClick} style={{ fontSize: 12, color: T.text2, cursor: 'pointer' }}
-    onMouseEnter={e => e.target.style.color = T.text1}
-    onMouseLeave={e => e.target.style.color = T.text2}>
+{
+  label: (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
+        <path d="M1 4.5l6 4 6-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      </svg>
+      Contact
+    </span>
+  ),
+  onClick: () => window.location.href = 'mailto:admin.polytrader@gmail.com'
+},
+].map(({ label, onClick }, i) => (
+  <span key={i} onClick={onClick} style={{ fontSize: 12, color: T.text2, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+    onMouseEnter={e => e.currentTarget.style.color = T.text1}
+    onMouseLeave={e => e.currentTarget.style.color = T.text2}>
     {label}
   </span>
-))}
         </div>
       </footer>
     </div>
