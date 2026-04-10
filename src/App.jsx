@@ -535,7 +535,7 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
                   </div>
                 </div>
               </div>
-            </div>
+            
           ))}
         </div>
       )}
