@@ -113,7 +113,7 @@ function Chart({ market }) {
   const firstPrice = candles[0]?.close ?? 0.5
   const isOverallUp = lastPrice >= firstPrice
   return (
-    <div style={{ overflowX: 'auto', marginTop: 12, background: 'rgba(255,255,255,0.02)', borderRadius: 12, padding: '12px 8px' }}>
+    <div style={{ overflowX: 'auto', marginTop: 12, background: 'rgba(255,255,255,0.02)', borderRadius: 16, padding: '12px 8px', border: '1px solid rgba(255,255,255,0.06)' }}>
       <svg width={totalW} height={chartH + volH + 28} style={{ display: 'block' }}>
         <defs>
           <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -585,93 +585,58 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
     </div>
   )
 }
-function AIInsights({ market }) {
-  const [insight, setInsight] = useState(null)
-  const [loading, setLoading] = useState(false)
+
+function TradeHistory({ userId, question }) {
+  const [trades, setTrades] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-  let cancelled = false
-
-  const run = async (isFirst = false) => {
-    if (!market || !market.outcomePrices) return
-
-    if (isFirst) {
-      setLoading(true)
-      setInsight(null)
-    }
-
-    const yes = (market.outcomePrices[0] * 100).toFixed(1)
-    const no = (market.outcomePrices[1] * 100).toFixed(1)
-
-    const prompt = `You are a prediction market analyst. Given this market: "${market.question}"
-Current probabilities: YES ${yes}% / NO ${no}%`
-
-    const { data: { session } } = await supabase.auth.getSession()
-
-    if (!session) {
-      setInsight("Please log in to view AI insights.")
+    if (!userId) return
+    const load = async () => {
+      const { data } = await supabase
+        .from('positions')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('market', question)
+        .order('created_at', { ascending: false })
+      setTrades(data ?? [])
       setLoading(false)
-      return
     }
+    load()
+  }, [userId, question])
 
-    const response = await fetch(
-      'https://njodnertiscjcxdssyat.supabase.co/functions/v1/ai-insight',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({ prompt }),
-      }
-    )
-
-    const data = await response.json()
-
-if (cancelled) return
-
-if (response.ok && data?.text) {
-  setInsight(data.text)
-}
-// if error, silently keep old insight — no flicker
-
-setLoading(false)
-  }
-
-  run(true)  // first load shows spinner
-
-  const interval = setInterval(() => run(false), 10000)  // refresh silently
-
-  return () => {
-    cancelled = true
-    clearInterval(interval)
-  }
-
-}, [market])
+  if (loading || trades.length === 0) return null
 
   return (
-    <div style={{ marginTop: 20, background: 'rgba(79,142,255,0.06)', border: '1px solid rgba(79,142,255,0.15)', borderRadius: 12, padding: '16px 20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <div style={{ width: 20, height: 20, borderRadius: 6, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#fff' }}>AI</div>
-        <span style={{ fontSize: 11, fontWeight: 600, color: T.blue, letterSpacing: '0.06em' }}>AI MARKET INSIGHT</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-          <span style={{ fontSize: 10, background: T.tealDim, color: T.teal, padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>YES {(market.outcomePrices[0] * 100).toFixed(0)}%</span>
-          <span style={{ fontSize: 10, background: T.redDim, color: T.red, padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>NO {(market.outcomePrices[1] * 100).toFixed(0)}%</span>
-        </div>
+    <div style={{ marginTop: 20 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: T.text2, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Trade History</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {trades.map(t => (
+          <div key={t.id} style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: t.side === 'YES' ? T.teal : T.red, background: t.side === 'YES' ? T.tealDim : T.redDim, padding: '2px 8px', borderRadius: 20 }}>{t.side}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: T.text0, fontFamily: T.mono }}>${Number(t.amount).toFixed(2)}</span>
+                {t.entry_price > 0 && <span style={{ fontSize: 11, color: T.text2 }}>at {t.entry_price}%</span>}
+              </div>
+              <div style={{ fontSize: 11, color: T.text2 }}>{t.market}</div>
+              <div style={{ fontSize: 10, color: T.text2, marginTop: 2 }}>
+                {new Date(t.created_at).toLocaleDateString()} · <span style={{ color: t.status === 'open' ? T.blue : T.text2 }}>{t.status}</span>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, fontFamily: T.mono, color: (t.pnl ?? 0) >= 0 ? T.teal : T.red }}>
+                {(t.pnl ?? 0) >= 0 ? '+' : ''}${Number(t.pnl ?? 0).toFixed(2)}
+              </div>
+              <div style={{ fontSize: 10, color: T.text2, marginTop: 2 }}>{(t.pnl ?? 0) >= 0 ? 'Profit' : 'Loss'}</div>
+            </div>
+          </div>
+        ))}
       </div>
-      {loading ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(79,142,255,0.2)', borderTop: '2px solid #4f8eff', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
-          <span style={{ color: T.text2, fontSize: 13 }}>Analyzing market conditions...</span>
-        </div>
-      ) : (
-        <p style={{ color: T.text1, fontSize: 13, lineHeight: 1.7, margin: 0 }}>{insight}</p>
-      )}
     </div>
   )
 }
-function MarketsPage({ prices, selected, setSelected, isMobile }) {
+function MarketsPage({ prices, selected, setSelected, isMobile, user }) {
   const selectedLive = prices?.find(m => m.id === selected?.id)
   if (isMobile && selectedLive) {
     return (
@@ -692,7 +657,7 @@ function MarketsPage({ prices, selected, setSelected, isMobile }) {
             ))}
           </div>
           <Chart market={selectedLive} />
-          <AIInsights market={selectedLive} />
+          <TradeHistory userId={user?.id} marketId={selectedLive.id} question={selectedLive.question} />
         </div>
       </div>
     )
@@ -757,7 +722,7 @@ onTouchStart={() => {}}
               </div>
               <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
                 <Chart market={selectedLive} />
-                <AIInsights market={selectedLive} />
+                <TradeHistory userId={user?.id} marketId={selectedLive.id} question={selectedLive.question} />
               </div>
             </>
           ) : (
@@ -1137,7 +1102,7 @@ function AdminPositionsPage() {
   const [closedPositions, setClosedPositions] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState('')
-  const [form, setForm] = useState({ market: '', side: 'YES', amount: '', pnl: '' })
+  const [form, setForm] = useState({ market: '', side: 'YES', amount: '', pnl: '', entry_price: '' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -1157,13 +1122,14 @@ function AdminPositionsPage() {
     if (!selectedUser || !form.market) return
     setSaving(true)
     const { data, error } = await supabase.from('positions').insert({
-      user_id: selectedUser,
-      market: form.market,
-      side: form.side,
-      amount: parseFloat(form.amount) || 0,
-      pnl: parseFloat(form.pnl) || 0,
-      status: 'open'
-    }).select('*, profiles(email)').single()
+  user_id: selectedUser,
+  market: form.market,
+  side: form.side,
+  amount: parseFloat(form.amount) || 0,
+  pnl: parseFloat(form.pnl) || 0,
+  entry_price: parseFloat(form.entry_price) || 0,
+  status: 'open'
+}).select('*, profiles(email)').single()
     if (!error) setPositions(prev => [data, ...prev])
     setForm({ market: '', side: 'YES', amount: '', pnl: '' })
     setSaving(false)
@@ -1207,8 +1173,12 @@ function AdminPositionsPage() {
             placeholder="Amount ($)" type="number"
             style={{ width: 120, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }} />
           <input value={form.pnl} onChange={e => setForm(p => ({ ...p, pnl: e.target.value }))}
-            placeholder="P&L ($)" type="number"
-            style={{ width: 120, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }} />
+  placeholder="P&L ($)" type="number"
+  style={{ width: 120, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }} />
+<input value={form.entry_price} onChange={e => setForm(p => ({ ...p, entry_price: e.target.value }))}
+  placeholder="Entry %" type="number"
+  style={{ width: 100, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }} />
+
           <button onClick={handleAdd} disabled={saving}
             style={{ padding: '8px 18px', background: T.blue, color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
             {saving ? '...' : '+ Add'}
@@ -1625,10 +1595,11 @@ setClosedPositions(closedData ?? [])
     if (view === 'markets') {
   return (
     <MarketsPage 
-      prices={markets}   // this is fine, only renders when view === 'markets'
+      prices={markets}
       selected={selected} 
       setSelected={setSelected}
       isMobile={isMobile}
+      user={user}
     />
   )
 }
