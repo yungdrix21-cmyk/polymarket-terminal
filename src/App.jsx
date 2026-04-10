@@ -782,7 +782,7 @@ function CopyTradingPage({ kycStatus, user }) {
   const [loading, setLoading] = useState(true)
 
   const traders = [
-    { name: "10xdE17f7144fbD0eddb2679132C10ff5e74B120988", slug: "10xdE17f7144fbD0eddb2679132C10ff5e74B120988", profit: "+$727,451", winRate: "91%", followers: "8.2K", rank: 1 },
+    { name: "10xdE17f7144fbD0eddb2679132C10ff5e74B120988", slug: "0xde17f7144fbd0eddb2679132c10ff5e74b120988-1772205225932", profit: "+$727,451", winRate: "91%", followers: "8.2K", rank: 1 },
     { name: "BoneReader", slug: "BoneReader", profit: "+$614,057", winRate: "87%", followers: "6.1K", rank: 2 },
     { name: "k9Q2mX4L8A7ZP3R", slug: "k9Q2mX4L8A7ZP3R", profit: "+$535,926", winRate: "84%", followers: "4.9K", rank: 3 },
     { name: "0x8dxd", slug: "0x8dxd", profit: "+$534,805", winRate: "82%", followers: "4.3K", rank: 4 },
