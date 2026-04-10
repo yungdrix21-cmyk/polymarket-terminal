@@ -642,11 +642,16 @@ function TradeHistory({ userId, question }) {
   load()
 }, [userId, question])
 
-  if (loading || trades.length === 0) return null
+  if (loading) return null
 
   return (
-    <div style={{ marginTop: 20 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: T.text2, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Trade History</div>
+  <div style={{ marginTop: 20 }}>
+    <div style={{ fontSize: 11, fontWeight: 600, color: T.text2, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Trade History</div>
+    {trades.length === 0 ? (
+      <div style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: '24px', textAlign: 'center', color: T.text2, fontSize: 13 }}>
+        No trades on this market yet.
+      </div>
+    ) : (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {trades.map(t => (
           <div key={t.id} style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -670,8 +675,9 @@ function TradeHistory({ userId, question }) {
           </div>
         ))}
       </div>
-    </div>
-  )
+    )}
+  </div>
+)
 }
 function MarketsPage({ prices, selected, setSelected, isMobile, user }) {
   const selectedLive = prices?.find(m => m.id === selected?.id)
