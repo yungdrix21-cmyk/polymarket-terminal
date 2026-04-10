@@ -648,7 +648,7 @@ export default function Auth({ onLogin, onNavigate }) {
       Contact
     </span>
   ),
-  { label: 'Contact', onClick: () => window.location.href = 'mailto:admin.polytrader@gmail.com', icon: true },
+  { label: 'Contact', onClick: () => { window.location.href = 'mailto:admin.polytrader@gmail.com' }, icon: true },
 ].map(({ label, onClick, icon }, i) => (
   <span key={i} onClick={onClick}
     style={{ fontSize: 12, color: T.text2, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}

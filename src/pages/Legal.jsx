@@ -48,10 +48,89 @@ function SubSection({ title, children }) {
   )
 }
 
-function InfoBox({ color = T.teal, icon, children }) {
+// ─── SVG Icons (matching Auth.jsx style) ─────────────────────────────────────
+
+function IcoInfo({ color }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+      <circle cx="7.5" cy="7.5" r="6.5" stroke={color} strokeWidth="1.3" />
+      <path d="M7.5 6.5v4" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="7.5" cy="4.5" r="0.8" fill={color} />
+    </svg>
+  )
+}
+function IcoLock({ color }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+      <rect x="2.5" y="6" width="10" height="7.5" rx="1.8" stroke={color} strokeWidth="1.3" />
+      <path d="M5 6V4.5a2.5 2.5 0 015 0V6" stroke={color} strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="7.5" cy="9.8" r="1" fill={color} />
+    </svg>
+  )
+}
+function IcoWarning({ color }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+      <path d="M7.5 1.5L13.5 12.5H1.5L7.5 1.5Z" stroke={color} strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M7.5 6v3" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="7.5" cy="10.5" r="0.8" fill={color} />
+    </svg>
+  )
+}
+function IcoRobot({ color }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+      <rect x="2" y="5" width="11" height="8" rx="2" stroke={color} strokeWidth="1.3" />
+      <circle cx="5.2" cy="8.5" r="1" fill={color} />
+      <circle cx="9.8" cy="8.5" r="1" fill={color} />
+      <path d="M5.5 11h4" stroke={color} strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M7.5 5V2.5" stroke={color} strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="7.5" cy="2" r="0.8" fill={color} />
+    </svg>
+  )
+}
+function IcoCheck({ color }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+      <circle cx="7.5" cy="7.5" r="6.5" stroke={color} strokeWidth="1.3" />
+      <path d="M4.5 7.5l2.2 2.2L10.5 5" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+function IcoX({ color }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+      <circle cx="7.5" cy="7.5" r="6.5" stroke={color} strokeWidth="1.3" />
+      <path d="M5 5l5 5M10 5l-5 5" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+function IcoGlobe({ color }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+      <circle cx="7.5" cy="7.5" r="6.5" stroke={color} strokeWidth="1.3" />
+      <path d="M7.5 1C7.5 1 5 4 5 7.5S7.5 14 7.5 14" stroke={color} strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M7.5 1C7.5 1 10 4 10 7.5S7.5 14 7.5 14" stroke={color} strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M1 7.5h13" stroke={color} strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+function IcoChain({ color }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+      <path d="M6 9l3-3" stroke={color} strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M4.5 7.5L3 9a2.12 2.12 0 003 3l1.5-1.5" stroke={color} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10.5 7.5L12 6a2.12 2.12 0 00-3-3L7.5 4.5" stroke={color} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// ─── Components ───────────────────────────────────────────────────────────────
+
+function InfoBox({ color = T.teal, svgIcon, children }) {
   return (
     <div style={{ background: color + '10', border: `1px solid ${color}30`, borderRadius: 10, padding: '12px 16px', marginBottom: 12, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-      {icon && <span style={{ color, fontSize: 14, flexShrink: 0, marginTop: 2 }}>{icon}</span>}
+      {svgIcon && svgIcon}
       <div style={{ fontSize: 13, color: T.text1, lineHeight: 1.6 }}>{children}</div>
     </div>
   )
@@ -61,7 +140,7 @@ function WarningBox({ children }) {
   return (
     <div style={{ background: T.red + '10', border: `1px solid ${T.red}40`, borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 15 }}>⚠️</span>
+        <IcoWarning color={T.red} />
         <span style={{ fontSize: 13, fontWeight: 700, color: T.red }}>Critical risk warning</span>
       </div>
       <div style={{ fontSize: 13, color: T.text1, lineHeight: 1.6 }}>{children}</div>
@@ -204,7 +283,7 @@ export default function LegalPage({ onBack }) {
             </SubSection>
 
             <SubSection title="Service Description">
-              <InfoBox color={T.teal} icon="ℹ">
+              <InfoBox color={T.teal} svgIcon={<IcoInfo color={T.teal} />}>
                 <strong style={{ color: T.text0 }}>PolyTrader is a non-custodial DeFi platform</strong> that provides:
                 <BulletList color={T.teal} items={[
                   'Web interface for accessing prediction markets',
@@ -273,7 +352,7 @@ export default function LegalPage({ onBack }) {
             </SubSection>
 
             <SubSection title="How We Protect Data">
-              <InfoBox color={T.blue} icon="🔒">
+              <InfoBox color={T.blue} svgIcon={<IcoLock color={T.blue} />}>
                 <strong style={{ color: T.text0 }}>Security measures</strong>
                 <BulletList color={T.blue} items={[
                   'Encryption of all sensitive data',
@@ -303,7 +382,7 @@ export default function LegalPage({ onBack }) {
             </WarningBox>
 
             <SubSection title="Risk of Loss">
-              <InfoBox color={T.red} icon="⚠">
+              <InfoBox color={T.red} svgIcon={<IcoWarning color={T.red} />}>
                 <strong style={{ color: T.text0 }}>Complete loss of capital</strong>
                 <BulletList color={T.red} items={[
                   "If you buy YES and event doesn't happen → tokens = $0",
@@ -325,7 +404,7 @@ export default function LegalPage({ onBack }) {
             </SubSection>
 
             <SubSection title="Technical Risks">
-              <InfoBox color={T.purple} icon="⛓">
+              <InfoBox color={T.purple} svgIcon={<IcoChain color={T.purple} />}>
                 <strong style={{ color: T.text0 }}>Blockchain and platform</strong>
                 <BulletList color={T.purple} items={[
                   'Smart contract failures',
@@ -338,7 +417,7 @@ export default function LegalPage({ onBack }) {
             </SubSection>
 
             <SubSection title="AI Analysis Risks">
-              <InfoBox color={T.yellow} icon="🤖">
+              <InfoBox color={T.yellow} svgIcon={<IcoRobot color={T.yellow} />}>
                 <strong style={{ color: T.text0 }}>AI can be wrong</strong>
                 <BulletList color={T.yellow} items={[
                   'Predictions are probabilistic, not certain',
@@ -350,7 +429,7 @@ export default function LegalPage({ onBack }) {
             </SubSection>
 
             <SubSection title="Risk Management Recommendations">
-              <InfoBox color={T.teal} icon="✓">
+              <InfoBox color={T.teal} svgIcon={<IcoCheck color={T.teal} />}>
                 <strong style={{ color: T.text0 }}>Tips</strong>
                 <BulletList color={T.teal} items={[
                   'Start small — study the platform',
@@ -362,7 +441,7 @@ export default function LegalPage({ onBack }) {
             </SubSection>
 
             <SubSection title="When NOT to Use the Platform">
-              <InfoBox color={T.red} icon="✕">
+              <InfoBox color={T.red} svgIcon={<IcoX color={T.red} />}>
                 <strong style={{ color: T.text0 }}>DON'T use PolyTrader if:</strong>
                 <BulletList color={T.red} items={[
                   "Can't afford to lose invested funds",
@@ -396,7 +475,7 @@ export default function LegalPage({ onBack }) {
             </SubSection>
 
             <SubSection title="Managing Cookies">
-              <InfoBox color={T.blue} icon="🌐">
+              <InfoBox color={T.blue} svgIcon={<IcoGlobe color={T.blue} />}>
                 <strong style={{ color: T.text0 }}>Browser settings</strong>
                 <BulletList color={T.blue} items={[
                   'You can manage cookies through browser settings',
@@ -405,7 +484,7 @@ export default function LegalPage({ onBack }) {
                   'Safari: Settings → Privacy → Cookies',
                 ]} />
               </InfoBox>
-              <InfoBox color={T.yellow} icon="⚠">
+              <InfoBox color={T.yellow} svgIcon={<IcoWarning color={T.yellow} />}>
                 <strong style={{ color: T.text0 }}>Consequences of disabling</strong>
                 <BulletList color={T.yellow} items={[
                   'Platform may not work correctly',
