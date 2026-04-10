@@ -782,17 +782,24 @@ function CopyTradingPage({ kycStatus, user }) {
   const [loading, setLoading] = useState(true)
 
   const traders = [
-    { name: "10xdE17f7144fbD0eddb2679132C10ff5e74B120988", profit: "+$727,451", winRate: "91%", followers: "8.2K", rank: 1 },
-    { name: "BoneReader", profit: "+$614,057", winRate: "87%", followers: "6.1K", rank: 2 },
-    { name: "k9Q2mX4L8A7ZP3R", profit: "+$535,926", winRate: "84%", followers: "4.9K", rank: 3 },
-    { name: "0x8dxd", profit: "+$534,805", winRate: "82%", followers: "4.3K", rank: 4 },
-    { name: "0xB27BC932bf8110D8F78e55da7d5f0497A18B5b82", profit: "+$411,861", winRate: "79%", followers: "3.7K", rank: 5 },
-    { name: "vidarx", profit: "+$403,477", winRate: "78%", followers: "3.2K", rank: 6 },
-    { name: "0x1f0ebc543B2d411f66947041625c0Aa1ce61CF86", profit: "+$386,132", winRate: "76%", followers: "2.8K", rank: 7 },
-    { name: "stingo43", profit: "+$323,175", winRate: "74%", followers: "2.4K", rank: 8 },
-    { name: "0xe1D6b51521Bd4365769199f392F9818661BD907", profit: "+$314,579", winRate: "72%", followers: "2.1K", rank: 9 },
-    { name: "Bonereaper", profit: "+$307,770", winRate: "71%", followers: "1.9K", rank: 10 },
+    { name: "10xdE17f7144fbD0eddb2679132C10ff5e74B120988", slug: "10xdE17f7144fbD0eddb2679132C10ff5e74B120988", profit: "+$727,451", winRate: "91%", followers: "8.2K", rank: 1 },
+    { name: "BoneReader", slug: "BoneReader", profit: "+$614,057", winRate: "87%", followers: "6.1K", rank: 2 },
+    { name: "k9Q2mX4L8A7ZP3R", slug: "k9Q2mX4L8A7ZP3R", profit: "+$535,926", winRate: "84%", followers: "4.9K", rank: 3 },
+    { name: "0x8dxd", slug: "0x8dxd", profit: "+$534,805", winRate: "82%", followers: "4.3K", rank: 4 },
+    { name: "0xB27BC932bf8110D8F78e55da7d5f0497A18B5b82", slug: "0xB27BC932bf8110D8F78e55da7d5f0497A18B5b82", profit: "+$411,861", winRate: "79%", followers: "3.7K", rank: 5 },
+    { name: "vidarx", slug: "vidarx", profit: "+$403,477", winRate: "78%", followers: "3.2K", rank: 6 },
+    { name: "0x1f0ebc543B2d411f66947041625c0Aa1ce61CF86", slug: "0x1f0ebc543B2d411f66947041625c0Aa1ce61CF86", profit: "+$386,132", winRate: "76%", followers: "2.8K", rank: 7 },
+    { name: "stingo43", slug: "stingo43", profit: "+$323,175", winRate: "74%", followers: "2.4K", rank: 8 },
+    { name: "0xe1D6b51521Bd4365769199f392F9818661BD907", slug: "0xe1D6b51521Bd4365769199f392F9818661BD907", profit: "+$314,579", winRate: "72%", followers: "2.1K", rank: 9 },
+    { name: "Bonereaper", slug: "Bonereaper", profit: "+$307,770", winRate: "71%", followers: "1.9K", rank: 10 },
   ]
+
+  const displayName = (name) => {
+    if (name.length > 20) {
+      return `${name.slice(0, 6)}...${name.slice(-4)}`
+    }
+    return name
+  }
 
   useEffect(() => {
     if (!user) return
@@ -810,23 +817,23 @@ function CopyTradingPage({ kycStatus, user }) {
   const [toast, setToast] = useState(null)
 
   const toggleCopy = async (name) => {
-  const isCopying = copying.includes(name)
-  if (isCopying) {
-    await supabase.from('copy_trades').delete().eq('user_id', user.id).eq('trader_name', name)
-    setCopying(prev => prev.filter(n => n !== name))
-    setToast({ msg: `Stopped copying ${name}`, color: T.red })
-  } else {
-    if (copying.length > 0) {
-      setToast({ msg: `Stop copying your current trader first before selecting another`, color: T.yellow })
-      setTimeout(() => setToast(null), 3000)
-      return
+    const isCopying = copying.includes(name)
+    if (isCopying) {
+      await supabase.from('copy_trades').delete().eq('user_id', user.id).eq('trader_name', name)
+      setCopying(prev => prev.filter(n => n !== name))
+      setToast({ msg: `Stopped copying ${name}`, color: T.red })
+    } else {
+      if (copying.length > 0) {
+        setToast({ msg: `Stop copying your current trader first before selecting another`, color: T.yellow })
+        setTimeout(() => setToast(null), 3000)
+        return
+      }
+      await supabase.from('copy_trades').insert({ user_id: user.id, trader_name: name })
+      setCopying(prev => [name, ...prev])
+      setToast({ msg: `Now copying ${name} — trades will automatically be copied within the next 24 hours`, color: T.teal })
     }
-    await supabase.from('copy_trades').insert({ user_id: user.id, trader_name: name })
-    setCopying(prev => [name, ...prev])
-    setToast({ msg: `Now copying ${name} — trades will automatically be copied within the next 24 hours`, color: T.teal })
+    setTimeout(() => setToast(null), 3000)
   }
-  setTimeout(() => setToast(null), 3000)
-}
 
   const shortName = (name) => name.startsWith('0x') || name.length > 20 ? name.slice(0, 6) + '...' + name.slice(-4) : name
 
@@ -887,7 +894,7 @@ function CopyTradingPage({ kycStatus, user }) {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 38, height: 38, borderRadius: 10, background: `${T.purple}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: T.purple }}>{trader.name[0].toUpperCase()}</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: T.text0 }}>{shortName(trader.name)}</div>
+                    <a href={`https://polymarket.com/@${trader.slug}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 700, color: T.text0, textDecoration: 'none', borderBottom: `1px dashed ${T.text2}` }}>{shortName(trader.name)}</a>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Icon name="star" size={12} color={T.yellow} />
@@ -900,20 +907,19 @@ function CopyTradingPage({ kycStatus, user }) {
                   <Badge color={T.purple}>{trader.followers} followers</Badge>
                 </div>
                 {(() => {
-  const isLocked = copying.length > 0 && !isCopying
-  return (
-    <button onClick={() => toggleCopy(trader.name)} disabled={isLocked}
-      style={{ width: '100%', padding: '11px', background: isCopying ? T.teal : isLocked ? T.bg3 : T.tealDim, color: isCopying ? '#0d0e14' : isLocked ? T.text2 : T.teal, border: `1px solid ${isLocked ? T.border : T.teal + '30'}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: isLocked ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: T.font, opacity: isLocked ? 0.5 : 1 }}>
-      {isCopying
-        ? <><Icon name="check" size={13} color="#0d0e14" /> Copying Trades</>
-        : isLocked
-        ? <><Icon name="lock" size={13} color={T.text2} /> Unavailable</>
-        : <><Icon name="copy" size={13} /> Copy Trader</>
-      }
-    </button>
-  )
-})()}
-
+                  const isLocked = copying.length > 0 && !isCopying
+                  return (
+                    <button onClick={() => toggleCopy(trader.name)} disabled={isLocked}
+                      style={{ width: '100%', padding: '11px', background: isCopying ? T.teal : isLocked ? T.bg3 : T.tealDim, color: isCopying ? '#0d0e14' : isLocked ? T.text2 : T.teal, border: `1px solid ${isLocked ? T.border : T.teal + '30'}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: isLocked ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: T.font, opacity: isLocked ? 0.5 : 1 }}>
+                      {isCopying
+                        ? <><Icon name="check" size={13} color="#0d0e14" /> Copying Trades</>
+                        : isLocked
+                        ? <><Icon name="lock" size={13} color={T.text2} /> Unavailable</>
+                        : <><Icon name="copy" size={13} /> Copy Trader</>
+                      }
+                    </button>
+                  )
+                })()}
               </div>
             )
           })}
