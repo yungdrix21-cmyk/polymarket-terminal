@@ -807,15 +807,20 @@ function CopyTradingPage({ kycStatus, user }) {
     load()
   }, [user])
 
+  const [toast, setToast] = useState(null)
+
   const toggleCopy = async (name) => {
     const isCopying = copying.includes(name)
     if (isCopying) {
       await supabase.from('copy_trades').delete().eq('user_id', user.id).eq('trader_name', name)
       setCopying(prev => prev.filter(n => n !== name))
+      setToast({ msg: `Stopped copying ${name}`, color: T.red })
     } else {
       await supabase.from('copy_trades').insert({ user_id: user.id, trader_name: name })
       setCopying(prev => [name, ...prev])
+      setToast({ msg: `Now copying ${name} — trades will automatically be copied within the next 24 hours`, color: T.teal })
     }
+    setTimeout(() => setToast(null), 3000)
   }
 
   const shortName = (name) => name.startsWith('0x') || name.length > 20 ? name.slice(0, 6) + '...' + name.slice(-4) : name
@@ -842,6 +847,23 @@ function CopyTradingPage({ kycStatus, user }) {
 
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: T.bgCard, border: `1px solid ${toast.color}40`,
+          borderLeft: `4px solid ${toast.color}`,
+          borderRadius: 12, padding: '12px 20px',
+          color: T.text0, fontSize: 13, fontWeight: 600,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          zIndex: 9999, whiteSpace: 'nowrap',
+          display: 'flex', alignItems: 'center', gap: 10,
+          animation: 'slideUp 0.3s ease'
+        }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: toast.color }} />
+          {toast.msg}
+          <style>{`@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(10px) } to { opacity: 1; transform: translateX(-50%) translateY(0) } }`}</style>
+        </div>
+      )}
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Copy Trading</h2>
       <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Follow successful Polymarket crypto traders</p>
       <div style={{ position: 'relative', marginBottom: 24 }}>
