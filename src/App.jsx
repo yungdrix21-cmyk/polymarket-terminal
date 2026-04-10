@@ -1512,8 +1512,23 @@ export default function App() {
   return (
     <div style={{ display: 'flex', height: '100vh', background: T.bg0, color: T.text0, fontFamily: T.font, overflow: 'hidden' }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      {isMobile && !collapsed && (
+        <div onClick={() => setCollapsed(true)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40 }} />
+      )}
       {/* -- SIDEBAR -- */}
-      <div style={{ width: collapsed ? 60 : 220, borderRight: `1px solid ${T.border}`, background: T.bg1, display: 'flex', flexDirection: 'column', transition: 'width 0.25s ease', flexShrink: 0 }}>
+      <div style={{
+        width: collapsed ? (isMobile ? 0 : 60) : 220,
+        borderRight: `1px solid ${T.border}`,
+        background: T.bg1,
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'width 0.25s ease',
+        flexShrink: 0,
+        position: isMobile ? 'fixed' : 'relative',
+        zIndex: isMobile ? 50 : 'auto',
+        height: isMobile ? '100vh' : 'auto',
+        overflow: 'hidden',
+      }}>
         {/* Logo */}
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@900&display=swap');`}</style>
         <div style={{ padding: collapsed ? '18px 12px' : '18px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10, justifyContent: collapsed ? 'center' : 'space-between' }}>
