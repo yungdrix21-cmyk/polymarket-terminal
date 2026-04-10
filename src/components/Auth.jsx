@@ -426,6 +426,10 @@ export default function Auth({ onLogin, onNavigate }) {
     finally { setLoading(false) }
   }
 
+  //  LANDING 
+  const isMobile = useIsMobile()
+  const col2 = '1fr 1fr'
+
   if (mode === 'check_email') return (
     <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
       <div style={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
@@ -500,10 +504,6 @@ export default function Auth({ onLogin, onNavigate }) {
       </div>
     </div>
   )
-
-  //  LANDING 
-  const isMobile = useIsMobile()
-  const col2 = '1fr 1fr'
 
   return (
     <div style={{ minHeight: '100vh', background: T.bg0, fontFamily: T.font, color: T.text0, overflowX: 'hidden' }}>
