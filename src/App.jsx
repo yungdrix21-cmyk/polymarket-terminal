@@ -531,8 +531,8 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
               <div style={{ textAlign: 'right' }}>
                 <div style={{ color: T.text1, fontSize: 12 }}>Invested: <span style={{ color: T.text0, fontFamily: T.mono }}>{fmt(p.amount)}</span></div>
                 <div style={{ color: (p.pnl ?? 0) >= 0 ? T.teal : T.red, fontWeight: 700, fontSize: 15, fontFamily: T.mono }}>
-  {(p.pnl ?? 0) >= 0 ? '+' : ''}{fmt(p.pnl ?? 0)}
-</div>
+                  {(p.pnl ?? 0) >= 0 ? '+' : ''}{fmt(p.pnl ?? 0)}
+                  </div>
                 </div>
               </div>
             </div>
