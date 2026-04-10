@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 
+function useIsMobile(bp = 640) {
+  const [m, setM] = useState(typeof window !== 'undefined' ? window.innerWidth < bp : false)
+  useEffect(() => {
+    const h = () => setM(window.innerWidth < bp)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [bp])
+  return m
+}
+
 const T = {
   bg0: '#0d0e14', bg1: '#12131c', bg2: '#181922', bg3: '#1e2030', bgCard: '#14151f',
   border: 'rgba(255,255,255,0.06)', borderHi: 'rgba(255,255,255,0.14)',
@@ -100,6 +110,7 @@ function DataTable({ headers, rows }) {
 export default function LegalPage({ onBack }) {
   const [active, setActive] = useState('terms')
   const contentRef = useRef(null)
+  const isMobile = useIsMobile()
 
   // Track which section is in view as user scrolls
   useEffect(() => {
@@ -144,29 +155,45 @@ export default function LegalPage({ onBack }) {
       </div>
 
       {/* Body: sidebar + content */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
 
-        {/* Left sidebar */}
-        <div style={{ width: 220, flexShrink: 0, borderRight: `1px solid ${T.border}`, background: T.bg1, padding: '32px 12px', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto' }}>
-          <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.text2, margin: '0 0 12px 8px' }}>Legal Information</p>
-          {SECTIONS.map(s => (
-            <button key={s.id} onClick={() => scrollTo(s.id)} style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '9px 12px', borderRadius: 8, border: 'none',
-              background: active === s.id ? T.teal + '15' : 'transparent',
-              color: active === s.id ? T.teal : T.text2,
-              fontSize: 13, fontWeight: active === s.id ? 600 : 400,
-              cursor: 'pointer', fontFamily: T.font, textAlign: 'left',
-              transition: 'all 0.15s', width: '100%',
-            }}>
-              {active === s.id && <div style={{ width: 3, height: 14, borderRadius: 2, background: T.teal, flexShrink: 0 }} />}
-              {s.label}
-            </button>
-          ))}
-        </div>
+        {/* Sidebar (desktop) / Tab bar (mobile) */}
+        {isMobile ? (
+          <div style={{ flexShrink: 0, borderBottom: `1px solid ${T.border}`, background: T.bg1, padding: '8px 12px', display: 'flex', gap: 6, overflowX: 'auto' }}>
+            {SECTIONS.map(s => (
+              <button key={s.id} onClick={() => scrollTo(s.id)} style={{
+                padding: '6px 12px', borderRadius: 20, border: 'none', whiteSpace: 'nowrap',
+                background: active === s.id ? T.teal + '20' : T.bg3,
+                color: active === s.id ? T.teal : T.text2,
+                fontSize: 12, fontWeight: active === s.id ? 600 : 400,
+                cursor: 'pointer', fontFamily: T.font, flexShrink: 0,
+              }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div style={{ width: 220, flexShrink: 0, borderRight: `1px solid ${T.border}`, background: T.bg1, padding: '32px 12px', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto' }}>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.text2, margin: '0 0 12px 8px' }}>Legal Information</p>
+            {SECTIONS.map(s => (
+              <button key={s.id} onClick={() => scrollTo(s.id)} style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '9px 12px', borderRadius: 8, border: 'none',
+                background: active === s.id ? T.teal + '15' : 'transparent',
+                color: active === s.id ? T.teal : T.text2,
+                fontSize: 13, fontWeight: active === s.id ? 600 : 400,
+                cursor: 'pointer', fontFamily: T.font, textAlign: 'left',
+                transition: 'all 0.15s', width: '100%',
+              }}>
+                {active === s.id && <div style={{ width: 3, height: 14, borderRadius: 2, background: T.teal, flexShrink: 0 }} />}
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Scrollable content */}
-        <div ref={contentRef} style={{ flex: 1, overflowY: 'auto', padding: '40px 48px 80px' }}>
+        <div ref={contentRef} style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '24px 16px 60px' : '40px 48px 80px' }}>
 
           {/* ── TERMS OF SERVICE ── */}
           <SectionBlock id="terms" title="Terms of Service">
