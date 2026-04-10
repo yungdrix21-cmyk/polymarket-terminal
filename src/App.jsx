@@ -554,25 +554,68 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
 function AIInsights({ market }) {
   const [insight, setInsight] = useState(null)
   const [loading, setLoading] = useState(false)
-  useEffect(() => {
-  if (!market) return
-  setLoading(true)
-  setInsight(null)
-  const yes = (market.outcomePrices[0] * 100).toFixed(1)
-  const no = (market.outcomePrices[1] * 100).toFixed(1)
-  const prompt = `You are a prediction market analyst. Given this market: "${market.question}"
-Current probabilities: YES ${yes}% / NO ${no}%
-Give a very short 2-3 sentence analysis. Mention the current lean, what could shift the odds, and a confidence note. Be concise and direct. No bullet points.`
 
-  supabase.functions.invoke('ai-insight', { body: { prompt } })
-  .then(({ data, error }) => {
-    console.log('data:', data)
-    console.log('error:', error)
-    setInsight(data?.text || "Unable to generate insight.")
-    setLoading(false)
-  })
-    
-}, [market?.id])
+  useEffect(() => {
+  let cancelled = false
+
+  const run = async (isFirst = false) => {
+    if (!market || !market.outcomePrices) return
+
+    if (isFirst) {
+      setLoading(true)
+      setInsight(null)
+    }
+
+    const yes = (market.outcomePrices[0] * 100).toFixed(1)
+    const no = (market.outcomePrices[1] * 100).toFixed(1)
+
+    const prompt = `You are a prediction market analyst. Given this market: "${market.question}"
+Current probabilities: YES ${yes}% / NO ${no}%`
+
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      setInsight("Please log in to view AI insights.")
+      setLoading(false)
+      return
+    }
+
+    const response = await fetch(
+      'https://njodnertiscjcxdssyat.supabase.co/functions/v1/ai-insight',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ prompt }),
+      }
+    )
+
+    const data = await response.json()
+
+if (cancelled) return
+
+if (response.ok && data?.text) {
+  setInsight(data.text)
+}
+// if error, silently keep old insight — no flicker
+
+setLoading(false)
+  }
+
+  run(true)  // first load shows spinner
+
+  const interval = setInterval(() => run(false), 10000)  // refresh silently
+
+  return () => {
+    cancelled = true
+    clearInterval(interval)
+  }
+
+}, [market])
+
   return (
     <div style={{ marginTop: 20, background: 'rgba(79,142,255,0.06)', border: '1px solid rgba(79,142,255,0.15)', borderRadius: 12, padding: '16px 20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
