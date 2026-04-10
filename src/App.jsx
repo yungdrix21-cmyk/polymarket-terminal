@@ -74,82 +74,119 @@ function StatCard({ label, value, color, icon, sub }) {
 }
 function Chart({ market }) {
   const [candles, setCandles] = useState([])
+
   useEffect(() => {
     let price = parseFloat(market.outcomePrices?.[0] ?? 0.5)
-    const initial = Array.from({ length: 48 }, () => {
+    let volatility = 0.012
+    let trend = 0
+    const initial = Array.from({ length: 60 }, (_, i) => {
+      // Trend changes
+      if (i % 15 === 0) trend = (Math.random() - 0.48) * 0.003
+      volatility = Math.max(0.004, Math.min(0.03, volatility + (Math.random() - 0.5) * 0.002))
+
       const open = price
-      const change = (Math.random() - 0.48) * 0.035
-      const close = Math.min(0.99, Math.max(0.01, open + change))
-      const high = Math.max(open, close) + Math.random() * 0.015
-      const low = Math.min(open, close) - Math.random() * 0.015
+      const move = trend + (Math.random() - 0.5) * volatility
+      const close = Math.min(0.99, Math.max(0.01, open + move))
+      const wickMultiplier = Math.random() * 1.5
+      const high = Math.max(open, close) + Math.abs(move) * wickMultiplier * Math.random()
+      const low = Math.min(open, close) - Math.abs(move) * wickMultiplier * Math.random()
       price = close
-      return { open, close, high, low, volume: Math.floor(Math.random() * 60000 + 8000) }
+      return {
+        open,
+        close,
+        high: Math.min(0.99, high),
+        low: Math.max(0.01, low),
+        volume: Math.floor((Math.random() * 0.5 + 0.75) * 40000 + 5000)
+      }
     })
     setCandles(initial)
   }, [market.id])
+
   useEffect(() => {
     if (!candles.length) return
     const last = candles[candles.length - 1]
-    const newClose = market.outcomePrices[0]
+    const newClose = parseFloat(market.outcomePrices[0])
+    const move = newClose - last.close
     const newCandle = {
       open: last.close,
       close: newClose,
-      high: Math.max(last.close, newClose) + Math.random() * 0.01,
-      low: Math.min(last.close, newClose) - Math.random() * 0.01,
-      volume: Math.floor(Math.random() * 60000 + 8000)
+      high: Math.min(0.99, Math.max(last.close, newClose) + Math.abs(move) * Math.random() * 0.5),
+      low: Math.max(0.01, Math.min(last.close, newClose) - Math.abs(move) * Math.random() * 0.5),
+      volume: Math.floor((Math.random() * 0.5 + 0.75) * 40000 + 5000)
     }
-    setCandles(prev => [...prev.slice(-47), newCandle])
+    setCandles(prev => [...prev.slice(-59), newCandle])
   }, [market.outcomePrices[0]])
+
   if (!candles.length) return null
-  const W = 16, chartH = 200, volH = 44, pad = 8
-  const minP = Math.min(...candles.map(c => c.low))
-  const maxP = Math.max(...candles.map(c => c.high))
+
+  const W = 14, chartH = 220, volH = 44, pad = 10
+  const minP = Math.min(...candles.map(c => c.low)) * 0.998
+  const maxP = Math.max(...candles.map(c => c.high)) * 1.002
   const maxVol = Math.max(...candles.map(c => c.volume))
   const scaleP = v => chartH - ((v - minP) / (maxP - minP || 1)) * (chartH - pad * 2) - pad
   const scaleV = v => volH - (v / maxVol) * (volH - 3)
   const totalW = candles.length * W + 20
-  const linePoints = candles.map((c, i) => `${i * W + W / 2},${scaleP(c.close)}`).join(' ')
   const lastPrice = candles[candles.length - 1]?.close ?? 0.5
   const firstPrice = candles[0]?.close ?? 0.5
   const isOverallUp = lastPrice >= firstPrice
+
   return (
     <div style={{ overflowX: 'auto', marginTop: 12, background: 'rgba(255,255,255,0.02)', borderRadius: 16, padding: '12px 8px', border: '1px solid rgba(255,255,255,0.06)' }}>
       <svg width={totalW} height={chartH + volH + 28} style={{ display: 'block' }}>
         <defs>
           <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={isOverallUp ? '#00d4aa' : '#ff4d6a'} stopOpacity="0.15" />
+            <stop offset="0%" stopColor={isOverallUp ? '#00d4aa' : '#ff4d6a'} stopOpacity="0.12" />
             <stop offset="100%" stopColor={isOverallUp ? '#00d4aa' : '#ff4d6a'} stopOpacity="0" />
           </linearGradient>
         </defs>
-        {[0.2, 0.4, 0.6, 0.8].map((v, i) => (
-          <g key={i}>
-            <line x1={0} y1={scaleP(minP + (maxP - minP) * v)} x2={totalW} y2={scaleP(minP + (maxP - minP) * v)} stroke="rgba(255,255,255,0.04)" strokeWidth={1} strokeDasharray="3,6" />
-            <text x={4} y={scaleP(minP + (maxP - minP) * v) - 3} fill="rgba(255,255,255,0.2)" fontSize={9} fontFamily="monospace">
-              {((minP + (maxP - minP) * v) * 100).toFixed(0)}%
-            </text>
-          </g>
-        ))}
-        <polygon points={`${candles.map((c, i) => `${i * W + W / 2},${scaleP(c.close)}`).join(' ')} ${(candles.length - 1) * W + W / 2},${chartH} 0,${chartH}`} fill="url(#areaGrad)" />
+
+        {/* Grid lines */}
+        {[0.2, 0.4, 0.6, 0.8].map((v, i) => {
+          const y = scaleP(minP + (maxP - minP) * v)
+          return (
+            <g key={i}>
+              <line x1={0} y1={y} x2={totalW} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth={1} strokeDasharray="4,8" />
+              <text x={4} y={y - 3} fill="rgba(255,255,255,0.18)" fontSize={9} fontFamily="monospace">
+                {((minP + (maxP - minP) * v) * 100).toFixed(1)}%
+              </text>
+            </g>
+          )
+        })}
+
+        {/* Area fill */}
+        <polygon
+          points={`${candles.map((c, i) => `${i * W + W / 2},${scaleP(c.close)}`).join(' ')} ${(candles.length - 1) * W + W / 2},${chartH} 0,${chartH}`}
+          fill="url(#areaGrad)"
+        />
+
+        {/* Candles */}
         {candles.map((c, i) => {
           const isUp = c.close >= c.open
           const color = isUp ? '#00d4aa' : '#ff4d6a'
           const bodyTop = scaleP(Math.max(c.open, c.close))
-          const bodyH = Math.max(2, Math.abs(scaleP(c.open) - scaleP(c.close)))
+          const bodyH = Math.max(1.5, Math.abs(scaleP(c.open) - scaleP(c.close)))
           const x = i * W + W / 2
           return (
             <g key={i}>
-              <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} opacity={0.6} />
-              <rect x={i * W + 3} y={bodyTop} width={W - 6} height={bodyH} fill={color} opacity={0.85} rx={2} />
-              <rect x={i * W + 3} y={chartH + 8 + scaleV(c.volume)} width={W - 6} height={volH - scaleV(c.volume)} fill={color} opacity={0.25} rx={1} />
+              {/* Wick */}
+              <line x1={x} y1={scaleP(c.high)} x2={x} y2={scaleP(c.low)} stroke={color} strokeWidth={1} opacity={0.7} />
+              {/* Body */}
+              <rect x={i * W + 2} y={bodyTop} width={W - 4} height={bodyH} fill={color} opacity={isUp ? 0.9 : 0.75} rx={1} />
+              {/* Volume */}
+              <rect x={i * W + 2} y={chartH + 8 + scaleV(c.volume)} width={W - 4} height={volH - scaleV(c.volume)} fill={color} opacity={0.2} rx={1} />
             </g>
           )
         })}
-        <polyline points={linePoints} fill="none" stroke={isOverallUp ? '#00d4aa' : '#ff4d6a'} strokeWidth={1.5} opacity={0.5} strokeLinejoin="round" />
+
+        {/* Current price label */}
+        <line x1={0} y1={scaleP(lastPrice)} x2={totalW - 54} y2={scaleP(lastPrice)} stroke={isOverallUp ? '#00d4aa' : '#ff4d6a'} strokeWidth={1} strokeDasharray="3,5" opacity={0.4} />
         <rect x={totalW - 52} y={scaleP(lastPrice) - 10} width={48} height={16} fill={isOverallUp ? '#00d4aa' : '#ff4d6a'} rx={4} />
         <text x={totalW - 28} y={scaleP(lastPrice) + 2} fill="#000" fontSize={10} fontWeight="700" fontFamily="monospace" textAnchor="middle">
           {(lastPrice * 100).toFixed(1)}%
         </text>
-        <text x={4} y={chartH + 8} fill="rgba(255,255,255,0.2)" fontSize={9} fontFamily="monospace">VOL</text>
+
+        {/* Volume label */}
+        <text x={4} y={chartH + 8} fill="rgba(255,255,255,0.18)" fontSize={9} fontFamily="monospace">VOL</text>
       </svg>
     </div>
   )
@@ -400,11 +437,11 @@ function AdminBalancePage() {
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
-  .from('profiles_with_email')
-  .select('id, email, balance, role')
-  .order('email', { ascending: true })
-      setUsers(data ?? [])
-      setLoading(false)
+  .from('positions')
+  .select('*')
+  .eq('user_id', userId)
+  .eq('market', question)
+  .order('created_at', { ascending: false })
     }
     load()
   }, [])
@@ -591,19 +628,19 @@ function TradeHistory({ userId, question }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!userId) return
-    const load = async () => {
-      const { data } = await supabase
-        .from('positions')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('market', question)
-        .order('created_at', { ascending: false })
-      setTrades(data ?? [])
-      setLoading(false)
-    }
-    load()
-  }, [userId, question])
+  if (!userId) return
+  const load = async () => {
+    const { data } = await supabase
+      .from('positions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .eq('market', question)
+    setTrades(data ?? [])
+    setLoading(false)
+  }
+  load()
+}, [userId, question])
 
   if (loading || trades.length === 0) return null
 
@@ -643,18 +680,48 @@ function MarketsPage({ prices, selected, setSelected, isMobile, user }) {
       <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '12px 16px', borderBottom: `1px solid ${T.border}`, background: T.bg1, display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={() => setSelected(null)} style={{ background: T.bg3, border: 'none', color: T.text1, borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontFamily: T.font }}>
-  &larr; Back
-</button>
+            &larr; Back
+          </button>
           <span style={{ fontSize: 13, fontWeight: 600, color: T.text0, flex: 1, lineHeight: 1.4 }}>{selectedLive.question}</span>
         </div>
         <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
             {[{ label: 'YES', val: Number(selectedLive?.outcomePrices?.[0] ?? 0.5), color: T.teal }, { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red }].map(item => (
               <div key={item.label} style={{ flex: 1, textAlign: 'center', background: `${item.color}10`, border: `1px solid ${item.color}30`, padding: '10px', borderRadius: 12 }}>
                 <div style={{ fontSize: 10, color: item.color, fontWeight: 700 }}>{item.label}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color: item.color, fontFamily: T.mono }}>{(Number(item.val ?? 0.5) * 100).toFixed(0)}%</div>
               </div>
             ))}
+          </div>
+          {/* Stats for mobile */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.bg3, borderRadius: 8, padding: '6px 12px', flex: 1 }}>
+                <Icon name="users" size={12} color={T.purple} />
+                <span style={{ fontSize: 12, color: T.text1 }}>Traders: </span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.text0, fontFamily: T.mono }}>
+                  {(Math.floor(selectedLive.volume / 180)).toLocaleString()}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.bg3, borderRadius: 8, padding: '6px 12px', flex: 1 }}>
+                <Icon name="zap" size={12} color={T.yellow} />
+                <span style={{ fontSize: 12, color: T.text1 }}>OI: </span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.yellow, fontFamily: T.mono }}>
+                  ${(selectedLive.volume * 1.8).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                </span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.bg3, borderRadius: 8, padding: '6px 12px' }}>
+              <Icon name="arrowUp" size={12} color={T.teal} />
+              <span style={{ fontSize: 12, color: T.text1 }}>24h High: </span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: T.teal, fontFamily: T.mono }}>
+                {Math.min(99, Math.floor(Number(selectedLive.outcomePrices?.[0] ?? 0.5) * 100 + 4))}%
+              </span>
+              <span style={{ fontSize: 12, color: T.text1, marginLeft: 6 }}>Low: </span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: T.red, fontFamily: T.mono }}>
+                {Math.max(1, Math.floor(Number(selectedLive.outcomePrices?.[0] ?? 0.5) * 100 - 4))}%
+              </span>
+            </div>
           </div>
           <Chart market={selectedLive} />
           <TradeHistory userId={user?.id} marketId={selectedLive.id} question={selectedLive.question} />
@@ -683,9 +750,8 @@ function MarketsPage({ prices, selected, setSelected, isMobile, user }) {
               <div key={market.id} onClick={() => setSelected(market)}
                 style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, border: `1px solid ${isSelected ? T.blue : T.border}`, borderRadius: 12, margin: '8px', cursor: 'pointer', background: isSelected ? T.bg3 : T.bgCard, borderLeft: `3px solid ${isSelected ? T.blue : T.border}`, transition: 'background 0.15s' }}
                 onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = T.bgHover }}
-onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
-onTouchStart={() => {}}
->
+                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
+                onTouchStart={() => {}}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ fontSize: 12.5, lineHeight: 1.4, color: isSelected ? T.text0 : T.text1, flex: 1, paddingRight: 8 }}>{market.question}</div>
                   <Badge color={T.blue}>{market.timeframe}</Badge>
@@ -710,6 +776,7 @@ onTouchStart={() => {}}
                   <div style={{ fontSize: 11, color: T.text2, marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Icon name="clock" size={11} color={T.text2} /> {selectedLive.timeframe} - Polymarket Crypto
                   </div>
+                  
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   {[{ label: 'YES', val: Number(selectedLive?.outcomePrices?.[0] ?? 0.5), color: T.teal }, { label: 'NO', val: selectedLive.outcomePrices[1], color: T.red }].map(item => (
@@ -722,6 +789,35 @@ onTouchStart={() => {}}
               </div>
               <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
                 <Chart market={selectedLive} />
+<div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '16px 0' }}>
+  <div style={{ display: 'flex', gap: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.bg3, borderRadius: 8, padding: '6px 12px', flex: 1 }}>
+      <Icon name="users" size={12} color={T.purple} />
+      <span style={{ fontSize: 12, color: T.text1 }}>Traders: </span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: T.text0, fontFamily: T.mono }}>
+        {(Math.floor(selectedLive.volume / 180)).toLocaleString()}
+      </span>
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.bg3, borderRadius: 8, padding: '6px 12px', flex: 1 }}>
+      <Icon name="zap" size={12} color={T.yellow} />
+      <span style={{ fontSize: 12, color: T.text1 }}>OI: </span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: T.yellow, fontFamily: T.mono }}>
+        ${(selectedLive.volume * 1.8).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+      </span>
+    </div>
+  </div>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.bg3, borderRadius: 8, padding: '6px 12px' }}>
+    <Icon name="arrowUp" size={12} color={T.teal} />
+    <span style={{ fontSize: 12, color: T.text1 }}>24h High: </span>
+    <span style={{ fontSize: 12, fontWeight: 700, color: T.teal, fontFamily: T.mono }}>
+      {Math.min(99, Math.floor(Number(selectedLive.outcomePrices?.[0] ?? 0.5) * 100 + 4))}%
+    </span>
+    <span style={{ fontSize: 12, color: T.text1, marginLeft: 6 }}>Low: </span>
+    <span style={{ fontSize: 12, fontWeight: 700, color: T.red, fontFamily: T.mono }}>
+      {Math.max(1, Math.floor(Number(selectedLive.outcomePrices?.[0] ?? 0.5) * 100 - 4))}%
+    </span>
+  </div>
+</div>
                 <TradeHistory userId={user?.id} marketId={selectedLive.id} question={selectedLive.question} />
               </div>
             </>
@@ -1104,6 +1200,7 @@ function AdminPositionsPage() {
   const [selectedUser, setSelectedUser] = useState('')
   const [form, setForm] = useState({ market: '', side: 'YES', amount: '', pnl: '', entry_price: '' })
   const [saving, setSaving] = useState(false)
+  const [userSearch, setUserSearch] = useState('') 
 
   useEffect(() => {
     const load = async () => {
@@ -1111,6 +1208,8 @@ function AdminPositionsPage() {
         supabase.from('profiles_with_email').select('id, email, first_name, last_name'),
         supabase.from('positions').select('*, profiles_with_email(email)').order('created_at', { ascending: false })
       ])
+      console.log('users loaded:', u)
+      console.log('positions loaded:', p)
       setUsers(u ?? [])
       setPositions(p ?? [])
       setLoading(false)
@@ -1122,14 +1221,14 @@ function AdminPositionsPage() {
     if (!selectedUser || !form.market) return
     setSaving(true)
     const { data, error } = await supabase.from('positions').insert({
-  user_id: selectedUser,
-  market: form.market,
-  side: form.side,
-  amount: parseFloat(form.amount) || 0,
-  pnl: parseFloat(form.pnl) || 0,
-  entry_price: parseFloat(form.entry_price) || 0,
-  status: 'open'
-}).select('*, profiles(email)').single()
+      user_id: selectedUser,
+      market: form.market,
+      side: form.side,
+      amount: parseFloat(form.amount) || 0,
+      pnl: parseFloat(form.pnl) || 0,
+      entry_price: parseFloat(form.entry_price) || 0,
+      status: 'open'
+    }).select('*, profiles(email)').single()
     if (!error) setPositions(prev => [data, ...prev])
     setForm({ market: '', side: 'YES', amount: '', pnl: '' })
     setSaving(false)
@@ -1150,20 +1249,27 @@ function AdminPositionsPage() {
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Open Positions</h2>
       <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Manually add or manage user positions.</p>
 
-      {/* Add position form */}
-      <div style={{ background: T.bgCard, borderRadius: 14, border: `1px solid ${T.border}`, padding: '20px', marginBottom: 24 }}>
+      <div style={{ background: T.bgCard, borderRadius: 14, border: `1px solid ${T.border}`, padding: '20px', marginBottom: 24, overflow: 'visible' }}>
         <div style={{ color: T.text0, fontWeight: 600, marginBottom: 14 }}>Add Position</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          <select value={selectedUser} onChange={e => setSelectedUser(e.target.value)}
-            style={{ padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.font, outline: 'none' }}>
-            <option value="">Select user...</option>
-            {users.map(u => (
-              <option key={u.id} value={u.id}>{u.email || `${u.first_name} ${u.last_name}`}</option>
-            ))}
-          </select>
-          <input value={form.market} onChange={e => setForm(p => ({ ...p, market: e.target.value }))}
-            placeholder="Market / question"
-            style={{ flex: 1, minWidth: 200, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, outline: 'none' }} />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, overflow: 'visible' }}>
+          <select
+  value={selectedUser}
+  onChange={e => setSelectedUser(e.target.value)}
+  style={{ padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.font, outline: 'none', width: 220 }}>
+  <option value="">Select user...</option>
+  {users.map(u => (
+    <option key={u.id} value={u.id}>{u.email || u.id}</option>
+  ))}
+</select>
+          <select
+  value={form.market}
+  onChange={e => setForm(p => ({ ...p, market: e.target.value }))}
+  style={{ padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.font, outline: 'none', flex: 1, minWidth: 200 }}>
+  <option value="">Select market...</option>
+  {LIVE_MARKET_CONFIG.map(m => (
+    <option key={m.id} value={m.question}>{m.question}</option>
+  ))}
+</select>
           <select value={form.side} onChange={e => setForm(p => ({ ...p, side: e.target.value }))}
             style={{ padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.font, outline: 'none' }}>
             <option value="YES">YES</option>
@@ -1173,12 +1279,11 @@ function AdminPositionsPage() {
             placeholder="Amount ($)" type="number"
             style={{ width: 120, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }} />
           <input value={form.pnl} onChange={e => setForm(p => ({ ...p, pnl: e.target.value }))}
-  placeholder="P&L ($)" type="number"
-  style={{ width: 120, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }} />
-<input value={form.entry_price} onChange={e => setForm(p => ({ ...p, entry_price: e.target.value }))}
-  placeholder="Entry %" type="number"
-  style={{ width: 100, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }} />
-
+            placeholder="P&L ($)" type="number"
+            style={{ width: 120, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }} />
+          <input value={form.entry_price} onChange={e => setForm(p => ({ ...p, entry_price: e.target.value }))}
+            placeholder="Entry %" type="number"
+            style={{ width: 100, padding: '8px 12px', background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none' }} />
           <button onClick={handleAdd} disabled={saving}
             style={{ padding: '8px 18px', background: T.blue, color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
             {saving ? '...' : '+ Add'}
@@ -1186,7 +1291,6 @@ function AdminPositionsPage() {
         </div>
       </div>
 
-      {/* Positions list */}
       {loading ? <div style={{ color: T.text2 }}>Loading...</div> : positions.length === 0 ? (
         <div style={{ color: T.text2, fontSize: 13 }}>No positions yet.</div>
       ) : (
@@ -1195,9 +1299,9 @@ function AdminPositionsPage() {
             <div key={p.id} style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-  <Icon name="zap" size={13} color={T.yellow} />
-  <div style={{ color: T.text0, fontWeight: 600, fontSize: 13 }}>{p.market}</div>
-</div>
+                  <Icon name="zap" size={13} color={T.yellow} />
+                  <div style={{ color: T.text0, fontWeight: 600, fontSize: 13 }}>{p.market}</div>
+                </div>
                 <div style={{ color: T.text2, fontSize: 11, marginTop: 2 }}>{p.profiles_with_email?.email ?? p.user_id}</div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                   <span style={{ fontSize: 10, fontWeight: 600, color: p.side === 'YES' ? T.teal : T.red, background: p.side === 'YES' ? T.tealDim : T.redDim, padding: '2px 8px', borderRadius: 20 }}>{p.side}</span>
@@ -1272,7 +1376,7 @@ function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
   }
 
   return (
-    <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
+    <div style={{ padding: '28px', overflowY: 'visible', flex: 1 }}>
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Withdraw Funds</h2>
       <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Select a crypto asset to withdraw to</p>
 
@@ -1352,6 +1456,7 @@ function SettingsPage({ user }) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [msg, setMsg] = useState('')
   const [saving, setSaving] = useState(false)
+  const [userSearch, setUserSearch] = useState('')
 
   const handlePasswordUpdate = async () => {
     if (!newPassword || newPassword !== confirmPassword) {
@@ -1422,19 +1527,22 @@ function SettingsPage({ user }) {
   )
 }
 // --- MAIN APP ----------------------------------------------------------------
-export default function App() {
-  const LIVE_MARKET_CONFIG = [
-  { id: 'btcusdt', question: "Will BTC be above $70K in 5 minutes?",   threshold: 70000, timeframe: "5m", volume: 124000 },
-  { id: 'ethusdt', question: "Will ETH be above $3K in 5 minutes?",    threshold: 3000,  timeframe: "5m", volume: 89000  },
-  { id: 'solusdt', question: "Will SOL be above $150 in 5 minutes?",   threshold: 150,   timeframe: "5m", volume: 56000  },
-  { id: 'bnbusdt', question: "Will BNB be above $400 in 5 minutes?",   threshold: 400,   timeframe: "5m", volume: 43000  },
-  { id: 'maticusdt', question: "Will MATIC be above $1 in 5 minutes?", threshold: 1,     timeframe: "5m", volume: 31000  },
-  { id: 'dogeusdt', question: "Will DOGE be above $0.15 in 5 minutes?",threshold: 0.15,  timeframe: "5m", volume: 67000  },
-  { id: 'avaxusdt', question: "Will AVAX be above $30 in 5 minutes?",  threshold: 30,    timeframe: "5m", volume: 28000  },
-  { id: 'linkusdt', question: "Will LINK be above $15 in 5 minutes?",  threshold: 15,    timeframe: "5m", volume: 19000  },
-  { id: 'xrpusdt',  question: "Will XRP be above $0.60 in 5 minutes?", threshold: 0.60,  timeframe: "5m", volume: 92000  },
-  { id: 'adausdt',  question: "Will ADA be above $0.45 in 5 minutes?", threshold: 0.45,  timeframe: "5m", volume: 35000  },
+const LIVE_MARKET_CONFIG = [
+  { id: 'btcusdt', question: "Will BTC be above $70K in 5 minutes?",   threshold: 70000, timeframe: "5m", volume: 1240000 },
+  { id: 'ethusdt', question: "Will ETH be above $3K in 5 minutes?",    threshold: 3000,  timeframe: "5m", volume: 890000  },
+  { id: 'solusdt', question: "Will SOL be above $150 in 5 minutes?",   threshold: 150,   timeframe: "5m", volume: 560000  },
+  { id: 'bnbusdt', question: "Will BNB be above $400 in 5 minutes?",   threshold: 400,   timeframe: "5m", volume: 430000  },
+  { id: 'maticusdt', question: "Will MATIC be above $1 in 5 minutes?", threshold: 1,     timeframe: "5m", volume: 310000  },
+  { id: 'dogeusdt', question: "Will DOGE be above $0.15 in 5 minutes?",threshold: 0.15,  timeframe: "5m", volume: 670000  },
+  { id: 'avaxusdt', question: "Will AVAX be above $30 in 5 minutes?",  threshold: 30,    timeframe: "5m", volume: 280000  },
+  { id: 'linkusdt', question: "Will LINK be above $15 in 5 minutes?",  threshold: 15,    timeframe: "5m", volume: 190000  },
+  { id: 'xrpusdt',  question: "Will XRP be above $0.60 in 5 minutes?", threshold: 0.60,  timeframe: "5m", volume: 920000  },
+  { id: 'adausdt',  question: "Will ADA be above $0.45 in 5 minutes?", threshold: 0.45,  timeframe: "5m", volume: 350000  },
 ]
+
+
+export default function App() {
+  // LIVE_MARKET_CONFIG and calcYes are now gone from here
 
 function calcYes(price, threshold) {
   if (!price) return 0.5
