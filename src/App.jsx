@@ -1463,6 +1463,7 @@ const [markets, setMarkets] = useState(
   const [kycStatus, setKycStatus] = useState(null)
   const [balance, setBalance] = useState(0)
   const [positions, setPositions] = useState([])
+  const [closedPositions, setClosedPositions] = useState([])
   useEffect(() => {
   const streams = LIVE_MARKET_CONFIG.map(m => `${m.id}@miniTicker`).join('/')
   const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`)
@@ -1546,6 +1547,7 @@ const [markets, setMarkets] = useState(
       const { data: posData } = await supabase.from('positions').select('*').eq('user_id', userId).eq('status', 'open').order('created_at', { ascending: false })
 setPositions(posData ?? [])
 
+const { data: closedData } = await supabase.from('positions').select('*').eq('user_id', userId).eq('status', 'closed').order('created_at', { ascending: false })
 setClosedPositions(closedData ?? [])
 
     } catch (e) {
