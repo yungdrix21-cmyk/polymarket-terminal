@@ -849,19 +849,19 @@ function CopyTradingPage({ kycStatus, user }) {
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
       {toast && (
         <div style={{
-          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          position: 'fixed', bottom: 24, left: 16, right: 16,
           background: T.bgCard, border: `1px solid ${toast.color}40`,
           borderLeft: `4px solid ${toast.color}`,
-          borderRadius: 12, padding: '12px 20px',
+          borderRadius: 12, padding: '14px 16px',
           color: T.text0, fontSize: 13, fontWeight: 600,
           boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-          zIndex: 9999, whiteSpace: 'nowrap',
-          display: 'flex', alignItems: 'center', gap: 10,
+          zIndex: 9999,
+          display: 'flex', alignItems: 'flex-start', gap: 10,
           animation: 'slideUp 0.3s ease'
         }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: toast.color }} />
-          {toast.msg}
-          <style>{`@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(10px) } to { opacity: 1; transform: translateX(-50%) translateY(0) } }`}</style>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: toast.color, flexShrink: 0, marginTop: 3 }} />
+          <span style={{ lineHeight: 1.5 }}>{toast.msg}</span>
+          <style>{`@keyframes slideUp { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }`}</style>
         </div>
       )}
       <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Copy Trading</h2>
