@@ -810,18 +810,23 @@ function CopyTradingPage({ kycStatus, user }) {
   const [toast, setToast] = useState(null)
 
   const toggleCopy = async (name) => {
-    const isCopying = copying.includes(name)
-    if (isCopying) {
-      await supabase.from('copy_trades').delete().eq('user_id', user.id).eq('trader_name', name)
-      setCopying(prev => prev.filter(n => n !== name))
-      setToast({ msg: `Stopped copying ${name}`, color: T.red })
-    } else {
-      await supabase.from('copy_trades').insert({ user_id: user.id, trader_name: name })
-      setCopying(prev => [name, ...prev])
-      setToast({ msg: `Now copying ${name} — trades will automatically be copied within the next 24 hours`, color: T.teal })
+  const isCopying = copying.includes(name)
+  if (isCopying) {
+    await supabase.from('copy_trades').delete().eq('user_id', user.id).eq('trader_name', name)
+    setCopying(prev => prev.filter(n => n !== name))
+    setToast({ msg: `Stopped copying ${name}`, color: T.red })
+  } else {
+    if (copying.length > 0) {
+      setToast({ msg: `Stop copying your current trader first before selecting another`, color: T.yellow })
+      setTimeout(() => setToast(null), 3000)
+      return
     }
-    setTimeout(() => setToast(null), 3000)
+    await supabase.from('copy_trades').insert({ user_id: user.id, trader_name: name })
+    setCopying(prev => [name, ...prev])
+    setToast({ msg: `Now copying ${name} — trades will automatically be copied within the next 24 hours`, color: T.teal })
   }
+  setTimeout(() => setToast(null), 3000)
+}
 
   const shortName = (name) => name.startsWith('0x') || name.length > 20 ? name.slice(0, 6) + '...' + name.slice(-4) : name
 
@@ -894,13 +899,21 @@ function CopyTradingPage({ kycStatus, user }) {
                   <Badge color={T.blue}>{trader.winRate} win rate</Badge>
                   <Badge color={T.purple}>{trader.followers} followers</Badge>
                 </div>
-                <button onClick={() => toggleCopy(trader.name)}
-                  style={{ width: '100%', padding: '11px', background: isCopying ? T.teal : T.tealDim, color: isCopying ? '#0d0e14' : T.teal, border: `1px solid ${T.teal}30`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: T.font }}>
-                  {isCopying
-                    ? <><Icon name="check" size={13} color="#0d0e14" /> Copying Trades</>
-                    : <><Icon name="copy" size={13} /> Copy Trader</>
-                  }
-                </button>
+                {(() => {
+  const isLocked = copying.length > 0 && !isCopying
+  return (
+    <button onClick={() => toggleCopy(trader.name)} disabled={isLocked}
+      style={{ width: '100%', padding: '11px', background: isCopying ? T.teal : isLocked ? T.bg3 : T.tealDim, color: isCopying ? '#0d0e14' : isLocked ? T.text2 : T.teal, border: `1px solid ${isLocked ? T.border : T.teal + '30'}`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: isLocked ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: T.font, opacity: isLocked ? 0.5 : 1 }}>
+      {isCopying
+        ? <><Icon name="check" size={13} color="#0d0e14" /> Copying Trades</>
+        : isLocked
+        ? <><Icon name="lock" size={13} color={T.text2} /> Unavailable</>
+        : <><Icon name="copy" size={13} /> Copy Trader</>
+      }
+    </button>
+  )
+})()}
+
               </div>
             )
           })}
