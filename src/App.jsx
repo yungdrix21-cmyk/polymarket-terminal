@@ -699,7 +699,7 @@ function MarketsPage({ prices, selected, setSelected, isMobile }) {
   }
   return (
     <div style={{ display: 'flex', flex: 1, overflow: 'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
-      <div style={{ width: isMobile ? '100%' : 300, borderRight: isMobile ? 'none' : `1px solid ${T.border}`, borderBottom: isMobile ? `1px solid ${T.border}` : 'none', display: 'flex', flexDirection: 'column', background: T.bg1, flex: isMobile ? 'none' : undefined }}>
+      <div style={{ width: isMobile ? '100%' : 300, borderRight: isMobile ? 'none' : `1px solid ${T.border}`, borderBottom: isMobile ? `1px solid ${T.border}` : 'none', display: 'flex', flexDirection: 'column', background: T.bg1, flex: isMobile ? 'none' : undefined, height: isMobile ? '100%' : undefined, maxHeight: isMobile ? 'calc(100vh - 52px)' : undefined }}>
         <div style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', background: T.red, boxShadow: `0 0 5px ${T.red}` }} />
@@ -707,7 +707,7 @@ function MarketsPage({ prices, selected, setSelected, isMobile }) {
           </div>
           <Badge color={T.purple}>{prices?.length || 0} active</Badge>
         </div>
-        <div style={{ overflowY: 'auto', flex: 1 }}>
+        <div style={{ overflowY: 'auto', flex: 1, WebkitOverflowScrolling: 'touch' }}>
           {prices?.map(market => {
             const yesPrice = typeof market?.outcomePrices?.[0] === "number" ? market.outcomePrices[0] : Number(market?.outcomePrices?.[0]) || 0.5
             const yes = (yesPrice * 100).toFixed(0)
@@ -718,7 +718,9 @@ function MarketsPage({ prices, selected, setSelected, isMobile }) {
               <div key={market.id} onClick={() => setSelected(market)}
                 style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, border: `1px solid ${isSelected ? T.blue : T.border}`, borderRadius: 12, margin: '8px', cursor: 'pointer', background: isSelected ? T.bg3 : T.bgCard, borderLeft: `3px solid ${isSelected ? T.blue : T.border}`, transition: 'background 0.15s' }}
                 onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = T.bgHover }}
-                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}>
+onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
+onTouchStart={() => {}}
+>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ fontSize: 12.5, lineHeight: 1.4, color: isSelected ? T.text0 : T.text1, flex: 1, paddingRight: 8 }}>{market.question}</div>
                   <Badge color={T.blue}>{market.timeframe}</Badge>
