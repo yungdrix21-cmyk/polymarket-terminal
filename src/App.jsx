@@ -1404,6 +1404,7 @@ export default function App() {
     </div>
   )
   if (showLanding && view !== 'legal') return <Auth onLogin={handleLogin} onNavigate={setView} />
+  if (view === 'legal') return <Legal onBack={() => setView('dashboard')} />
   const isAdmin = user && profile?.role === 'admin'
   const MAIN_NAV = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },

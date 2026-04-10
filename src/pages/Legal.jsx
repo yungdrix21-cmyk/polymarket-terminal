@@ -138,7 +138,7 @@ export default function LegalPage() {
           <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>P</div>
           <span style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</span>
         </a>
-        <a href="/" style={{ fontSize: 13, color: T.text2, textDecoration: 'none' }}>← Back to home</a>
+        <span onClick={() => onBack && onBack()} style={{ fontSize: 13, color: T.text2, cursor: 'pointer' }}>← Back</span>
       </nav>
 
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '48px 24px 100px' }}>
