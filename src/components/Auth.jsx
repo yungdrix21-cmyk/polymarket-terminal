@@ -16,6 +16,26 @@ const T = {
   mono: '"DM Mono", monospace',
 }
 
+// Glow card — top border + box-shadow in the given color, matching screenshot exactly
+function GlowCard({ color, children, style = {} }) {
+  return (
+    <div style={{
+      background: T.bgCard,
+      borderRadius: 16,
+      border: `1px solid ${color}30`,
+      borderTop: `2px solid ${color}`,
+      boxShadow: `0 -4px 24px ${color}25, 0 0 0 0 transparent`,
+      position: 'relative',
+      overflow: 'hidden',
+      ...style,
+    }}>
+      {/* subtle top glow bloom */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60, background: `linear-gradient(to bottom, ${color}12, transparent)`, pointerEvents: 'none' }} />
+      <div style={{ position: 'relative' }}>{children}</div>
+    </div>
+  )
+}
+
 function withTimeout(promise, ms = 15000) {
   let timeoutId
   const timeout = new Promise((_, reject) => {
@@ -51,7 +71,6 @@ function SvgGrid({ color }) {
     </svg>
   )
 }
-
 function SvgStarburst({ color }) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -67,7 +86,6 @@ function SvgStarburst({ color }) {
     </svg>
   )
 }
-
 function SvgBolt({ color }) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -75,8 +93,7 @@ function SvgBolt({ color }) {
     </svg>
   )
 }
-
-function SvgShield({ color }) {
+function SvgShieldIcon({ color }) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
       <path d="M10 2L3 5.5V10c0 3.87 2.96 7.5 7 8.5 4.04-1 7-4.63 7-8.5V5.5L10 2z"
@@ -85,7 +102,6 @@ function SvgShield({ color }) {
     </svg>
   )
 }
-
 function SvgRotate({ color }) {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -94,7 +110,6 @@ function SvgRotate({ color }) {
     </svg>
   )
 }
-
 function SvgTargetBadge({ color }) {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -103,7 +118,6 @@ function SvgTargetBadge({ color }) {
     </svg>
   )
 }
-
 function SvgCheck({ color }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
@@ -113,7 +127,7 @@ function SvgCheck({ color }) {
   )
 }
 
-// Trust section icons — 22px teal, matching screenshot style
+// Trust icons
 function TrustIconShield() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -123,7 +137,6 @@ function TrustIconShield() {
     </svg>
   )
 }
-
 function TrustIconPeople() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -134,7 +147,6 @@ function TrustIconPeople() {
     </svg>
   )
 }
-
 function TrustIconTarget() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -144,18 +156,15 @@ function TrustIconTarget() {
     </svg>
   )
 }
-
 function TrustIconBrain() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <path d="M11 3C7.5 3 5 5.5 5 8.5c0 1.4.5 2.6 1.3 3.5-.8.6-1.3 1.5-1.3 2.5C5 16.3 6.7 18 8.8 18h4.4c2.1 0 3.8-1.7 3.8-3.5 0-1-.5-1.9-1.3-2.5.8-.9 1.3-2.1 1.3-3.5C17 5.5 14.5 3 11 3z"
         stroke={T.teal} strokeWidth="1.5" fill="none" strokeLinejoin="round" />
-      <path d="M11 3v15" stroke={T.teal} strokeWidth="1.2" strokeLinecap="round" opacity=".5" />
-      <path d="M7.5 9.5h7M7.5 13h7" stroke={T.teal} strokeWidth="1.2" strokeLinecap="round" opacity=".5" />
+      <path d="M11 3v15M7.5 9.5h7M7.5 13h7" stroke={T.teal} strokeWidth="1.2" strokeLinecap="round" opacity=".5" />
     </svg>
   )
 }
-
 function TrustIconEye() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -169,10 +178,10 @@ function TrustIconEye() {
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 
 const FEATURES = [
-  { svgIcon: (c) => <SvgGrid color={c} />,      title: 'Web interface',        color: T.teal,   points: ['Dashboard overview', 'AI + MCP', 'Probability on demand', 'Live import'] },
-  { svgIcon: (c) => <SvgStarburst color={c} />, title: 'Directed bot trading', color: T.blue,   points: ['Utilize live RLHF/LLM', 'Train on your market', 'Learn from preferences', 'Non-stop improvement'] },
-  { svgIcon: (c) => <SvgBolt color={c} />,      title: 'AI-powered analysis',  color: T.purple, points: ['Real-time market event alerts', 'Smart QA on current P&L', 'Optimal win analysis', 'Probability simulation'] },
-  { svgIcon: (c) => <SvgShield color={c} />,    title: 'Risk protection',      color: T.yellow, points: ['Automatic hedging up to 85%', 'Automatic hedge badge', 'Loss limit at 20%'] },
+  { svgIcon: (c) => <SvgGrid color={c} />,        title: 'Web interface',        color: T.teal,   points: ['Dashboard overview', 'AI + MCP', 'Probability on demand', 'Live import'] },
+  { svgIcon: (c) => <SvgStarburst color={c} />,   title: 'Directed bot trading', color: T.blue,   points: ['Utilize live RLHF/LLM', 'Train on your market', 'Learn from preferences', 'Non-stop improvement'] },
+  { svgIcon: (c) => <SvgBolt color={c} />,         title: 'AI-powered analysis',  color: T.purple, points: ['Real-time market event alerts', 'Smart QA on current P&L', 'Optimal win analysis', 'Probability simulation'] },
+  { svgIcon: (c) => <SvgShieldIcon color={c} />,   title: 'Risk protection',      color: T.yellow, points: ['Automatic hedging up to 85%', 'Automatic hedge badge', 'Loss limit at 20%'] },
 ]
 
 const MODES = [
@@ -231,12 +240,10 @@ function ErrorBox({ msg }) {
   if (!msg) return null
   return <div style={{ background: T.redDim, border: `1px solid ${T.red}30`, borderRadius: 10, padding: '10px 14px', color: T.red, fontSize: 13, marginBottom: 16, lineHeight: 1.5 }}>{msg}</div>
 }
-
 function SuccessBox({ msg }) {
   if (!msg) return null
   return <div style={{ background: T.tealDim, border: `1px solid ${T.teal}30`, borderRadius: 10, padding: '10px 14px', color: T.teal, fontSize: 13, marginBottom: 16 }}>{msg}</div>
 }
-
 function PrimaryBtn({ onClick, disabled, loading, children }) {
   return (
     <button onClick={onClick} disabled={disabled || loading}
@@ -251,62 +258,54 @@ function PrimaryBtn({ onClick, disabled, loading, children }) {
 function FeatureCard({ feature }) {
   const { svgIcon, title, color, points } = feature
   return (
-    <div style={{ background: '#1a1d24', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '18px 18px 22px', transition: 'border-color 0.2s' }}
-      onMouseEnter={e => e.currentTarget.style.borderColor = color + '50'}
-      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}>
-      <div style={{ width: 42, height: 42, borderRadius: 10, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-        {svgIcon(color)}
+    <GlowCard color={color} style={{ padding: '22px 22px 26px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 11, background: color + '18', border: `1px solid ${color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {svgIcon(color)}
+        </div>
+        <p style={{ fontSize: 16, fontWeight: 700, color: T.text0, margin: 0 }}>{title}</p>
       </div>
-      <p style={{ fontSize: 15, fontWeight: 500, color: T.text0, margin: '0 0 10px 0' }}>{title}</p>
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {points.map(pt => (
-          <li key={pt} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: T.text1 }}>
-            <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#4d4d4a', marginTop: 6, flexShrink: 0, display: 'inline-block' }} />
-            {pt}
-          </li>
+          <div key={pt} style={{ display: 'flex', alignItems: 'center', gap: 10, background: color + '0a', border: `1px solid ${color}18`, borderRadius: 10, padding: '10px 14px' }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block', opacity: 0.7 }} />
+            <span style={{ fontSize: 13, color: T.text1 }}>{pt}</span>
+          </div>
         ))}
-      </ul>
-    </div>
+      </div>
+    </GlowCard>
   )
 }
 
 function ModeCard({ mode }) {
   const { badgeIcon, badgeLabel, color, title, subtitle, points } = mode
   return (
-    <div style={{ background: '#1a1d24', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '18px 20px 22px' }}>
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 20, background: color + '20', color, fontSize: 12, fontWeight: 500, marginBottom: 14 }}>
+    <GlowCard color={color} style={{ padding: '22px 22px 26px' }}>
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 20, background: color + '18', border: `1px solid ${color}35`, color, fontSize: 12, fontWeight: 600, marginBottom: 16 }}>
         {badgeIcon(color)}{badgeLabel}
       </div>
-      <p style={{ fontSize: 17, fontWeight: 500, color: T.text0, margin: '0 0 4px 0' }}>{title}</p>
-      <p style={{ fontSize: 12, color: T.text2, margin: '0 0 14px 0' }}>{subtitle}</p>
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <p style={{ fontSize: 18, fontWeight: 700, color: T.text0, margin: '0 0 4px 0' }}>{title}</p>
+      <p style={{ fontSize: 12, color: T.text2, margin: '0 0 16px 0' }}>{subtitle}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {points.map(pt => (
-          <li key={pt} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, fontSize: 13, color: T.text1 }}>
-            <SvgCheck color={T.teal} />{pt}
-          </li>
+          <div key={pt} style={{ display: 'flex', alignItems: 'center', gap: 10, background: color + '0a', border: `1px solid ${color}18`, borderRadius: 10, padding: '10px 14px' }}>
+            <SvgCheck color={color} />
+            <span style={{ fontSize: 13, color: T.text1 }}>{pt}</span>
+          </div>
         ))}
-      </ul>
-    </div>
+      </div>
+    </GlowCard>
   )
 }
 
-// Wide pill card — matches screenshot exactly
-function TrustPill({ icon, text }) {
+function TrustPill({ icon, text, color }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 18,
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.07)',
-      borderRadius: 16, padding: '22px 28px',
-      transition: 'border-color 0.2s, background 0.2s',
-    }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = T.teal + '45'; e.currentTarget.style.background = 'rgba(0,212,170,0.04)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}>
-      <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(0,212,170,0.1)', border: '1px solid rgba(0,212,170,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <GlowCard color={color} style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '20px 24px' }}>
+      <div style={{ width: 46, height: 46, borderRadius: 12, background: color + '15', border: `1px solid ${color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         {icon}
       </div>
-      <span style={{ fontSize: 16, fontWeight: 500, color: T.text0, lineHeight: 1.4 }}>{text}</span>
-    </div>
+      <span style={{ fontSize: 15, fontWeight: 500, color: T.text0, lineHeight: 1.4 }}>{text}</span>
+    </GlowCard>
   )
 }
 
@@ -364,8 +363,8 @@ export default function Auth({ onLogin }) {
     setLoading(true); reset()
     try {
       const { data, error: err } = await withTimeout(supabase.auth.signInWithPassword({ email, password }), 15000)
-      if (err) { setError(err.message.toLowerCase().includes('email not confirmed') ? 'Please confirm your email first. Check your inbox.' : err.message.toLowerCase().includes('invalid') || err.message.toLowerCase().includes('credentials') ? 'Wrong email or password.' : err.message); return }
-      if (!data?.user) { setError('Login failed. No user returned.'); return }
+      if (err) { setError(err.message.toLowerCase().includes('email not confirmed') ? 'Please confirm your email first.' : err.message.toLowerCase().includes('invalid') || err.message.toLowerCase().includes('credentials') ? 'Wrong email or password.' : err.message); return }
+      if (!data?.user) { setError('Login failed.'); return }
       if (onLogin && typeof onLogin === 'function') await Promise.resolve(onLogin(data.user))
       else window.location.href = '/dashboard'
     } catch (e) { setError(e.message || 'Something went wrong.') }
@@ -379,10 +378,10 @@ export default function Auth({ onLogin }) {
     setLoading(true); reset()
     try {
       const { data, error: err } = await withTimeout(supabase.auth.signUp({ email, password }))
-      if (err) { setError(err.message.toLowerCase().includes('already') || err.message.toLowerCase().includes('registered') ? 'An account with this email already exists. Please sign in instead.' : err.message); return }
+      if (err) { setError(err.message.toLowerCase().includes('already') || err.message.toLowerCase().includes('registered') ? 'An account with this email already exists.' : err.message); return }
       const user = data?.user
       if (!user) { setError('Signup failed. Please try again.'); return }
-      if (user.identities && user.identities.length === 0) { setError('An account with this email already exists. Please sign in instead.'); return }
+      if (user.identities && user.identities.length === 0) { setError('An account with this email already exists.'); return }
       setSignupUser(user)
       if (data.session) setStep(1); else setMode('check_email')
     } catch (e) { setError(e.message || 'Signup failed.') }
@@ -409,7 +408,7 @@ export default function Auth({ onLogin }) {
       <div style={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
         <div style={{ width: 72, height: 72, borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.teal}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 24px' }}>✉️</div>
         <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 800, margin: '0 0 12px' }}>Check your email</h2>
-        <p style={{ color: T.text1, fontSize: 14, lineHeight: 1.7, margin: '0 0 28px' }}>We sent a confirmation link to <strong style={{ color: T.text0 }}>{email}</strong>.<br />Click the link to activate your account, then sign in to continue.</p>
+        <p style={{ color: T.text1, fontSize: 14, lineHeight: 1.7, margin: '0 0 28px' }}>We sent a confirmation link to <strong style={{ color: T.text0 }}>{email}</strong>.<br />Click the link to activate your account, then sign in.</p>
         <button onClick={() => { setMode('signin'); reset() }} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, marginBottom: 14 }}>Go to Sign In →</button>
         <p style={{ color: T.text2, fontSize: 12 }}>Didn't receive it? Check spam or <span onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ color: T.blue, cursor: 'pointer' }}>try again</span></p>
       </div>
@@ -485,6 +484,7 @@ export default function Auth({ onLogin }) {
       <div style={{ position: 'fixed', top: '-5%', left: '50%', transform: 'translateX(-50%)', width: 900, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(79,142,255,0.08) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', top: '30%', right: '-10%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,212,170,0.05) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
 
+      {/* Nav */}
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', height: 60, borderBottom: `1px solid ${T.border}`, background: 'rgba(13,14,20,0.9)', backdropFilter: 'blur(16px)', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>P</div>
@@ -496,6 +496,7 @@ export default function Auth({ onLogin }) {
         </div>
       </nav>
 
+      {/* Hero */}
       <section style={{ position: 'relative', textAlign: 'center', padding: '110px 24px 100px', zIndex: 1 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: T.tealDim, border: `1px solid rgba(0,212,170,0.2)`, borderRadius: 20, padding: '5px 14px', marginBottom: 28 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: T.teal, boxShadow: `0 0 6px ${T.teal}` }} />
@@ -509,65 +510,94 @@ export default function Auth({ onLogin }) {
         <button onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ padding: '14px 40px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 50, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, boxShadow: '0 0 40px rgba(79,142,255,0.35)' }}>Trade →</button>
       </section>
 
+      {/* ── Problems & Solutions ── */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, margin: 0 }}>Problems & <span style={{ color: T.teal }}>Solutions</span></h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid rgba(255,77,106,0.15)`, padding: '28px 24px' }}>
-            <div style={{ fontWeight: 700, color: T.text0, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: T.red }}>✕</span> Problems</div>
-            {PROBLEMS.map((p, i) => <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 12 }}><span style={{ color: T.red, flexShrink: 0 }}>✕</span><span style={{ color: T.text1, fontSize: 13 }}>{p}</span></div>)}
-          </div>
-          <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid rgba(0,212,170,0.15)`, padding: '28px 24px' }}>
-            <div style={{ fontWeight: 700, color: T.text0, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: T.teal }}>✓</span> Solutions</div>
-            {SOLUTIONS.map((s, i) => <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 12 }}><span style={{ color: T.teal, flexShrink: 0 }}>✓</span><span style={{ color: T.text1, fontSize: 13 }}>{s}</span></div>)}
-          </div>
+
+          {/* Problems card */}
+          <GlowCard color={T.red} style={{ padding: '28px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 11, background: T.red + '18', border: `1px solid ${T.red}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M4 4l10 10M14 4L4 14" stroke={T.red} strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+              <span style={{ fontSize: 18, fontWeight: 700, color: T.text0 }}>Problems</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {PROBLEMS.map((p, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.red + '0a', border: `1px solid ${T.red}18`, borderRadius: 10, padding: '11px 14px' }}>
+                  <span style={{ color: T.red, fontSize: 14, fontWeight: 700, flexShrink: 0 }}>✕</span>
+                  <span style={{ color: T.text1, fontSize: 13 }}>{p}</span>
+                </div>
+              ))}
+            </div>
+          </GlowCard>
+
+          {/* Solutions card */}
+          <GlowCard color={T.teal} style={{ padding: '28px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 11, background: T.teal + '18', border: `1px solid ${T.teal}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M3 9l4.5 4.5L15 5" stroke={T.teal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <span style={{ fontSize: 18, fontWeight: 700, color: T.text0 }}>Solutions</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {SOLUTIONS.map((s, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.teal + '0a', border: `1px solid ${T.teal}18`, borderRadius: 10, padding: '11px 14px' }}>
+                  <span style={{ color: T.teal, fontSize: 14, fontWeight: 700, flexShrink: 0 }}>✓</span>
+                  <span style={{ color: T.text1, fontSize: 13 }}>{s}</span>
+                </div>
+              ))}
+            </div>
+          </GlowCard>
+
         </div>
       </section>
 
+      {/* ── Core Features ── */}
       <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 14px 0' }}>Core features</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 16px 0' }}>Core features</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
           {FEATURES.map((f, i) => <FeatureCard key={i} feature={f} />)}
         </div>
       </section>
 
+      {/* ── Two Operating Modes ── */}
       <section style={{ padding: '0 24px 80px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 14px 0' }}>Two operating modes</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 16px 0' }}>Two operating modes</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
           {MODES.map((m, i) => <ModeCard key={i} mode={m} />)}
         </div>
       </section>
 
-      {/* ── WHY TRADERS TRUST — matching screenshot layout ── */}
+      {/* ── Why Traders Trust ── */}
       <section style={{ padding: '80px 24px 100px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <h2 style={{ fontSize: 'clamp(32px, 5vw, 58px)', fontWeight: 900, margin: '0 0 56px 0', lineHeight: 1.1, letterSpacing: '-1px' }}>
+        <h2 style={{ fontSize: 'clamp(32px, 5vw, 58px)', fontWeight: 900, margin: '0 0 48px 0', lineHeight: 1.1, letterSpacing: '-1px' }}>
           Why traders trust{' '}
-          <span style={{ background: 'linear-gradient(90deg, #00d4aa, #9b7dff, #ff4d9b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            PolyTrader?
-          </span>
+          <span style={{ background: 'linear-gradient(90deg, #00d4aa, #9b7dff, #ff4d9b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>PolyTrader?</span>
         </h2>
-
-        {/* Row 1 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-          <TrustPill icon={<TrustIconShield />} text="Non-custodial — you always control your funds" />
-          <TrustPill icon={<TrustIconPeople />} text="Built by traders, for traders" />
+          <TrustPill color={T.teal}   icon={<TrustIconShield />} text="Non-custodial — you always control your funds" />
+          <TrustPill color={T.blue}   icon={<TrustIconPeople />} text="Built by traders, for traders" />
         </div>
-
-        {/* Row 2 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-          <TrustPill icon={<TrustIconTarget />} text="Execution-first, not narratives" />
-          <TrustPill icon={<TrustIconBrain />}  text="AI-driven probability analysis for decision-making" />
+          <TrustPill color={T.purple} icon={<TrustIconTarget />} text="Execution-first, not narratives" />
+          <TrustPill color={T.yellow} icon={<TrustIconBrain />}  text="AI-driven probability analysis for decision-making" />
         </div>
-
-        {/* Row 3 — centered single pill */}
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{ width: 'calc(50% - 7px)' }}>
-            <TrustPill icon={<TrustIconEye />} text="Transparent execution and risk management logic" />
+            <TrustPill color={T.red} icon={<TrustIconEye />} text="Transparent execution and risk management logic" />
           </div>
         </div>
       </section>
 
+      {/* CTA */}
       <section style={{ padding: '0 24px 100px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', background: 'linear-gradient(135deg, rgba(79,142,255,0.08), rgba(155,125,255,0.08))', border: `1px solid rgba(79,142,255,0.2)`, borderRadius: 24, padding: '56px 40px' }}>
           <h2 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, margin: '0 0 14px' }}>Start your edge today</h2>
@@ -576,6 +606,7 @@ export default function Auth({ onLogin }) {
         </div>
       </section>
 
+      {/* Footer */}
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, background: T.bg1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#fff' }}>P</div>
