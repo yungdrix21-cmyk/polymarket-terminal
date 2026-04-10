@@ -638,7 +638,7 @@ export default function Auth({ onLogin, onNavigate }) {
           {[
            { label: 'Privacy Policy', onClick: () => onNavigate('legal') },
 { label: 'Terms of Service', onClick: () => onNavigate('legal') },
-{ label: 'Contact', onClick: () => window.location.href = 'mailto:legal@polytrader.app' },
+{ label: 'Contact', onClick: () => window.location.href = 'mailto:admin.polytrader@gmail.com' },
 ].map(({ label, onClick }) => (
   <span key={label} onClick={onClick} style={{ fontSize: 12, color: T.text2, cursor: 'pointer' }}
     onMouseEnter={e => e.target.style.color = T.text1}
