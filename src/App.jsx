@@ -1357,6 +1357,7 @@ export default function App() {
           } else {
             setShowLanding(true)
           }
+          setLoading(false)
         }
       } catch (err) {
         console.error("Auth crash:", err)
