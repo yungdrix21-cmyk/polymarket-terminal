@@ -782,18 +782,27 @@ function CopyTradingPage({ kycStatus, user }) {
   const [loading, setLoading] = useState(true)
 
   const traders = [
-    { name: "10xdE17f7144fbD0eddb2679132C10ff5e74B120988", slug: "0xde17f7144fbd0eddb2679132c10ff5e74b120988-1772205225932", profit: "+$727,451", winRate: "91%", followers: "8.2K", rank: 1 },
-    { name: "BoneReader", slug: "BoneReader", profit: "+$614,057", winRate: "87%", followers: "6.1K", rank: 2 },
-    { name: "k9Q2mX4L8A7ZP3R", slug: "k9Q2mX4L8A7ZP3R", profit: "+$535,926", winRate: "84%", followers: "4.9K", rank: 3 },
-    { name: "0x8dxd", slug: "0x8dxd", profit: "+$534,805", winRate: "82%", followers: "4.3K", rank: 4 },
-    { name: "0xB27BC932bf8110D8F78e55da7d5f0497A18B5b82", slug: "0xB27BC932bf8110D8F78e55da7d5f0497A18B5b82", profit: "+$411,861", winRate: "79%", followers: "3.7K", rank: 5 },
-    { name: "vidarx", slug: "vidarx", profit: "+$403,477", winRate: "78%", followers: "3.2K", rank: 6 },
-    { name: "0x1f0ebc543B2d411f66947041625c0Aa1ce61CF86", slug: "0x1f0ebc543B2d411f66947041625c0Aa1ce61CF86", profit: "+$386,132", winRate: "76%", followers: "2.8K", rank: 7 },
-    { name: "stingo43", slug: "stingo43", profit: "+$323,175", winRate: "74%", followers: "2.4K", rank: 8 },
-    { name: "0xe1D6b51521Bd4365769199f392F9818661BD907", slug: "0xe1D6b51521Bd4365769199f392F9818661BD907", profit: "+$314,579", winRate: "72%", followers: "2.1K", rank: 9 },
-    { name: "Bonereaper", slug: "Bonereaper", profit: "+$307,770", winRate: "71%", followers: "1.9K", rank: 10 },
-  ]
-
+  { name: "10xdE17f7144fbD0eddb2679132C10ff5e74B120988", slug: "10xdE17f7144fbD0eddb2679132C10ff5e74B120988-1772205225932", profit: "+$727,451", winRate: "91%", followers: "8.2K", rank: 1 },
+  { name: "BoneReader", slug: "BoneReader", profit: "+$614,057", winRate: "87%", followers: "6.1K", rank: 2 },
+  { name: "k9Q2mX4L8A7ZP3R", slug: "k9Q2mX4L8A7ZP3R", profit: "+$535,926", winRate: "84%", followers: "4.9K", rank: 3 },
+  { name: "0x8dxd", slug: "0x8dxd", profit: "+$534,805", winRate: "82%", followers: "4.3K", rank: 4 },
+  { name: "0xB27BC932bf8110D8F78e55da7d5f0497A18B5b82", slug: "0xB27BC932bf8110D8F78e55da7d5f0497A18B5b82-1772569391020", profit: "+$411,861", winRate: "79%", followers: "3.7K", rank: 5 },
+  { name: "vidarx", slug: "vidarx", profit: "+$403,477", winRate: "78%", followers: "3.2K", rank: 6 },
+  { name: "0x1f0ebc543B2d411f66947041625c0Aa1ce61CF86", slug: "0x1f0ebc543B2d411f66947041625c0Aa1ce61CF86-1772205597930", profit: "+$386,132", winRate: "76%", followers: "2.8K", rank: 7 },
+  { name: "stingo43", slug: "stingo43", profit: "+$323,175", winRate: "74%", followers: "2.4K", rank: 8 },
+  { name: "0xe1D6b51521Bd4365769199f392F9818661BD907", slug: "0xe1D6b51521Bd4365769199f392F9818661BD907", profit: "+$314,579", winRate: "72%", followers: "2.1K", rank: 9 },
+  { name: "Bonereaper", slug: "Bonereaper", profit: "+$307,770", winRate: "71%", followers: "1.9K", rank: 10 },
+  { name: "0x2Eb5714FF6f20f5F9f7662c556DBEF5e1c9bf4D", slug: "0x2Eb5714FF6f20f5F9f7662c556DBEF5e1c9bf4D", profit: "+$274,366", winRate: "70%", followers: "1.7K", rank: 11 },
+  { name: "0xd1ebE815f921b3EbBD8d9e0a4192C6Ab18360F5c", slug: "0xd1ebE815f921b3EbBD8d9e0a4192C6Ab18360F5c-1772214308773", profit: "+$225,565", winRate: "69%", followers: "1.5K", rank: 12 },
+  { name: "BoshBashBish", slug: "BoshBashBish", profit: "+$199,067", winRate: "68%", followers: "1.3K", rank: 13 },
+  { name: "vague-sourdough", slug: "vague-sourdough", profit: "+$198,295", winRate: "67%", followers: "1.2K", rank: 14 },
+  { name: "0x732F1", slug: "0x732F1", profit: "+$197,364", winRate: "66%", followers: "1.1K", rank: 15 },
+  { name: "guh123", slug: "guh123", profit: "+$193,895", winRate: "65%", followers: "1.0K", rank: 16 },
+  { name: "0x04283f2Fef49d70D8C55ab240450D17A65bF85b", slug: "0x04283f2Fef49d70D8C55ab240450D17A65bF85b", profit: "+$186,240", winRate: "64%", followers: "950", rank: 17 },
+  { name: "0x3A847382ad6FfF9be1db4e073FD9b869f6884D4", slug: "0x3A847382ad6FfF9be1db4e073FD9b869f6884D4", profit: "+$180,527", winRate: "63%", followers: "900", rank: 18 },
+  { name: "kingofcoinflips", slug: "kingofcoinflips", profit: "+$171,880", winRate: "62%", followers: "850", rank: 19 },
+  { name: "ohanism", slug: "ohanism", profit: "+$162,865", winRate: "61%", followers: "800", rank: 20 },
+]
   const displayName = (name) => {
     if (name.length > 20) {
       return `${name.slice(0, 6)}...${name.slice(-4)}`
