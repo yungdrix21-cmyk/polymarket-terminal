@@ -44,6 +44,18 @@ function withTimeout(promise, ms = 15000) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId))
 }
 
+function useIsMobile(breakpoint = 640) {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
+  )
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
+}
+
 const PROBLEMS = [
   'Hundreds of markets — hard to find the right one',
   'Manual analysis takes hours',
@@ -255,21 +267,28 @@ function PrimaryBtn({ onClick, disabled, loading, children }) {
 
 // ─── SECTION CARDS ────────────────────────────────────────────────────────────
 
-function FeatureCard({ feature }) {
+function FeatureCard({ feature, isMobile }) {
   const { svgIcon, title, color, points } = feature
+  const pad = isMobile ? '14px 12px 16px' : '22px 22px 26px'
+  const iconSize = isMobile ? 34 : 44
+  const iconRadius = isMobile ? 9 : 11
+  const titleSize = isMobile ? 13 : 16
+  const itemPad = isMobile ? '7px 10px' : '10px 14px'
+  const itemFont = isMobile ? 11 : 13
+  const itemGap = isMobile ? 6 : 8
   return (
-    <GlowCard color={color} style={{ padding: '22px 22px 26px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 11, background: color + '18', border: `1px solid ${color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <GlowCard color={color} style={{ padding: pad }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14, marginBottom: isMobile ? 12 : 18 }}>
+        <div style={{ width: iconSize, height: iconSize, borderRadius: iconRadius, background: color + '18', border: `1px solid ${color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           {svgIcon(color)}
         </div>
-        <p style={{ fontSize: 16, fontWeight: 700, color: T.text0, margin: 0 }}>{title}</p>
+        <p style={{ fontSize: titleSize, fontWeight: 700, color: T.text0, margin: 0, lineHeight: 1.3 }}>{title}</p>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: itemGap }}>
         {points.map(pt => (
-          <div key={pt} style={{ display: 'flex', alignItems: 'center', gap: 10, background: color + '0a', border: `1px solid ${color}18`, borderRadius: 10, padding: '10px 14px' }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block', opacity: 0.7 }} />
-            <span style={{ fontSize: 13, color: T.text1 }}>{pt}</span>
+          <div key={pt} style={{ display: 'flex', alignItems: 'center', gap: itemGap, background: color + '0a', border: `1px solid ${color}18`, borderRadius: 8, padding: itemPad }}>
+            <span style={{ width: isMobile ? 4 : 5, height: isMobile ? 4 : 5, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block', opacity: 0.7 }} />
+            <span style={{ fontSize: itemFont, color: T.text1, lineHeight: 1.3 }}>{pt}</span>
           </div>
         ))}
       </div>
@@ -277,20 +296,24 @@ function FeatureCard({ feature }) {
   )
 }
 
-function ModeCard({ mode }) {
+function ModeCard({ mode, isMobile }) {
   const { badgeIcon, badgeLabel, color, title, subtitle, points } = mode
+  const pad = isMobile ? '14px 12px 16px' : '22px 22px 26px'
+  const itemPad = isMobile ? '7px 10px' : '10px 14px'
+  const itemFont = isMobile ? 11 : 13
+  const itemGap = isMobile ? 6 : 8
   return (
-    <GlowCard color={color} style={{ padding: '22px 22px 26px' }}>
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 20, background: color + '18', border: `1px solid ${color}35`, color, fontSize: 12, fontWeight: 600, marginBottom: 16 }}>
+    <GlowCard color={color} style={{ padding: pad }}>
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: isMobile ? '3px 8px' : '5px 12px', borderRadius: 20, background: color + '18', border: `1px solid ${color}35`, color, fontSize: isMobile ? 10 : 12, fontWeight: 600, marginBottom: isMobile ? 10 : 16 }}>
         {badgeIcon(color)}{badgeLabel}
       </div>
-      <p style={{ fontSize: 18, fontWeight: 700, color: T.text0, margin: '0 0 4px 0' }}>{title}</p>
-      <p style={{ fontSize: 12, color: T.text2, margin: '0 0 16px 0' }}>{subtitle}</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <p style={{ fontSize: isMobile ? 14 : 18, fontWeight: 700, color: T.text0, margin: '0 0 3px 0' }}>{title}</p>
+      <p style={{ fontSize: isMobile ? 10 : 12, color: T.text2, margin: `0 0 ${isMobile ? 10 : 16}px 0` }}>{subtitle}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: itemGap }}>
         {points.map(pt => (
-          <div key={pt} style={{ display: 'flex', alignItems: 'center', gap: 10, background: color + '0a', border: `1px solid ${color}18`, borderRadius: 10, padding: '10px 14px' }}>
+          <div key={pt} style={{ display: 'flex', alignItems: 'center', gap: itemGap, background: color + '0a', border: `1px solid ${color}18`, borderRadius: 8, padding: itemPad }}>
             <SvgCheck color={color} />
-            <span style={{ fontSize: 13, color: T.text1 }}>{pt}</span>
+            <span style={{ fontSize: itemFont, color: T.text1, lineHeight: 1.3 }}>{pt}</span>
           </div>
         ))}
       </div>
@@ -298,13 +321,13 @@ function ModeCard({ mode }) {
   )
 }
 
-function TrustPill({ icon, text, color }) {
+function TrustPill({ icon, text, color, isMobile }) {
   return (
-    <GlowCard color={color} style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '20px 24px' }}>
-      <div style={{ width: 46, height: 46, borderRadius: 12, background: color + '15', border: `1px solid ${color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <GlowCard color={color} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 18, padding: isMobile ? '12px 12px' : '20px 24px' }}>
+      <div style={{ width: isMobile ? 34 : 46, height: isMobile ? 34 : 46, borderRadius: isMobile ? 9 : 12, background: color + '15', border: `1px solid ${color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         {icon}
       </div>
-      <span style={{ fontSize: 15, fontWeight: 500, color: T.text0, lineHeight: 1.4 }}>{text}</span>
+      <span style={{ fontSize: isMobile ? 11 : 15, fontWeight: 500, color: T.text0, lineHeight: 1.4 }}>{text}</span>
     </GlowCard>
   )
 }
@@ -479,13 +502,16 @@ export default function Auth({ onLogin }) {
   )
 
   // ── LANDING ───────────────────────────────────────────────────────────────
+  const isMobile = useIsMobile()
+  const col2 = '1fr 1fr'
+
   return (
     <div style={{ minHeight: '100vh', background: T.bg0, fontFamily: T.font, color: T.text0, overflowX: 'hidden' }}>
       <div style={{ position: 'fixed', top: '-5%', left: '50%', transform: 'translateX(-50%)', width: 900, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(79,142,255,0.08) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', top: '30%', right: '-10%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,212,170,0.05) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
 
       {/* Nav */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', height: 60, borderBottom: `1px solid ${T.border}`, background: 'rgba(13,14,20,0.9)', backdropFilter: 'blur(16px)', position: 'sticky', top: 0, zIndex: 100 }}>
+      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '0 16px' : '0 40px', height: 60, borderBottom: `1px solid ${T.border}`, background: 'rgba(13,14,20,0.9)', backdropFilter: 'blur(16px)', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>P</div>
           <span style={{ fontSize: 15, fontWeight: 700, color: T.text0 }}>PolyTrader</span>
@@ -497,7 +523,7 @@ export default function Auth({ onLogin }) {
       </nav>
 
       {/* Hero */}
-      <section style={{ position: 'relative', textAlign: 'center', padding: '110px 24px 100px', zIndex: 1 }}>
+      <section style={{ position: 'relative', textAlign: 'center', padding: isMobile ? '60px 20px 60px' : '110px 24px 100px', zIndex: 1 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: T.tealDim, border: `1px solid rgba(0,212,170,0.2)`, borderRadius: 20, padding: '5px 14px', marginBottom: 28 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: T.teal, boxShadow: `0 0 6px ${T.teal}` }} />
           <span style={{ fontSize: 11, color: T.teal, fontWeight: 600, letterSpacing: '0.06em' }}>LIVE PREDICTION MARKETS</span>
@@ -511,47 +537,45 @@ export default function Auth({ onLogin }) {
       </section>
 
       {/* ── Problems & Solutions ── */}
-      <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, margin: 0 }}>Problems & <span style={{ color: T.teal }}>Solutions</span></h2>
+      <section style={{ padding: isMobile ? '40px 12px' : '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <div style={{ textAlign: 'center', marginBottom: isMobile ? 24 : 48 }}>
+          <h2 style={{ fontSize: 'clamp(22px, 4vw, 42px)', fontWeight: 800, margin: 0 }}>Problems & <span style={{ color: T.teal }}>Solutions</span></h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: col2, gap: isMobile ? 8 : 16 }}>
 
-          {/* Problems card */}
-          <GlowCard color={T.red} style={{ padding: '28px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 11, background: T.red + '18', border: `1px solid ${T.red}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <GlowCard color={T.red} style={{ padding: isMobile ? '16px 12px' : '28px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14, marginBottom: isMobile ? 12 : 20 }}>
+              <div style={{ width: isMobile ? 34 : 44, height: isMobile ? 34 : 44, borderRadius: isMobile ? 9 : 11, background: T.red + '18', border: `1px solid ${T.red}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path d="M4 4l10 10M14 4L4 14" stroke={T.red} strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </div>
-              <span style={{ fontSize: 18, fontWeight: 700, color: T.text0 }}>Problems</span>
+              <span style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, color: T.text0 }}>Problems</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 6 : 8 }}>
               {PROBLEMS.map((p, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.red + '0a', border: `1px solid ${T.red}18`, borderRadius: 10, padding: '11px 14px' }}>
-                  <span style={{ color: T.red, fontSize: 14, fontWeight: 700, flexShrink: 0 }}>✕</span>
-                  <span style={{ color: T.text1, fontSize: 13 }}>{p}</span>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 7 : 10, background: T.red + '0a', border: `1px solid ${T.red}18`, borderRadius: 8, padding: isMobile ? '7px 10px' : '11px 14px' }}>
+                  <span style={{ color: T.red, fontSize: isMobile ? 11 : 14, fontWeight: 700, flexShrink: 0 }}>✕</span>
+                  <span style={{ color: T.text1, fontSize: isMobile ? 11 : 13, lineHeight: 1.3 }}>{p}</span>
                 </div>
               ))}
             </div>
           </GlowCard>
 
-          {/* Solutions card */}
-          <GlowCard color={T.teal} style={{ padding: '28px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 11, background: T.teal + '18', border: `1px solid ${T.teal}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <GlowCard color={T.teal} style={{ padding: isMobile ? '16px 12px' : '28px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14, marginBottom: isMobile ? 12 : 20 }}>
+              <div style={{ width: isMobile ? 34 : 44, height: isMobile ? 34 : 44, borderRadius: isMobile ? 9 : 11, background: T.teal + '18', border: `1px solid ${T.teal}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path d="M3 9l4.5 4.5L15 5" stroke={T.teal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <span style={{ fontSize: 18, fontWeight: 700, color: T.text0 }}>Solutions</span>
+              <span style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, color: T.text0 }}>Solutions</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 6 : 8 }}>
               {SOLUTIONS.map((s, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.teal + '0a', border: `1px solid ${T.teal}18`, borderRadius: 10, padding: '11px 14px' }}>
-                  <span style={{ color: T.teal, fontSize: 14, fontWeight: 700, flexShrink: 0 }}>✓</span>
-                  <span style={{ color: T.text1, fontSize: 13 }}>{s}</span>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 7 : 10, background: T.teal + '0a', border: `1px solid ${T.teal}18`, borderRadius: 8, padding: isMobile ? '7px 10px' : '11px 14px' }}>
+                  <span style={{ color: T.teal, fontSize: isMobile ? 11 : 14, fontWeight: 700, flexShrink: 0 }}>✓</span>
+                  <span style={{ color: T.text1, fontSize: isMobile ? 11 : 13, lineHeight: 1.3 }}>{s}</span>
                 </div>
               ))}
             </div>
@@ -561,38 +585,36 @@ export default function Auth({ onLogin }) {
       </section>
 
       {/* ── Core Features ── */}
-      <section style={{ padding: '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 16px 0' }}>Core features</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
-          {FEATURES.map((f, i) => <FeatureCard key={i} feature={f} />)}
+      <section style={{ padding: isMobile ? '32px 12px' : '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: col2, gap: isMobile ? 8 : 14 }}>
+          {FEATURES.map((f, i) => <FeatureCard key={i} feature={f} isMobile={isMobile} />)}
         </div>
       </section>
 
       {/* ── Two Operating Modes ── */}
-      <section style={{ padding: '0 24px 80px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 16px 0' }}>Two operating modes</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
-          {MODES.map((m, i) => <ModeCard key={i} mode={m} />)}
+      <section style={{ padding: isMobile ? '0 12px 32px' : '0 24px 80px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: col2, gap: isMobile ? 8 : 14 }}>
+          {MODES.map((m, i) => <ModeCard key={i} mode={m} isMobile={isMobile} />)}
         </div>
       </section>
 
       {/* ── Why Traders Trust ── */}
-      <section style={{ padding: '80px 24px 100px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+      <section style={{ padding: isMobile ? '32px 12px 48px' : '80px 24px 100px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <h2 style={{ fontSize: 'clamp(32px, 5vw, 58px)', fontWeight: 900, margin: '0 0 48px 0', lineHeight: 1.1, letterSpacing: '-1px' }}>
           Why traders trust{' '}
           <span style={{ background: 'linear-gradient(90deg, #00d4aa, #9b7dff, #ff4d9b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>PolyTrader?</span>
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-          <TrustPill color={T.teal}   icon={<TrustIconShield />} text="Non-custodial — you always control your funds" />
-          <TrustPill color={T.blue}   icon={<TrustIconPeople />} text="Built by traders, for traders" />
+        <div style={{ display: 'grid', gridTemplateColumns: col2, gap: isMobile ? 8 : 14, marginBottom: isMobile ? 8 : 14 }}>
+          <TrustPill color={T.teal}   icon={<TrustIconShield />} text="Non-custodial — you always control your funds" isMobile={isMobile} />
+          <TrustPill color={T.blue}   icon={<TrustIconPeople />} text="Built by traders, for traders" isMobile={isMobile} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-          <TrustPill color={T.purple} icon={<TrustIconTarget />} text="Execution-first, not narratives" />
-          <TrustPill color={T.yellow} icon={<TrustIconBrain />}  text="AI-driven probability analysis for decision-making" />
+        <div style={{ display: 'grid', gridTemplateColumns: col2, gap: isMobile ? 8 : 14, marginBottom: isMobile ? 8 : 14 }}>
+          <TrustPill color={T.purple} icon={<TrustIconTarget />} text="Execution-first, not narratives" isMobile={isMobile} />
+          <TrustPill color={T.yellow} icon={<TrustIconBrain />}  text="AI-driven probability analysis for decision-making" isMobile={isMobile} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{ width: 'calc(50% - 7px)' }}>
-            <TrustPill color={T.red} icon={<TrustIconEye />} text="Transparent execution and risk management logic" />
+            <TrustPill color={T.red} icon={<TrustIconEye />} text="Transparent execution and risk management logic" isMobile={isMobile} />
           </div>
         </div>
       </section>
@@ -607,7 +629,7 @@ export default function Auth({ onLogin }) {
       </section>
 
       {/* Footer */}
-      <footer style={{ borderTop: `1px solid ${T.border}`, padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, background: T.bg1 }}>
+      <footer style={{ borderTop: `1px solid ${T.border}`, padding: isMobile ? '20px 16px' : '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, background: T.bg1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#fff' }}>P</div>
           <span style={{ fontSize: 13, color: T.text2 }}>PolyTrader © 2025</span>
