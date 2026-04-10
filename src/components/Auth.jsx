@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
@@ -658,5 +658,4 @@ export default function Auth({ onLogin, onNavigate }) {
     </div>
   )
 }
- 
- 
+
