@@ -1459,7 +1459,7 @@ export default function App() {
   const NavItem = ({ item }) => {
     const active = view === item.id
     return (
-      <div onClick={() => setView(item.id)} title={collapsed ? item.label : ''}
+      <div onClick={() => { setView(item.id); if (isMobile) setCollapsed(true) }} title={collapsed ? item.label : ''}
         style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, marginBottom: 2, cursor: 'pointer', background: active ? T.bg3 : 'transparent', borderLeft: active && !collapsed ? `2px solid ${T.blue}` : '2px solid transparent', transition: 'all 0.15s' }}
         onMouseEnter={e => { if (!active) e.currentTarget.style.background = T.bgHover }}
         onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
@@ -1585,7 +1585,7 @@ export default function App() {
         </div>
         {/* Logout */}
         <div style={{ padding: '12px 8px', borderTop: `1px solid ${T.border}` }}>
-          <div onClick={handleLogout}
+          <div onClick={() => { handleLogout(); if (isMobile) setCollapsed(true) }}
             style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, cursor: 'pointer', color: T.text2, transition: 'all 0.15s' }}
             onMouseEnter={e => { e.currentTarget.style.background = T.redDim; e.currentTarget.style.color = T.red }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = T.text2 }}>
