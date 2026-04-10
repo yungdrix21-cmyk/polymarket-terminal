@@ -16,7 +16,7 @@ const T = {
   yellow: '#f5c842', yellowDim: 'rgba(245,200,66,0.12)',
   text0: '#e8eaf0', text1: '#8b8fa8', text2: '#4a4d62',
   font: '"DM Sans", "Sora", system-ui, sans-serif',
-  mono: '"DM Mono", "Fira Code", monospace',
+  mono: '"Manrope", "DM Mono", "Fira Code", monospace',
 }
 const Icon = ({ name, size = 16, color = 'currentColor', strokeWidth = 1.6 }) => {
   const paths = {
@@ -54,6 +54,8 @@ const Icon = ({ name, size = 16, color = 'currentColor', strokeWidth = 1.6 }) =>
     </svg>
   )
 }
+const fmt = (n) => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 })
+
 function Badge({ children, color = T.blue }) {
   return <span style={{ fontSize: 10, fontWeight: 600, color, background: `${color}18`, padding: '3px 8px', borderRadius: 20, border: `1px solid ${color}28` }}>{children}</span>
 }
@@ -353,7 +355,7 @@ function AdminDepositsPage() {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ color: T.teal, fontWeight: 700, fontSize: 22, fontFamily: T.mono }}>
-                    ${Number(tx.amount).toFixed(2)}
+                    {fmt(tx.amount)}
                   </div>
                   <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
                     <button onClick={() => handleDecision(tx, 'completed')}
@@ -425,7 +427,7 @@ function AdminBalancePage() {
                 {u.role === 'admin' && <Badge color={T.purple}>Admin</Badge>}
               </div>
               <div style={{ flex: 1, color: T.teal, fontWeight: 700, fontFamily: T.mono, fontSize: 14 }}>
-                ${Number(u.balance ?? 0).toFixed(2)}
+                {fmt(u.balance ?? 0)}
               </div>
               <div style={{ flex: 2, display: 'flex', gap: 8, alignItems: 'center' }}>
                 <input
@@ -470,8 +472,8 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 28 }}>
-        <StatCard label="Account Balance" value={`$${Number(balance).toFixed(2)}`} color={T.text0} icon={<Icon name="wallet" size={15} />} sub="Available funds" />
-        <StatCard label="Total P&L" value={`${(pnl ?? 0) >= 0 ? '+' : ''}$${Number(pnl ?? 0).toFixed(2)}`} color={(pnl ?? 0) >= 0 ? T.teal : T.red} icon={<Icon name="trending" size={15} color={(pnl ?? 0) >= 0 ? T.teal : T.red} />} sub="All time trading" />
+        <StatCard label="Account Balance" value={fmt(balance)} color={T.text0} icon={<Icon name="wallet" size={15} />} sub="Available funds" />
+        <StatCard label="Total P&L" value={`${(pnl ?? 0) >= 0 ? '+' : ''}${fmt(pnl ?? 0)}`} color={(pnl ?? 0) >= 0 ? T.teal : T.red} icon={<Icon name="trending" size={15} color={(pnl ?? 0) >= 0 ? T.teal : T.red} />} sub="All time trading" />
         <StatCard label="Open Positions" value={positions?.length || 0} color={T.blue} icon={<Icon name="zap" size={15} color={T.blue} />} sub="Active markets" />
         <StatCard label="Live Markets" value={marketsCount || 0} color={T.purple} icon={<Icon name="markets" size={15} color={T.purple} />} sub="Available now" />
       </div>
@@ -500,7 +502,7 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ color: tx.type === 'withdrawal' ? T.red : T.teal, fontWeight: 600, fontSize: 14, fontFamily: T.mono }}>
-                  {tx.type === 'withdrawal' ? '-' : '+'}${Number(tx.amount).toFixed(2)}
+                  {tx.type === 'withdrawal' ? '-' : '+'}${fmt(tx.amount).replace('$','')}
                   </div>
                 <Badge color={tx.status === 'completed' ? T.teal : tx.status === 'declined' ? T.red : T.yellow}>{tx.status}</Badge>
               </div>
@@ -527,9 +529,10 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ color: T.text1, fontSize: 12 }}>Invested: <span style={{ color: T.text0, fontFamily: T.mono }}>${Number(p.amount).toFixed(2)}</span></div>
+                <div style={{ color: T.text1, fontSize: 12 }}>Invested: <span style={{ color: T.text0, fontFamily: T.mono }}>{fmt(p.amount)}</span></div>
                 <div style={{ color: (p.pnl ?? 0) >= 0 ? T.teal : T.red, fontWeight: 700, fontSize: 15, fontFamily: T.mono }}>
-                  {(p.pnl ?? 0) >= 0 ? '+' : ''}${Number(p.pnl ?? 0).toFixed(2)}
+  {(p.pnl ?? 0) >= 0 ? '+' : ''}{fmt(p.pnl ?? 0)}
+</div>
                 </div>
               </div>
             </div>
@@ -1658,7 +1661,7 @@ export default function App() {
             {view.replace('admin-', 'Admin > ')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 700, color: T.teal }}>${(Number(balance) || 0).toFixed(2)}</div>
+            <div style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 700, color: T.teal }}>{fmt(balance)}</div>
             <Icon name="bell" size={16} color={T.text2} />
             <div onClick={() => setView('profile')} style={{ width: 30, height: 30, borderRadius: 8, background: `${T.purple}20`, border: `1px solid ${T.purple}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <Icon name="profile" size={14} color={T.purple} />
