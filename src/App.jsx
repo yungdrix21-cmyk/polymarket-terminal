@@ -465,7 +465,7 @@ function AdminBalancePage() {
     </div>
   )
 }
-function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, positions, pnl }) {
+function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, positions, closedPositions, pnl }) {
   return (
     <div style={{ padding: '28px 28px 40px', overflowY: 'auto', flex: 1 }}>
       <KYCBanner kycStatus={kycStatus} />
@@ -513,6 +513,34 @@ function DashboardPage({ user, balance, transactions, kycStatus, marketsCount, p
           ))}
         </div>
       )}
+      
+      {closedPositions?.length > 0 && (
+  <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden', marginBottom: 20 }}>
+    <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <Icon name="chart" size={15} color={T.purple} />
+      <span style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>Closed Positions</span>
+    </div>
+    {closedPositions.map((p, i) => (
+      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', borderBottom: i < closedPositions.length - 1 ? `1px solid ${T.border}` : 'none' }}
+        onMouseEnter={e => e.currentTarget.style.background = T.bgHover}
+        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+        <div>
+          <div style={{ color: T.text0, fontSize: 13, fontWeight: 500 }}>{p.market}</div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: p.side === 'YES' ? T.teal : T.red, background: p.side === 'YES' ? T.tealDim : T.redDim, padding: '2px 8px', borderRadius: 20 }}>{p.side}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: T.text2, background: T.bg3, padding: '2px 8px', borderRadius: 20 }}>closed</span>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ color: T.text1, fontSize: 12 }}>Invested: <span style={{ color: T.text0, fontFamily: T.mono }}>{fmt(p.amount)}</span></div>
+          <div style={{ color: (p.pnl ?? 0) >= 0 ? T.teal : T.red, fontWeight: 700, fontSize: 15, fontFamily: T.mono }}>
+            {(p.pnl ?? 0) >= 0 ? '+' : ''}{fmt(p.pnl ?? 0)}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
 
       <div style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
         <div style={{ padding: '16px 24px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1084,6 +1112,7 @@ function AdminPnLPage() {
 function AdminPositionsPage() {
   const [users, setUsers] = useState([])
   const [positions, setPositions] = useState([])
+  const [closedPositions, setClosedPositions] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState('')
   const [form, setForm] = useState({ market: '', side: 'YES', amount: '', pnl: '' })
@@ -1515,7 +1544,10 @@ const [markets, setMarkets] = useState(
       const { data: txData } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false })
       setTransactions(txData ?? [])
       const { data: posData } = await supabase.from('positions').select('*').eq('user_id', userId).eq('status', 'open').order('created_at', { ascending: false })
-      setPositions(posData ?? [])
+setPositions(posData ?? [])
+
+const { data: closedData } = await supabase.from('positions').select('*').eq('user_id', userId).eq('status', 'closed').order('created_at', { ascending: false })
+setClosedPositions(closedData ?? [])
     } catch (e) {
       console.warn('loadUserData failed:', e.message)
       setKycStatus('not_started')
@@ -1561,7 +1593,7 @@ const [markets, setMarkets] = useState(
 
   const renderPage = () => {
     if (view === 'legal') return <Legal />
-    if (view === 'dashboard')      return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} marketsCount={markets.length} positions={positions} pnl={profile?.pnl} />
+    if (view === 'dashboard')      return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} marketsCount={markets.length} positions={positions} closedPositions={closedPositions} pnl={profile?.pnl} />
     if (view === 'markets') {
   return (
     <MarketsPage 
