@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
@@ -16,7 +16,7 @@ const T = {
   mono: '"DM Mono", monospace',
 }
 
-// Glow card — top border + box-shadow in the given color, matching screenshot exactly
+// Glow card  top border + box-shadow in the given color, matching screenshot exactly
 function GlowCard({ color, children, style = {} }) {
   return (
     <div style={{
@@ -57,7 +57,7 @@ function useIsMobile(breakpoint = 640) {
 }
 
 const PROBLEMS = [
-  'Hundreds of markets — hard to find the right one',
+  'Hundreds of markets  hard to find the right one',
   'Manual analysis takes hours',
   'Bots are too technical, no coding skills',
   'Hard to stay on top with your positions',
@@ -68,10 +68,10 @@ const SOLUTIONS = [
   'AI analysis on any market, on demand',
   'Two modes: autonomous or managed',
   'Track live, improve results',
-  'Unified platform: explore → direct → trade',
+  'Unified platform: explore  direct  trade',
 ]
 
-// ─── SVG ICONS ────────────────────────────────────────────────────────────────
+//  SVG ICONS 
 
 function SvgGrid({ color }) {
   return (
@@ -187,7 +187,7 @@ function TrustIconEye() {
   )
 }
 
-// ─── DATA ─────────────────────────────────────────────────────────────────────
+//  DATA 
 
 const FEATURES = [
   { svgIcon: (c) => <SvgGrid color={c} />,        title: 'Web interface',        color: T.teal,   points: ['Dashboard overview', 'AI + MCP', 'Probability on demand', 'Live import'] },
@@ -201,7 +201,7 @@ const MODES = [
   { badgeIcon: (c) => <SvgTargetBadge color={c} />, badgeLabel: 'Managed mode',    color: T.purple, title: 'Stay in control',       subtitle: 'For active traders, targeted bets', points: ['You select markets via web interface', 'You set your specific market list', 'Bot analyzes your selection'] },
 ]
 
-// ─── FORM HELPERS ─────────────────────────────────────────────────────────────
+//  FORM HELPERS 
 
 function Field({ label, type = 'text', value, onChange, placeholder, required }) {
   return (
@@ -225,7 +225,7 @@ function Steps({ current }) {
         <div key={i} style={{ display: 'flex', alignItems: 'center', flex: i < steps.length - 1 ? 1 : 'none' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 28, height: 28, borderRadius: '50%', background: i < current ? T.teal : i === current ? T.blue : T.bg3, border: `2px solid ${i < current ? T.teal : i === current ? T.blue : T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: i <= current ? '#fff' : T.text2 }}>
-              {i < current ? '✓' : i + 1}
+              {i < current ? '' : i + 1}
             </div>
             <span style={{ fontSize: 9, color: i === current ? T.text0 : T.text2, fontWeight: i === current ? 600 : 400, whiteSpace: 'nowrap' }}>{s}</span>
           </div>
@@ -265,7 +265,7 @@ function PrimaryBtn({ onClick, disabled, loading, children }) {
   )
 }
 
-// ─── SECTION CARDS ────────────────────────────────────────────────────────────
+//  SECTION CARDS 
 
 function FeatureCard({ feature, isMobile }) {
   const { svgIcon, title, color, points } = feature
@@ -332,7 +332,7 @@ function TrustPill({ icon, text, color, isMobile }) {
   )
 }
 
-// ─── KYC PENDING ──────────────────────────────────────────────────────────────
+//  KYC PENDING 
 
 export function KYCPending({ user, kycStatus, onLogout }) {
   return (
@@ -340,13 +340,13 @@ export function KYCPending({ user, kycStatus, onLogout }) {
       <div style={{ maxWidth: 460, width: '100%', textAlign: 'center' }}>
         <Logo />
         <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.borderHi}`, padding: '40px 36px' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>{kycStatus === 'rejected' ? '❌' : '⏳'}</div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>{kycStatus === 'rejected' ? '' : ''}</div>
           <h2 style={{ color: kycStatus === 'rejected' ? T.red : T.text0, fontSize: 22, fontWeight: 800, margin: '0 0 12px' }}>
             {kycStatus === 'rejected' ? 'KYC Rejected' : 'KYC Under Review'}
           </h2>
           <p style={{ color: T.text1, fontSize: 14, lineHeight: 1.7, margin: '0 0 24px' }}>
             {kycStatus === 'rejected' ? 'Your documents were rejected. Please contact support to resubmit.'
-              : <>Your documents are under review. Usually takes <strong style={{ color: T.yellow }}>1–2 business days</strong>.</>}
+              : <>Your documents are under review. Usually takes <strong style={{ color: T.yellow }}>12 business days</strong>.</>}
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => window.location.reload()} style={{ flex: 1, padding: '12px', background: T.blueDim, color: T.blue, border: `1px solid ${T.blue}30`, borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: T.font }}>Refresh Status</button>
@@ -358,7 +358,7 @@ export function KYCPending({ user, kycStatus, onLogout }) {
   )
 }
 
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+//  MAIN COMPONENT 
 
 export default function Auth({ onLogin, onNavigate }) {
   const [mode, setMode] = useState('landing')
@@ -420,7 +420,7 @@ export default function Auth({ onLogin, onNavigate }) {
       if (!uid) { setError('Session expired. Please go back and sign in again.'); return }
       const { error: profileError } = await withTimeout(supabase.from('profiles').upsert({ id: uid, first_name: firstName, last_name: lastName, phone, address, city, country, kyc_status: 'not_started', updated_at: new Date().toISOString() }))
       if (profileError) throw profileError
-      setSuccess('✅ Account created! Taking you to your dashboard...')
+      setSuccess(' Account created! Taking you to your dashboard...')
       setTimeout(() => onLogin(user || signupUser), 1200)
     } catch (e) { setError(e.message || 'Failed to save details.') }
     finally { setLoading(false) }
@@ -429,10 +429,10 @@ export default function Auth({ onLogin, onNavigate }) {
   if (mode === 'check_email') return (
     <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
       <div style={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
-        <div style={{ width: 72, height: 72, borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.teal}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 24px' }}>✉️</div>
+        <div style={{ width: 72, height: 72, borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.teal}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 24px' }}></div>
         <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 800, margin: '0 0 12px' }}>Check your email</h2>
         <p style={{ color: T.text1, fontSize: 14, lineHeight: 1.7, margin: '0 0 28px' }}>We sent a confirmation link to <strong style={{ color: T.text0 }}>{email}</strong>.<br />Click the link to activate your account, then sign in.</p>
-        <button onClick={() => { setMode('signin'); reset() }} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, marginBottom: 14 }}>Go to Sign In →</button>
+        <button onClick={() => { setMode('signin'); reset() }} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, marginBottom: 14 }}>Go to Sign In </button>
         <p style={{ color: T.text2, fontSize: 12 }}>Didn't receive it? Check spam or <span onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ color: T.blue, cursor: 'pointer' }}>try again</span></p>
       </div>
     </div>
@@ -441,15 +441,15 @@ export default function Auth({ onLogin, onNavigate }) {
   if (mode === 'signin') return (
     <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
       <div style={{ width: '100%', maxWidth: 420 }}>
-        <button onClick={() => { setMode('landing'); reset() }} style={{ background: 'none', border: 'none', color: T.text2, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0, fontFamily: T.font }}>← Back to home</button>
+        <button onClick={() => { setMode('landing'); reset() }} style={{ background: 'none', border: 'none', color: T.text2, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0, fontFamily: T.font }}> Back to home</button>
         <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.borderHi}`, padding: '36px', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
           <Logo />
           <h2 style={{ color: T.text0, margin: '0 0 6px', fontSize: 22, fontWeight: 800 }}>Welcome back</h2>
           <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Sign in to your PolyTrader account</p>
           <Field label="Email" type="email" value={email} onChange={v => { setEmail(v); reset() }} placeholder="you@example.com" required />
-          <Field label="Password" type="password" value={password} onChange={v => { setPassword(v); reset() }} placeholder="••••••••" required />
+          <Field label="Password" type="password" value={password} onChange={v => { setPassword(v); reset() }} placeholder="" required />
           <ErrorBox msg={error} />
-          <PrimaryBtn onClick={handleSignIn} loading={loading}>{loading ? 'Signing in...' : 'Sign In →'}</PrimaryBtn>
+          <PrimaryBtn onClick={handleSignIn} loading={loading}>{loading ? 'Signing in...' : 'Sign In '}</PrimaryBtn>
           <div style={{ textAlign: 'center', fontSize: 13, color: T.text2, marginTop: 16 }}>Don't have an account? <span onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ color: T.blue, cursor: 'pointer', fontWeight: 600 }}>Sign Up</span></div>
         </div>
       </div>
@@ -459,7 +459,7 @@ export default function Auth({ onLogin, onNavigate }) {
   if (mode === 'signup') return (
     <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20, overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 480, paddingTop: 20 }}>
-        <button onClick={() => { if (step === 0) { setMode('landing'); reset() } else { setStep(s => s - 1); reset() } }} style={{ background: 'none', border: 'none', color: T.text2, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0, fontFamily: T.font }}>← {step === 0 ? 'Back to home' : 'Back'}</button>
+        <button onClick={() => { if (step === 0) { setMode('landing'); reset() } else { setStep(s => s - 1); reset() } }} style={{ background: 'none', border: 'none', color: T.text2, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0, fontFamily: T.font }}> {step === 0 ? 'Back to home' : 'Back'}</button>
         <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.borderHi}`, padding: '36px', boxShadow: '0 24px 80px rgba(0,0,0,0.4)' }}>
           <Logo />
           <Steps current={step} />
@@ -470,7 +470,7 @@ export default function Auth({ onLogin, onNavigate }) {
             <Field label="Password" type="password" value={password} onChange={v => { setPassword(v); reset() }} placeholder="Min. 6 characters" required />
             <Field label="Confirm Password" type="password" value={confirmPassword} onChange={v => { setConfirmPassword(v); reset() }} placeholder="Repeat password" required />
             <ErrorBox msg={error} />
-            <PrimaryBtn onClick={handleAccountStep} loading={loading}>{loading ? 'Creating account...' : 'Continue →'}</PrimaryBtn>
+            <PrimaryBtn onClick={handleAccountStep} loading={loading}>{loading ? 'Creating account...' : 'Continue '}</PrimaryBtn>
             <div style={{ textAlign: 'center', fontSize: 13, color: T.text2, marginTop: 16 }}>Already have an account? <span onClick={() => { setMode('signin'); reset() }} style={{ color: T.blue, cursor: 'pointer', fontWeight: 600 }}>Sign In</span></div>
           </>}
           {step === 1 && <>
@@ -494,14 +494,14 @@ export default function Auth({ onLogin, onNavigate }) {
             </div>
             <ErrorBox msg={error} />
             <SuccessBox msg={success} />
-            <PrimaryBtn onClick={handleDetailsStep} loading={loading}>{loading ? 'Saving...' : 'Continue →'}</PrimaryBtn>
+            <PrimaryBtn onClick={handleDetailsStep} loading={loading}>{loading ? 'Saving...' : 'Continue '}</PrimaryBtn>
           </>}
         </div>
       </div>
     </div>
   )
 
-  // ── LANDING ───────────────────────────────────────────────────────────────
+  //  LANDING 
   const isMobile = useIsMobile()
   const col2 = '1fr 1fr'
 
@@ -518,7 +518,7 @@ export default function Auth({ onLogin, onNavigate }) {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => { setMode('signin'); reset() }} style={{ padding: '7px 18px', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text1, fontSize: 13, cursor: 'pointer', fontFamily: T.font }}>Sign In</button>
-          <button onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ padding: '7px 18px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: T.font }}>Trade →</button>
+          <button onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ padding: '7px 18px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: T.font }}>Trade </button>
         </div>
       </nav>
 
@@ -533,10 +533,10 @@ export default function Auth({ onLogin, onNavigate }) {
         </h1>
         <h2 style={{ fontSize: 'clamp(18px, 3vw, 26px)', fontWeight: 600, color: T.text0, margin: '0 0 16px' }}>Your unfair advantage on Prediction Markets</h2>
         <p style={{ color: T.text1, fontSize: 15, maxWidth: 520, margin: '0 auto 40px', lineHeight: 1.7 }}>Trading Terminal with AI Analysis and Copy Trading for prediction markets</p>
-        <button onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ padding: '14px 40px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 50, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, boxShadow: '0 0 40px rgba(79,142,255,0.35)' }}>Trade →</button>
+        <button onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ padding: '14px 40px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 50, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, boxShadow: '0 0 40px rgba(79,142,255,0.35)' }}>Trade </button>
       </section>
 
-      {/* ── Problems & Solutions ── */}
+      {/*  Problems & Solutions  */}
       <section style={{ padding: isMobile ? '40px 12px' : '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: isMobile ? 24 : 48 }}>
           <h2 style={{ fontSize: 'clamp(22px, 4vw, 42px)', fontWeight: 800, margin: 0 }}>Problems & <span style={{ color: T.teal }}>Solutions</span></h2>
@@ -555,7 +555,7 @@ export default function Auth({ onLogin, onNavigate }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 6 : 8 }}>
               {PROBLEMS.map((p, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 7 : 10, background: T.red + '0a', border: `1px solid ${T.red}18`, borderRadius: 8, padding: isMobile ? '7px 10px' : '11px 14px' }}>
-                  <span style={{ color: T.red, fontSize: isMobile ? 11 : 14, fontWeight: 700, flexShrink: 0 }}>✕</span>
+                  <span style={{ color: T.red, fontSize: isMobile ? 11 : 14, fontWeight: 700, flexShrink: 0 }}></span>
                   <span style={{ color: T.text1, fontSize: isMobile ? 11 : 13, lineHeight: 1.3 }}>{p}</span>
                 </div>
               ))}
@@ -574,7 +574,7 @@ export default function Auth({ onLogin, onNavigate }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 6 : 8 }}>
               {SOLUTIONS.map((s, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 7 : 10, background: T.teal + '0a', border: `1px solid ${T.teal}18`, borderRadius: 8, padding: isMobile ? '7px 10px' : '11px 14px' }}>
-                  <span style={{ color: T.teal, fontSize: isMobile ? 11 : 14, fontWeight: 700, flexShrink: 0 }}>✓</span>
+                  <span style={{ color: T.teal, fontSize: isMobile ? 11 : 14, fontWeight: 700, flexShrink: 0 }}></span>
                   <span style={{ color: T.text1, fontSize: isMobile ? 11 : 13, lineHeight: 1.3 }}>{s}</span>
                 </div>
               ))}
@@ -584,28 +584,28 @@ export default function Auth({ onLogin, onNavigate }) {
         </div>
       </section>
 
-      {/* ── Core Features ── */}
+      {/*  Core Features  */}
       <section style={{ padding: isMobile ? '32px 12px' : '80px 24px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'grid', gridTemplateColumns: col2, gap: isMobile ? 8 : 14 }}>
           {FEATURES.map((f, i) => <FeatureCard key={i} feature={f} isMobile={isMobile} />)}
         </div>
       </section>
 
-      {/* ── Two Operating Modes ── */}
+      {/*  Two Operating Modes  */}
       <section style={{ padding: isMobile ? '0 12px 32px' : '0 24px 80px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'grid', gridTemplateColumns: col2, gap: isMobile ? 8 : 14 }}>
           {MODES.map((m, i) => <ModeCard key={i} mode={m} isMobile={isMobile} />)}
         </div>
       </section>
 
-      {/* ── Why Traders Trust ── */}
+      {/*  Why Traders Trust  */}
       <section style={{ padding: isMobile ? '32px 12px 48px' : '80px 24px 100px', maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <h2 style={{ fontSize: 'clamp(32px, 5vw, 58px)', fontWeight: 900, margin: '0 0 48px 0', lineHeight: 1.1, letterSpacing: '-1px' }}>
           Why traders trust{' '}
           <span style={{ background: 'linear-gradient(90deg, #00d4aa, #9b7dff, #ff4d9b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>PolyTrader?</span>
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: col2, gap: isMobile ? 8 : 14, marginBottom: isMobile ? 8 : 14 }}>
-          <TrustPill color={T.teal}   icon={<TrustIconShield />} text="Non-custodial — you always control your funds" isMobile={isMobile} />
+          <TrustPill color={T.teal}   icon={<TrustIconShield />} text="Non-custodial  you always control your funds" isMobile={isMobile} />
           <TrustPill color={T.blue}   icon={<TrustIconPeople />} text="Built by traders, for traders" isMobile={isMobile} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: col2, gap: isMobile ? 8 : 14, marginBottom: isMobile ? 8 : 14 }}>
@@ -624,7 +624,7 @@ export default function Auth({ onLogin, onNavigate }) {
         <div style={{ maxWidth: 640, margin: '0 auto', background: 'linear-gradient(135deg, rgba(79,142,255,0.08), rgba(155,125,255,0.08))', border: `1px solid rgba(79,142,255,0.2)`, borderRadius: 24, padding: '56px 40px' }}>
           <h2 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 800, margin: '0 0 14px' }}>Start your edge today</h2>
           <p style={{ color: T.text1, fontSize: 15, margin: '0 0 32px' }}>Join thousands of traders using PolyTrader.</p>
-          <button onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ padding: '15px 48px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 50, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, boxShadow: '0 0 40px rgba(79,142,255,0.3)' }}>Trade → Free</button>
+          <button onClick={() => { setMode('signup'); setStep(0); reset() }} style={{ padding: '15px 48px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 50, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, boxShadow: '0 0 40px rgba(79,142,255,0.3)' }}>Trade  Free</button>
         </div>
       </section>
 
@@ -632,7 +632,7 @@ export default function Auth({ onLogin, onNavigate }) {
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: isMobile ? '20px 16px' : '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, background: T.bg1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#fff' }}>P</div>
-          <span style={{ fontSize: 13, color: T.text2 }}>© 2025 PolyTrader. All rights reserved.</span>
+          <span style={{ fontSize: 13, color: T.text2 }}> 2025 PolyTrader. All rights reserved.</span>
         </div>
         <div style={{ display: 'flex', gap: 20 }}>
           {[
