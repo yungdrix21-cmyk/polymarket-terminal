@@ -638,17 +638,7 @@ export default function Auth({ onLogin, onNavigate }) {
           {[
            { label: 'Privacy Policy', onClick: () => onNavigate('legal') },
 { label: 'Terms of Service', onClick: () => onNavigate('legal') },
-{
-  label: (
-    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
-        <path d="M1 4.5l6 4 6-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-      </svg>
-      Contact
-    </span>
-  ),
-  { label: 'Contact', onClick: () => window.open('mailto:admin.polytrader@gmail.com'), icon: true },
+{ label: 'Contact', onClick: () => window.open('mailto:admin.polytrader@gmail.com'), icon: true },
 ].map(({ label, onClick, icon }, i) => (
   <span key={i} onClick={onClick}
     style={{ fontSize: 12, color: T.text2, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
