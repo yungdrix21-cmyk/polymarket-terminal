@@ -360,7 +360,7 @@ export function KYCPending({ user, kycStatus, onLogout }) {
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
-export default function Auth({ onLogin }) {
+export default function Auth({ onLogin, onNavigate }) {
   const [mode, setMode] = useState('landing')
   const [step, setStep] = useState(0)
   const [email, setEmail] = useState('')
@@ -635,7 +635,17 @@ export default function Auth({ onLogin }) {
           <span style={{ fontSize: 13, color: T.text2 }}>PolyTrader © 2025</span>
         </div>
         <div style={{ display: 'flex', gap: 20 }}>
-          {['Privacy Policy', 'Terms of Service', 'Contact'].map(l => <span key={l} style={{ fontSize: 12, color: T.text2, cursor: 'pointer' }}>{l}</span>)}
+          {[
+           { label: 'Privacy Policy', onClick: () => onNavigate('legal') },
+{ label: 'Terms of Service', onClick: () => onNavigate('legal') },
+{ label: 'Contact', onClick: () => window.location.href = 'mailto:legal@polytrader.app' },
+].map(({ label, onClick }) => (
+  <span key={label} onClick={onClick} style={{ fontSize: 12, color: T.text2, cursor: 'pointer' }}
+    onMouseEnter={e => e.target.style.color = T.text1}
+    onMouseLeave={e => e.target.style.color = T.text2}>
+    {label}
+  </span>
+))}
         </div>
       </footer>
     </div>

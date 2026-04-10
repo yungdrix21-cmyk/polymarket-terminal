@@ -1,5 +1,6 @@
 import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
+import Legal from './pages/Legal'
 import Profile from './components/Profile'
 import PolymarketMarkets from './components/PolymarketMarkets'
 import AdminKYCReview from './components/admin/AdminKYCReview';
@@ -1402,7 +1403,7 @@ export default function App() {
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
-  if (showLanding) return <Auth onLogin={handleLogin} />
+  if (showLanding) return <Auth onLogin={handleLogin} onNavigate={setView} />
   const isAdmin = user && profile?.role === 'admin'
   const MAIN_NAV = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -1424,6 +1425,7 @@ export default function App() {
 ]
 
   const renderPage = () => {
+    if (view === 'legal') return <Legal />
     if (view === 'dashboard')      return <DashboardPage user={user} balance={balance} transactions={transactions} kycStatus={kycStatus} marketsCount={markets.length} positions={positions} pnl={profile?.pnl} />
     if (view === 'markets') {
   return (
