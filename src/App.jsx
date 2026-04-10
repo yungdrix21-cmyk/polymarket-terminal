@@ -342,7 +342,15 @@ function AdminDepositsPage() {
             <div key={tx.id} style={{ background: T.bgCard, borderRadius: 16, border: `1px solid ${T.border}`, padding: '20px 24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>{tx.profiles?.email ?? tx.user_id}</div>
+                  <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>
+  {tx.profiles?.first_name && tx.profiles?.last_name
+    ? `${tx.profiles.first_name} ${tx.profiles.last_name}`
+    : tx.profiles?.email ?? tx.user_id}
+</div>
+{tx.profiles?.email && (
+  <div style={{ color: T.blue, fontSize: 12, marginTop: 2 }}>{tx.profiles.email}</div>
+)}
+
                   <div style={{ fontSize: 11, color: tx.type === 'withdrawal' ? T.red : T.teal, marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tx.type}</div> 
                   {tx.wallet_address && <div style={{ fontSize: 11, color: T.text2, marginTop: 4, fontFamily: T.mono }}>To: {tx.wallet_address.slice(0,16)}...</div>}
                   <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
@@ -1042,7 +1050,7 @@ function AdminPositionsPage() {
     const load = async () => {
       const [{ data: u }, { data: p }] = await Promise.all([
         supabase.from('profiles_with_email').select('id, email, first_name, last_name'),
-        supabase.from('positions').select('*, profiles(email)').order('created_at', { ascending: false })
+        supabase.from('positions').select('*, profiles(email, first_name, last_name)').order('created_at', { ascending: false })
       ])
       setUsers(u ?? [])
       setPositions(p ?? [])
