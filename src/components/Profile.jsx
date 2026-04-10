@@ -97,7 +97,7 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
         setKycRow(data)
         if (data && onKycUpdate) onKycUpdate(data.status || 'pending')
       })
-  }, [user, onKycUpdate])
+  }, [user?.id])
 
   const saveProfile = async () => {
     setSaving(true); setSaveMsg('')

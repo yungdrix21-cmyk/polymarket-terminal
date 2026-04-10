@@ -199,9 +199,9 @@ function AdminKYCPage() {
       const { data, error } = await supabase
         .from('kyc_documents')
         .select(`
-          id, user_id, status, document_type, submitted_at, document_url,
-          profiles ( first_name, last_name )
-        `)
+  id, user_id, status, document_type, submitted_at, file_url,
+  profiles ( first_name, last_name )
+`)
         .eq('status', 'pending')
         .order('submitted_at', { ascending: false })
 
@@ -269,12 +269,18 @@ function AdminKYCPage() {
                   </button>
                 </div>
               </div>
-              {sub.document_url && (
-                <div style={{ marginTop: 14 }}>
-                  <a href={sub.document_url} target="_blank" rel="noreferrer"
-                    style={{ fontSize: 12, color: T.blue, textDecoration: 'underline' }}>View Document</a>
-                </div>
-              )}
+              {sub.file_url && (
+  <div style={{ marginTop: 14 }}>
+    <img
+      src={sub.file_url}
+      alt="KYC Document"
+      onClick={() => window.open(sub.file_url, '_blank')}
+      style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 8, cursor: 'zoom-in', border: `1px solid ${T.border}` }}
+      onError={e => e.target.style.display = 'none'}
+    />
+    <a href={sub.file_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 6, fontSize: 12, color: T.blue, textDecoration: 'underline', cursor: 'pointer' }}>View Document</a>
+  </div>
+)}
             </div>
           ))}
         </div>
@@ -394,9 +400,9 @@ function AdminBalancePage() {
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
-        .from('profiles')
-        .select('id, email, balance, role')
-        .order('email', { ascending: true })
+  .from('profiles_with_email')
+  .select('id, email, balance, role')
+  .order('email', { ascending: true })
       setUsers(data ?? [])
       setLoading(false)
     }
@@ -710,7 +716,7 @@ function MarketsPage({ prices, selected, setSelected, isMobile }) {
             const isSelected = selected?.id === market.id
             return (
               <div key={market.id} onClick={() => setSelected(market)}
-                style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, cursor: 'pointer', background: isSelected ? T.bg3 : 'transparent', borderLeft: `3px solid ${isSelected ? T.blue : 'transparent'}`, transition: 'background 0.15s' }}
+                style={{ padding: '14px 16px', borderBottom: `1px solid ${T.border}`, border: `1px solid ${isSelected ? T.blue : T.border}`, borderRadius: 12, margin: '8px', cursor: 'pointer', background: isSelected ? T.bg3 : T.bgCard, borderLeft: `3px solid ${isSelected ? T.blue : T.border}`, transition: 'background 0.15s' }}
                 onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = T.bgHover }}
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -1028,10 +1034,24 @@ function AdminPnLPage() {
 
   useEffect(() => {
     const load = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, balance, pnl, role')
-        .order('email')
+      const { data: profileData, error } = await supabase
+  .from('profiles')
+  .select('id, balance, pnl, role')
+  .order('id')
+
+const userIds = (profileData || []).map(u => u.id)
+let emailMap = {}
+if (userIds.length > 0) {
+  const { data: emailData } = await supabase
+    .from('profiles_with_email')
+    .select('id, email')
+    .in('id', userIds)
+  if (emailData) emailData.forEach(e => { emailMap[e.id] = e.email })
+}
+
+const data = (profileData || []).map(u => ({ ...u, email: emailMap[u.id] ?? u.id }))
+setUsers(data)
+setLoading(false)
       console.log('pnl users:', data, error)
       setUsers(data ?? [])
       setLoading(false)
@@ -1122,7 +1142,7 @@ function AdminPositionsPage() {
     const load = async () => {
       const [{ data: u }, { data: p }] = await Promise.all([
         supabase.from('profiles_with_email').select('id, email, first_name, last_name'),
-        supabase.from('positions').select('*, profiles(email, first_name, last_name)').order('created_at', { ascending: false })
+        supabase.from('positions').select('*, profiles_with_email(email)').order('created_at', { ascending: false })
       ])
       setUsers(u ?? [])
       setPositions(p ?? [])
@@ -1202,8 +1222,11 @@ function AdminPositionsPage() {
           {positions.map(p => (
             <div key={p.id} style={{ background: T.bgCard, borderRadius: 12, border: `1px solid ${T.border}`, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <div>
-                <div style={{ color: T.text0, fontWeight: 600, fontSize: 13 }}>{p.market}</div>
-                <div style={{ color: T.text2, fontSize: 11, marginTop: 2 }}>{p.profiles?.email ?? p.user_id}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+  <Icon name="zap" size={13} color={T.yellow} />
+  <div style={{ color: T.text0, fontWeight: 600, fontSize: 13 }}>{p.market}</div>
+</div>
+                <div style={{ color: T.text2, fontSize: 11, marginTop: 2 }}>{p.profiles_with_email?.email ?? p.user_id}</div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                   <span style={{ fontSize: 10, fontWeight: 600, color: p.side === 'YES' ? T.teal : T.red, background: p.side === 'YES' ? T.tealDim : T.redDim, padding: '2px 8px', borderRadius: 20 }}>{p.side}</span>
                   <span style={{ fontSize: 10, fontWeight: 600, color: p.status === 'open' ? T.blue : T.text2, background: T.blueDim, padding: '2px 8px', borderRadius: 20 }}>{p.status}</span>
@@ -1591,7 +1614,7 @@ setClosedPositions(closedData ?? [])
   { id: 'admin-deposits',  label: 'Deposit Review',  icon: 'deposit' },
   { id: 'admin-balance',   label: 'Edit Balance',    icon: 'wallet'  },
   { id: 'admin-pnl',       label: 'Edit P&L',        icon: 'trending' },
-  { id: 'admin-positions', label: 'Open Positions',  icon: 'activity' },
+  { id: 'admin-positions', label: 'Open Positions',  icon: 'zap' },
 ]
 
   const renderPage = () => {

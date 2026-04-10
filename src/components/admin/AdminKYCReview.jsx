@@ -105,8 +105,9 @@ function KYCTab() {
                 {item.file_url && (
                   <div style={{ marginTop: 12 }}>
                     <img src={item.file_url} alt="KYC Document" onClick={() => setPreviewUrl(item.file_url)}
-                      style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 8, cursor: 'zoom-in', border: `1px solid ${T.border}` }}
-                      onMouseEnter={e => e.target.style.opacity = '0.8'} onMouseLeave={e => e.target.style.opacity = '1'} />
+  style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 8, cursor: 'zoom-in', border: `1px solid ${T.border}` }}
+  onMouseEnter={e => e.target.style.opacity = '0.8'} onMouseLeave={e => e.target.style.opacity = '1'}
+  onError={e => { e.target.style.display = 'none'; e.target.nextSibling.textContent = '⚠ Image failed to load' }} />
                     <div style={{ color: T.text2, fontSize: 11, marginTop: 4 }}>Click to enlarge</div>
                   </div>
                 )}
@@ -130,11 +131,20 @@ function DepositsTab() {
   useEffect(() => { fetchDeposits() }, [])
 
   const fetchDeposits = async () => {
-    setLoading(true)
-    const { data } = await supabase.from('transactions').select('*').eq('type', 'deposit').eq('status', 'pending').order('created_at', { ascending: false })
-    setDeposits(data ?? [])
-    setLoading(false)
+  setLoading(true)
+  const { data } = await supabase.from('transactions').select('*').eq('type', 'deposit').eq('status', 'pending').order('created_at', { ascending: false })
+  
+  // fetch emails
+  const userIds = (data || []).map(d => d.user_id)
+  let emailMap = {}
+  if (userIds.length > 0) {
+    const { data: emailData } = await supabase.from('profiles_with_email').select('id, email').in('id', userIds)
+    if (emailData) emailData.forEach(e => { emailMap[e.id] = e.email })
   }
+  
+  setDeposits((data ?? []).map(d => ({ ...d, email: emailMap[d.user_id] || null })))
+  setLoading(false)
+}
 
   const handleApprove = async (tx) => {
     const { error: txError } = await supabase.from('transactions').update({ status: 'completed' }).eq('id', tx.id)
@@ -160,7 +170,7 @@ function DepositsTab() {
             <div key={tx.id} style={{ background: T.bgCard, borderRadius: 14, border: `1px solid ${T.border}`, padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
               <div>
                 <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>{tx.crypto} Deposit</div>
-                <div style={{ color: T.text2, fontSize: 11, marginTop: 3 }}>User ID: {tx.user_id}</div>
+                <div style={{ color: T.blue, fontSize: 11, marginTop: 3 }}>{tx.email || tx.user_id}</div>
                 <div style={{ color: T.text2, fontSize: 11 }}>{new Date(tx.created_at).toLocaleString()}</div>
               </div>
               <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
@@ -188,11 +198,17 @@ function EditBalanceTab() {
 
   const fetchUsers = async () => {
   setLoading(true)
-  const { data } = await supabase
-    .from('profiles')
-    .select('id, first_name, last_name, balance')
-    .order('balance', { ascending: false })
-  setUsers(data ?? [])
+  const { data } = await supabase.from('profiles').select('id, first_name, last_name, balance').order('balance', { ascending: false })
+  
+  // fetch emails
+  const userIds = (data || []).map(u => u.id)
+  let emailMap = {}
+  if (userIds.length > 0) {
+    const { data: emailData } = await supabase.from('profiles_with_email').select('id, email').in('id', userIds)
+    if (emailData) emailData.forEach(e => { emailMap[e.id] = e.email })
+  }
+
+  setUsers((data ?? []).map(u => ({ ...u, email: emailMap[u.id] || null })))
   setLoading(false)
 }
 
