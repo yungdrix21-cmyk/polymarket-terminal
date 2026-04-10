@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { fetchLeaderboard, enrichTrader, fetchWalletPnl, fetchWalletTrades, fetchWalletPositions } from '../lib/polymarket'
 
-// ─── Fallback mock data (shown while loading or if API fails) ─────────────────
+//  Fallback mock data (shown while loading or if API fails) 
 
 const MOCK_TRADERS = [
   {
@@ -61,7 +61,7 @@ const DEFAULT_COPY_CONFIG = {
   autoStopPct: 20,
 }
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
+//  Utils 
 
 function fmt$(n) {
   if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
@@ -75,7 +75,7 @@ function shortAddr(addr) {
   return addr.slice(0, 6) + '...' + addr.slice(-4)
 }
 
-// ─── Small components ─────────────────────────────────────────────────────────
+//  Small components 
 
 function Avatar({ char, size = 32, color = '#185FA5' }) {
   return (
@@ -187,7 +187,7 @@ function Toggle({ label, sublabel, value, onChange, accent = '#378ADD' }) {
   )
 }
 
-// ─── Live Feed ────────────────────────────────────────────────────────────────
+//  Live Feed 
 
 function LiveFeed({ copiedTraders, configs }) {
   const [feed, setFeed] = useState([])
@@ -261,7 +261,7 @@ function LiveFeed({ copiedTraders, configs }) {
   )
 }
 
-// ─── Copy Config ──────────────────────────────────────────────────────────────
+//  Copy Config 
 
 function CopyConfig({ config, onChange }) {
   const cfg = config || DEFAULT_COPY_CONFIG
@@ -318,7 +318,7 @@ function CopyConfig({ config, onChange }) {
   )
 }
 
-// ─── Wallet Modal ─────────────────────────────────────────────────────────────
+//  Wallet Modal 
 
 function WalletModal({ onAdd, onClose }) {
   const [addr, setAddr] = useState('')
@@ -366,7 +366,7 @@ function WalletModal({ onAdd, onClose }) {
   )
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+//  Main Component 
 
 export default function CopyTrading() {
   const [traders, setTraders] = useState(MOCK_TRADERS)
@@ -386,7 +386,7 @@ export default function CopyTrading() {
   const [customWallets, setCustomWallets] = useState([])
   const [timeFilter, setTimeFilter] = useState('all')
 
-  // ── Load real leaderboard on mount
+  //  Load real leaderboard on mount
   useEffect(() => {
     setLoadingLeaderboard(true)
     fetchLeaderboard(20)
@@ -395,7 +395,7 @@ export default function CopyTrading() {
           setTraders(data)
           setApiError(false)
         } else {
-          // API returned empty — keep mock data
+          // API returned empty  keep mock data
           setApiError(true)
         }
       })
@@ -418,7 +418,7 @@ export default function CopyTrading() {
 
   const selected = allTraders.find(t => t.id === selectedId)
 
-  // ── When a trader is selected, enrich them with live positions + trades
+  //  When a trader is selected, enrich them with live positions + trades
   const selectTrader = useCallback(async (trader) => {
     setSelectedId(trader.id)
     setRightTab('positions')
@@ -502,7 +502,7 @@ export default function CopyTrading() {
         fontFamily: '"Courier New", monospace', fontSize: 13, overflow: 'hidden',
       }}>
 
-        {/* ── LEFT ── */}
+        {/*  LEFT  */}
         <div style={{ width: 300, borderRight: '0.5px solid #2a2a2a', display: 'flex', flexDirection: 'column', background: '#1e222d', flexShrink: 0 }}>
 
           <div style={{ padding: '11px 16px', borderBottom: '0.5px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -583,7 +583,7 @@ export default function CopyTrading() {
           </div>
         </div>
 
-        {/* ── RIGHT ── */}
+        {/*  RIGHT  */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {!selected ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: '#444' }}>
@@ -605,7 +605,7 @@ export default function CopyTrading() {
                       <div style={{ fontSize: 11, color: '#444', marginTop: 2 }}>{selected.addr}</div>
                       <a href={`https://polymarket.com/profile/${selected.addr}`} target="_blank" rel="noreferrer"
                         style={{ fontSize: 10, color: '#378ADD', textDecoration: 'none', marginTop: 2, display: 'inline-block' }}>
-                        View on Polymarket →
+                        View on Polymarket 
                       </a>
                     </div>
                   </div>

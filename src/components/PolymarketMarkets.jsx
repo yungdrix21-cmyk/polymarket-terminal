@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 
 export default function PolymarketMarkets() {
   const [markets, setMarkets] = useState([]);
@@ -21,7 +21,7 @@ export default function PolymarketMarkets() {
   useEffect(() => {
     fetchMarkets();
 
-    // 🔁 auto refresh every 5 sec
+    //  auto refresh every 5 sec
     const interval = setInterval(fetchMarkets, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -32,7 +32,7 @@ export default function PolymarketMarkets() {
 
   return (
     <div style={{ padding: "20px" }}>
-      <h2 style={{ color: "#fff" }}>📊 Live Polymarket Markets</h2>
+      <h2 style={{ color: "#fff" }}> Live Polymarket Markets</h2>
 
       {markets.slice(0, 10).map((market) => (
         <div

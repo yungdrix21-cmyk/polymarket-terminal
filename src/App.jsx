@@ -1,4 +1,4 @@
-import { supabase } from './lib/supabase'
+﻿import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
 import Legal from './pages/Legal'
 import Profile from './components/Profile'
@@ -1188,7 +1188,7 @@ function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
             </div>
           </div>
           <div style={{ background: T.yellowDim, border: `1px solid ${T.yellow}30`, borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 12, color: T.yellow, lineHeight: 1.6 }}>
-            ⚠ Withdrawals are reviewed. Please allow 24 hours for processing.
+             Withdrawals are reviewed. Please allow 24 hours for processing.
           </div>
           <button onClick={handleSubmit} disabled={!address || !amount || submitting}
             style={{ width: '100%', padding: '14px', background: address && amount ? T.teal : T.bg3, color: address && amount ? '#0d0e14' : T.text2, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: address && amount ? 'pointer' : 'not-allowed', fontFamily: T.font }}>
@@ -1249,14 +1249,14 @@ function SettingsPage({ user }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: T.text1, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 7 }}>New Password</label>
-              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••"
+              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder=""
                 style={{ width: '100%', padding: '11px 14px', background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text0, fontSize: 13, fontFamily: T.font, outline: 'none', boxSizing: 'border-box' }}
                 onFocus={e => e.target.style.borderColor = T.blue}
                 onBlur={e => e.target.style.borderColor = T.border} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: T.text1, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 7 }}>Confirm New Password</label>
-              <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••"
+              <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder=""
                 style={{ width: '100%', padding: '11px 14px', background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text0, fontSize: 13, fontFamily: T.font, outline: 'none', boxSizing: 'border-box' }}
                 onFocus={e => e.target.style.borderColor = T.blue}
                 onBlur={e => e.target.style.borderColor = T.border} />
@@ -1279,8 +1279,8 @@ function SettingsPage({ user }) {
             {[
               ['Email', user?.email],
               ['User ID', user?.id?.slice(0, 18) + '...'],
-              ['Account Created', user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'],
-              ['Last Sign In', user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : '—'],
+              ['Account Created', user?.created_at ? new Date(user.created_at).toLocaleDateString() : ''],
+              ['Last Sign In', user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : ''],
             ].map(([label, val]) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: T.bg3, borderRadius: 10 }}>
                 <span style={{ fontSize: 13, color: T.text1 }}>{label}</span>

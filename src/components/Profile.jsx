@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const T = {
@@ -58,7 +58,7 @@ function KYCStatusBadge({ status }) {
   const map = {
     not_started: { label: 'Not Started', color: T.text2, bg: T.bg3 },
     pending:     { label: 'Under Review', color: T.yellow, bg: T.yellowDim },
-    approved:    { label: 'Verified ✓', color: T.teal, bg: T.tealDim },
+    approved:    { label: 'Verified ', color: T.teal, bg: T.tealDim },
     rejected:    { label: 'Rejected', color: T.red, bg: T.redDim },
   }
   const s = map[status] || map.not_started
@@ -152,7 +152,7 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
       setKycRow(inserted)
       if (onKycUpdate) onKycUpdate('pending')
 
-      setUploadMsg('Document uploaded successfully! Under review within 1–2 business days.')
+      setUploadMsg('Document uploaded successfully! Under review within 12 business days.')
 
     } catch (err) {
       console.error('KYC upload error:', err)
@@ -267,7 +267,7 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
               {(kycRow?.status || kycStatus) === 'approved'
                 ? 'Your identity has been verified. You have full access to all platform features.'
                 : (kycRow?.status || kycStatus) === 'pending'
-                ? 'Your documents are being reviewed by our team. This typically takes 1–2 business days.'
+                ? 'Your documents are being reviewed by our team. This typically takes 12 business days.'
                 : 'Upload a government-issued ID to verify your identity and unlock deposits, trading, and withdrawals.'}
             </div>
           </div>
@@ -306,7 +306,7 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
                 <div style={{ fontSize: 14, fontWeight: 600, color: T.text0, marginBottom: 6 }}>
                   {uploading ? 'Uploading...' : 'Click to upload document'}
                 </div>
-                <div style={{ fontSize: 12, color: T.text2 }}>JPG, PNG, or PDF · Max 10MB</div>
+                <div style={{ fontSize: 12, color: T.text2 }}>JPG, PNG, or PDF  Max 10MB</div>
                 <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.pdf" style={{ display: 'none' }}
                   onChange={e => { if (e.target.files[0]) uploadKYCDoc(e.target.files[0]) }} />
               </div>
@@ -356,7 +356,7 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
               {kycRow.file_url && (
                 <div style={{ padding: '0 24px 16px' }}>
                   <a href={kycRow.file_url} target="_blank" rel="noopener noreferrer" style={{ color: T.blue, textDecoration: 'underline' }}>
-                    View Uploaded Document →
+                    View Uploaded Document 
                   </a>
                 </div>
               )}

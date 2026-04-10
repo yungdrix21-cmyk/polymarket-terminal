@@ -1,11 +1,11 @@
-// src/lib/polymarket.js
-// Real Polymarket data layer — no API key required for Goldsky endpoints
+﻿// src/lib/polymarket.js
+// Real Polymarket data layer  no API key required for Goldsky endpoints
 
 const GOLDSKY_PNL    = 'https://api.goldsky.com/api/public/project_cl6mb8i9h0003e201j6li0diw/subgraphs/pnl-subgraph/0.0.14/gn'
 const GOLDSKY_ACTIVITY = 'https://api.goldsky.com/api/public/project_cl6mb8i9h0003e201j6li0diw/subgraphs/activity-subgraph/0.0.4/gn'
 const GAMMA_API      = 'https://gamma-api.polymarket.com'
 
-// ─── GraphQL helper ───────────────────────────────────────────────────────────
+//  GraphQL helper 
 
 async function gql(endpoint, query, variables = {}) {
   const res = await fetch(endpoint, {
@@ -19,7 +19,7 @@ async function gql(endpoint, query, variables = {}) {
   return json.data
 }
 
-// ─── Leaderboard: top traders by realized PnL ────────────────────────────────
+//  Leaderboard: top traders by realized PnL 
 // Returns array of { id, addr, pnl, pnl7d, winRate, trades, volume }
 
 export async function fetchLeaderboard(limit = 20) {
@@ -64,7 +64,7 @@ export async function fetchLeaderboard(limit = 20) {
   }
 }
 
-// ─── Wallet positions: open positions for a wallet ───────────────────────────
+//  Wallet positions: open positions for a wallet 
 // Returns array of { market, side, size, entry, current, pnl }
 
 export async function fetchWalletPositions(addr) {
@@ -127,7 +127,7 @@ export async function fetchWalletPositions(addr) {
   }
 }
 
-// ─── Wallet trade history ─────────────────────────────────────────────────────
+//  Wallet trade history 
 // Returns array of { time, market, side, size, price, type }
 
 export async function fetchWalletTrades(addr, limit = 20) {
@@ -180,7 +180,7 @@ export async function fetchWalletTrades(addr, limit = 20) {
   }
 }
 
-// ─── Enrich a trader with live positions + trades ────────────────────────────
+//  Enrich a trader with live positions + trades 
 // Call this when a user clicks a trader in the leaderboard
 
 export async function enrichTrader(trader) {
@@ -202,7 +202,7 @@ export async function enrichTrader(trader) {
   }
 }
 
-// ─── Active markets from Gamma REST API ──────────────────────────────────────
+//  Active markets from Gamma REST API 
 // Returns array compatible with your CRYPTO_MARKETS format in App.jsx
 
 export async function fetchActiveMarkets(tag = 'crypto', limit = 20) {
@@ -231,7 +231,7 @@ export async function fetchActiveMarkets(tag = 'crypto', limit = 20) {
   }
 }
 
-// ─── Single market lookup by condition ID ────────────────────────────────────
+//  Single market lookup by condition ID 
 
 export async function fetchMarketByCondition(conditionId) {
   try {
@@ -244,8 +244,8 @@ export async function fetchMarketByCondition(conditionId) {
   }
 }
 
-// ─── Wallet PnL summary ───────────────────────────────────────────────────────
-// Lightweight — just PnL numbers for a given wallet
+//  Wallet PnL summary 
+// Lightweight  just PnL numbers for a given wallet
 
 export async function fetchWalletPnl(addr) {
   const query = `

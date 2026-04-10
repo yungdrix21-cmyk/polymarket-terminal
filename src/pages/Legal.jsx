@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 
 function useIsMobile(bp = 640) {
   const [m, setM] = useState(typeof window !== 'undefined' ? window.innerWidth < bp : false)
@@ -48,7 +48,7 @@ function SubSection({ title, children }) {
   )
 }
 
-// ─── SVG Icons (matching Auth.jsx style) ─────────────────────────────────────
+//  SVG Icons (matching Auth.jsx style) 
 
 function IcoInfo({ color }) {
   return (
@@ -125,7 +125,7 @@ function IcoChain({ color }) {
   )
 }
 
-// ─── Components ───────────────────────────────────────────────────────────────
+//  Components 
 
 function InfoBox({ color = T.teal, svgIcon, children }) {
   return (
@@ -153,7 +153,7 @@ function BulletList({ color = T.teal, items }) {
     <ul style={{ listStyle: 'none', margin: '0 0 12px 0', padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
       {items.map((item, i) => (
         <li key={i} style={{ display: 'flex', gap: 10, fontSize: 13, color: T.text1, lineHeight: 1.5 }}>
-          <span style={{ color, flexShrink: 0, marginTop: 1 }}>•</span>
+          <span style={{ color, flexShrink: 0, marginTop: 1 }}></span>
           <span>{item}</span>
         </li>
       ))}
@@ -229,7 +229,7 @@ export default function LegalPage({ onBack }) {
         <span onClick={() => onBack && onBack()} style={{ fontSize: 13, color: T.text2, cursor: 'pointer' }}
           onMouseEnter={e => e.target.style.color = T.text1}
           onMouseLeave={e => e.target.style.color = T.text2}>
-          ← Back
+           Back
         </span>
       </div>
 
@@ -274,11 +274,11 @@ export default function LegalPage({ onBack }) {
         {/* Scrollable content */}
         <div ref={contentRef} style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '24px 16px 60px' : '40px 48px 80px' }}>
 
-          {/* ── TERMS OF SERVICE ── */}
+          {/*  TERMS OF SERVICE  */}
           <SectionBlock id="terms" title="Terms of Service">
             <SubSection title="Acceptance of Terms">
               <p style={{ fontSize: 13, color: T.text1, lineHeight: 1.7, margin: '0 0 12px 0' }}>
-                By using PolyTrader, you agree to these Terms of Service. If you don't agree — please don't use the platform.
+                By using PolyTrader, you agree to these Terms of Service. If you don't agree  please don't use the platform.
               </p>
             </SubSection>
 
@@ -296,9 +296,9 @@ export default function LegalPage({ onBack }) {
 
             <SubSection title="What We Don't Do">
               <BulletList color={T.red} items={[
-                "We're NOT a custodial service — don't manage your funds",
-                "We're NOT a guaranteed profit — trading involves risk",
-                "We're NOT a financial advisor — provide only tool advice",
+                "We're NOT a custodial service  don't manage your funds",
+                "We're NOT a guaranteed profit  trading involves risk",
+                "We're NOT a financial advisor  provide only tool advice",
               ]} />
             </SubSection>
 
@@ -321,13 +321,13 @@ export default function LegalPage({ onBack }) {
             </SubSection>
           </SectionBlock>
 
-          {/* ── PRIVACY POLICY ── */}
+          {/*  PRIVACY POLICY  */}
           <SectionBlock id="privacy" title="Privacy Policy">
             <SubSection title="Non-Custodial Nature">
               <BulletList color={T.teal} items={[
-                "Your funds are protected — sit in your wallet",
-                "We DON'T have access to funds — you control assets",
-                "We DON'T store private keys — never request them",
+                "Your funds are protected  sit in your wallet",
+                "We DON'T have access to funds  you control assets",
+                "We DON'T store private keys  never request them",
               ]} />
             </SubSection>
 
@@ -374,7 +374,7 @@ export default function LegalPage({ onBack }) {
             </SubSection>
           </SectionBlock>
 
-          {/* ── RISK DISCLOSURE ── */}
+          {/*  RISK DISCLOSURE  */}
           <SectionBlock id="risk" title="Risk Disclosure">
             <WarningBox>
               Trading on prediction markets involves very high risks. You may lose all or a significant portion of your funds.<br /><br />
@@ -385,8 +385,8 @@ export default function LegalPage({ onBack }) {
               <InfoBox color={T.red} svgIcon={<IcoWarning color={T.red} />}>
                 <strong style={{ color: T.text0 }}>Complete loss of capital</strong>
                 <BulletList color={T.red} items={[
-                  "If you buy YES and event doesn't happen → tokens = $0",
-                  "If you buy NO and event happens → tokens = $0",
+                  "If you buy YES and event doesn't happen  tokens = $0",
+                  "If you buy NO and event happens  tokens = $0",
                   'No guarantee of fund recovery',
                 ]} />
               </InfoBox>
@@ -432,10 +432,10 @@ export default function LegalPage({ onBack }) {
               <InfoBox color={T.teal} svgIcon={<IcoCheck color={T.teal} />}>
                 <strong style={{ color: T.text0 }}>Tips</strong>
                 <BulletList color={T.teal} items={[
-                  'Start small — study the platform',
-                  "Diversification — don't put all in one market",
-                  'Monitoring — track your positions',
-                  'Education — study prediction markets',
+                  'Start small  study the platform',
+                  "Diversification  don't put all in one market",
+                  'Monitoring  track your positions',
+                  'Education  study prediction markets',
                 ]} />
               </InfoBox>
             </SubSection>
@@ -455,7 +455,7 @@ export default function LegalPage({ onBack }) {
             </SubSection>
           </SectionBlock>
 
-          {/* ── COOKIE POLICY ── */}
+          {/*  COOKIE POLICY  */}
           <SectionBlock id="cookies" title="Cookie Policy">
             <SubSection title="What are Cookies">
               <p style={{ fontSize: 13, color: T.text1, lineHeight: 1.7, margin: '0 0 12px 0' }}>
@@ -479,9 +479,9 @@ export default function LegalPage({ onBack }) {
                 <strong style={{ color: T.text0 }}>Browser settings</strong>
                 <BulletList color={T.blue} items={[
                   'You can manage cookies through browser settings',
-                  'Chrome: Settings → Privacy → Cookies',
-                  'Firefox: Settings → Privacy → Cookies',
-                  'Safari: Settings → Privacy → Cookies',
+                  'Chrome: Settings  Privacy  Cookies',
+                  'Firefox: Settings  Privacy  Cookies',
+                  'Safari: Settings  Privacy  Cookies',
                 ]} />
               </InfoBox>
               <InfoBox color={T.yellow} svgIcon={<IcoWarning color={T.yellow} />}>

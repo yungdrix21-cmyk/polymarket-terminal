@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { supabase } from '../../lib/supabase';
 
 const T = {
@@ -81,11 +81,11 @@ function KYCTab() {
         <div onClick={() => setPreviewUrl(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, cursor: 'zoom-out' }}>
           <div onClick={e => e.stopPropagation()} style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}>
             <img src={previewUrl} alt="KYC Document" style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 12, objectFit: 'contain', display: 'block' }} />
-            <button onClick={() => setPreviewUrl(null)} style={{ position: 'absolute', top: -16, right: -16, background: T.red, border: 'none', color: '#fff', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            <button onClick={() => setPreviewUrl(null)} style={{ position: 'absolute', top: -16, right: -16, background: T.red, border: 'none', color: '#fff', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}></button>
           </div>
         </div>
       )}
-      <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 700, marginBottom: 6 }}>👑 KYC Review</h2>
+      <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 700, marginBottom: 6 }}> KYC Review</h2>
       <p style={{ color: T.text2, fontSize: 13, marginBottom: 20 }}>Approve or reject pending KYC submissions</p>
       {loading ? <p style={{ color: T.text2 }}>Loading...</p> : submissions.length === 0 ? <p style={{ color: T.text2 }}>No pending KYC submissions.</p> : (
         submissions.map(item => (
@@ -112,8 +112,8 @@ function KYCTab() {
                 )}
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => updateKYC(item.id, 'approved')} style={{ padding: '8px 16px', background: T.teal, color: '#000', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>✓ Approve</button>
-                <button onClick={() => updateKYC(item.id, 'rejected')} style={{ padding: '8px 16px', background: T.red, color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>✗ Reject</button>
+                <button onClick={() => updateKYC(item.id, 'approved')} style={{ padding: '8px 16px', background: T.teal, color: '#000', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}> Approve</button>
+                <button onClick={() => updateKYC(item.id, 'rejected')} style={{ padding: '8px 16px', background: T.red, color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}> Reject</button>
               </div>
             </div>
           </div>
@@ -152,7 +152,7 @@ function DepositsTab() {
 
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
-      <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 700, marginBottom: 6 }}>💰 Deposit Reviews</h2>
+      <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 700, marginBottom: 6 }}> Deposit Reviews</h2>
       <p style={{ color: T.text2, fontSize: 13, marginBottom: 20 }}>Approve or decline pending user deposits</p>
       {loading ? <p style={{ color: T.text2 }}>Loading...</p> : deposits.length === 0 ? <p style={{ color: T.text2 }}>No pending deposits.</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -168,8 +168,8 @@ function DepositsTab() {
                 <Badge color={T.yellow}>pending</Badge>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => handleApprove(tx)} style={{ padding: '8px 18px', background: T.tealDim, color: T.teal, border: `1px solid ${T.teal}30`, borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, fontFamily: T.font }}>✓ Approve</button>
-                <button onClick={() => handleDecline(tx)} style={{ padding: '8px 18px', background: T.redDim, color: T.red, border: `1px solid ${T.red}30`, borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, fontFamily: T.font }}>✗ Decline</button>
+                <button onClick={() => handleApprove(tx)} style={{ padding: '8px 18px', background: T.tealDim, color: T.teal, border: `1px solid ${T.teal}30`, borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, fontFamily: T.font }}> Approve</button>
+                <button onClick={() => handleDecline(tx)} style={{ padding: '8px 18px', background: T.redDim, color: T.red, border: `1px solid ${T.red}30`, borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, fontFamily: T.font }}> Decline</button>
               </div>
             </div>
           ))}
@@ -211,7 +211,7 @@ function EditBalanceTab() {
 
   return (
     <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
-      <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 700, marginBottom: 6 }}>✏️ Edit User Balance</h2>
+      <h2 style={{ color: T.text0, fontSize: 22, fontWeight: 700, marginBottom: 6 }}> Edit User Balance</h2>
       <p style={{ color: T.text2, fontSize: 13, marginBottom: 20 }}>Manually adjust any user's account balance</p>
       {loading ? <p style={{ color: T.text2 }}>Loading...</p> : users.length === 0 ? <p style={{ color: T.text2 }}>No users found.</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -236,7 +236,7 @@ function EditBalanceTab() {
                     />
                     <button onClick={() => handleSave(u.id)} disabled={saving}
                       style={{ padding: '8px 16px', background: T.teal, color: '#000', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-                      {saving ? '...' : '✓ Save'}
+                      {saving ? '...' : ' Save'}
                     </button>
                     <button onClick={() => { setEditingId(null); setNewBalance('') }}
                       style={{ padding: '8px 16px', background: T.bg3, color: T.text1, border: `1px solid ${T.border}`, borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
@@ -248,7 +248,7 @@ function EditBalanceTab() {
                     <div style={{ color: T.teal, fontWeight: 700, fontSize: 16, fontFamily: T.mono }}>${Number(u.balance ?? 0).toFixed(2)}</div>
                     <button onClick={() => { setEditingId(u.id); setNewBalance(Number(u.balance ?? 0).toFixed(2)) }}
                       style={{ padding: '8px 16px', background: T.blueDim, color: T.blue, border: `1px solid ${T.blue}30`, borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, fontFamily: T.font }}>
-                      ✏️ Edit
+                       Edit
                     </button>
                   </>
                 )}
@@ -265,9 +265,9 @@ function AdminPanel({ defaultTab = 'kyc' }) {
   const [activeTab, setActiveTab] = useState(defaultTab)
 
   const tabs = [
-    { id: 'kyc', label: '👑 KYC Review' },
-    { id: 'deposits', label: '💰 Deposits' },
-    { id: 'balance', label: '✏️ Edit Balance' },
+    { id: 'kyc', label: ' KYC Review' },
+    { id: 'deposits', label: ' Deposits' },
+    { id: 'balance', label: ' Edit Balance' },
   ]
 
   return (

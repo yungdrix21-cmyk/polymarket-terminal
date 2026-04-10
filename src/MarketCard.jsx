@@ -1,4 +1,4 @@
-export default function MarketCard({ market }) {
+﻿export default function MarketCard({ market }) {
   if (!market) return null
 
   return (
