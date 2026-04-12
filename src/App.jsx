@@ -1737,7 +1737,10 @@ setClosedPositions(closedData ?? [])
   const NavItem = ({ item }) => {
     const active = view === item.id
     return (
-      <div onClick={() => { setView(item.id); if (isMobile) setCollapsed(true) }} title={collapsed ? item.label : ''}
+      <div 
+        onClick={() => { setView(item.id); if (isMobile) setCollapsed(true) }} 
+        onMouseDown={e => e.preventDefault()}
+        title={collapsed ? item.label : ''}
         style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, marginBottom: 2, cursor: 'pointer', background: active ? T.bg3 : 'transparent', borderLeft: active && !collapsed ? `2px solid ${T.blue}` : '2px solid transparent', transition: 'all 0.15s' }}
         onMouseEnter={e => { if (!active) e.currentTarget.style.background = T.bgHover }}
         onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
@@ -1747,6 +1750,7 @@ setClosedPositions(closedData ?? [])
       </div>
     )
   }
+  
   // Admin dropdown parent item
   const adminActive = ADMIN_SUBNAV.some(s => s.id === view)
   const AdminDropdown = () => (
