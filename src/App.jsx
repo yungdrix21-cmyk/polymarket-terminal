@@ -331,14 +331,26 @@ function AdminDepositsPage() {
   const [loading, setLoading] = useState(true)
   useEffect(() => {
   const load = async () => {
-    const { data } = await supabase
-      .from('transactions')
-      .select('*, profiles(email)')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-    setDeposits(data ?? [])
-    setLoading(false)
+  const { data } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+  
+  const userIds = (data || []).map(d => d.user_id)
+  let emailMap = {}
+  if (userIds.length > 0) {
+    const { data: emailData } = await supabase
+      .from('profiles_with_email')
+      .select('id, email')
+      .in('id', userIds)
+    if (emailData) emailData.forEach(e => { emailMap[e.id] = e.email })
   }
+
+  const enriched = (data || []).map(d => ({ ...d, email: emailMap[d.user_id] || null }))
+  setDeposits(enriched ?? [])
+  setLoading(false)
+}
   load()
 
   // Real-time subscription
@@ -385,12 +397,10 @@ function AdminDepositsPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                 <div>
                   <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>
-  {tx.profiles_with_email?.first_name && tx.profiles_with_email?.last_name
-    ? `${tx.profiles_with_email.first_name} ${tx.profiles_with_email.last_name}`
-    : tx.profiles_with_email?.email ?? tx.user_id}
+  {tx.email ?? tx.user_id}
 </div>
-{tx.profiles_with_email?.email && (
-  <div style={{ color: T.blue, fontSize: 12, marginTop: 2 }}>{tx.profiles_with_email.email}</div>
+{tx.email && (
+  <div style={{ color: T.blue, fontSize: 12, marginTop: 2 }}>{tx.email}</div>
 )}
 
                   <div style={{ fontSize: 11, color: tx.type === 'withdrawal' ? T.red : T.teal, marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tx.type}</div> 
