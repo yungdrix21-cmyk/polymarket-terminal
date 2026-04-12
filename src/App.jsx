@@ -445,13 +445,13 @@ function AdminBalancePage() {
   const [saved, setSaved] = useState({})
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-  .from('positions')
-  .select('*')
-  .eq('user_id', userId)
-  .eq('market', question)
-  .order('created_at', { ascending: false })
-    }
+  const { data } = await supabase
+    .from('profiles_with_email')
+    .select('id, email, balance, role')
+    .order('email', { ascending: true })
+  setUsers(data ?? [])
+  setLoading(false)
+}
     load()
   }, [])
   const handleSave = async (userId) => {
