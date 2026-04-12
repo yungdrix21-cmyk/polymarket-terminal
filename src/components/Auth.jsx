@@ -650,7 +650,17 @@ export default function Auth({ onLogin, onNavigate }) {
       {/* Footer */}
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: isMobile ? '20px 16px' : '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, background: T.bg1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#fff' }}>P</div>
+          <svg width="26" height="26" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="lgFooter" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stopColor="#4f8eff"/>
+      <stop offset="100%" stopColor="#9b7dff"/>
+    </linearGradient>
+  </defs>
+  <path d="M16,2 L28,8 L28,18 Q28,27 16,30 Q4,27 4,18 L4,8 Z" fill="#1e2030" stroke="#4f8eff" strokeWidth="1.5"/>
+  <path d="M16,5 L25,10 L25,18 Q25,25 16,27 Q7,25 7,18 L7,10 Z" fill="none" stroke="#9b7dff" strokeWidth="0.8" opacity="0.4"/>
+  <text x="16" y="20" textAnchor="middle" fontSize="11" fontWeight="900" fontFamily="'Manrope', sans-serif" fill="url(#lgFooter)" letterSpacing="0.5">PT</text>
+</svg>
           <span style={{ fontSize: 13, color: T.text2 }}> © 2026 PolyTrader. All rights reserved.</span>
         </div>
         <div style={{ display: 'flex', gap: 20 }}>
