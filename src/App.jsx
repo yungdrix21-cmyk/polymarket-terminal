@@ -437,11 +437,11 @@ function AdminBalancePage() {
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
-  .from('profiles_with_email')
-  .select('id, email, balance, role')
-  .order('email', { ascending: true })
-setUsers(data ?? [])
-setLoading(false)
+  .from('positions')
+  .select('*')
+  .eq('user_id', userId)
+  .eq('market', question)
+  .order('created_at', { ascending: false })
     }
     load()
   }, [])
@@ -1547,13 +1547,10 @@ const LIVE_MARKET_CONFIG = [
 ]
 
 
-function calcYes(price, threshold) {
-  if (!price) return 0.5
-  const dist = (price - threshold) / threshold
-  return Math.min(0.97, Math.max(0.03, 0.5 + dist * 8))
-}
-
 export default function App() {
+  // LIVE_MARKET_CONFIG and calcYes are now gone from here
+
+function calcYes(price, threshold) {
   if (!price) return 0.5
   const dist = (price - threshold) / threshold
   return Math.min(0.97, Math.max(0.03, 0.5 + dist * 8))
@@ -1737,7 +1734,7 @@ setClosedPositions(closedData ?? [])
       </div>
     )
   }
-  const NavItem = React.memo(({ item }) => {
+  const NavItem = ({ item }) => {
     const active = view === item.id
     return (
       <div 
@@ -1752,11 +1749,11 @@ setClosedPositions(closedData ?? [])
         {!collapsed && item.locked && <Icon name="lock" size={11} color={T.yellow} />}
       </div>
     )
-  })
+  }
 
   // Admin dropdown parent item
   const adminActive = ADMIN_SUBNAV.some(s => s.id === view)
-  const AdminDropdown = React.memo(() => (
+  const AdminDropdown = () => (
     <div>
       {/* Parent row */}
       <div
@@ -1792,7 +1789,7 @@ setClosedPositions(closedData ?? [])
   
       )}
     </div>
-  ))
+  )
 
   // find icon for topbar
   const allNav = [...MAIN_NAV, ...BOTTOM_NAV, ...ADMIN_SUBNAV]
@@ -1909,3 +1906,4 @@ setClosedPositions(closedData ?? [])
       </div>
     </div>
   )
+}
