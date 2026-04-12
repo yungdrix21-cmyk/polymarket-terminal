@@ -1741,7 +1741,7 @@ setClosedPositions(closedData ?? [])
         onClick={() => { setView(item.id); if (isMobile) setCollapsed(true) }} 
         onMouseDown={e => e.preventDefault()}
         title={collapsed ? item.label : ''}
-        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, marginBottom: 2, cursor: 'pointer', background: active ? T.bg3 : 'transparent', borderLeft: active && !collapsed ? `2px solid ${T.blue}` : '2px solid transparent', transition: 'all 0.15s' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, marginBottom: 2, cursor: 'pointer', background: active ? T.bg3 : 'transparent', borderLeft: active && !collapsed ? `2px solid ${T.blue}` : '2px solid transparent', transition: 'background 0.15s' }}
         onMouseEnter={e => { if (!active) e.currentTarget.style.background = T.bgHover }}
         onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
         <Icon name={item.icon} size={16} color={active ? T.blue : item.locked ? T.text2 : T.text1} />
@@ -1760,7 +1760,7 @@ setClosedPositions(closedData ?? [])
         onClick={() => { if (collapsed) { setCollapsed(false); setAdminOpen(true) } else setAdminOpen(o => !o) }}
         onMouseDown={e => e.preventDefault()}
         title={collapsed ? 'Admin Panel' : ''}
-        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, marginBottom: 2, cursor: 'pointer', background: adminActive ? T.bg3 : 'transparent', borderLeft: adminActive && !collapsed ? `2px solid ${T.purple}` : '2px solid transparent', transition: 'all 0.15s' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, marginBottom: 2, cursor: 'pointer', background: adminActive ? T.bg3 : 'transparent', borderLeft: adminActive && !collapsed ? `2px solid ${T.purple}` : '2px solid transparent', transition: 'background 0.15s' }}
         onMouseEnter={e => { if (!adminActive) e.currentTarget.style.background = T.bgHover }}
         onMouseLeave={e => { if (!adminActive) e.currentTarget.style.background = 'transparent' }}>
         <Icon name="shield" size={16} color={adminActive ? T.purple : T.text1} />
@@ -1777,7 +1777,7 @@ setClosedPositions(closedData ?? [])
             return (
               <div key={sub.id} onClick={() => setView(sub.id)}
                 onMouseDown={e => e.preventDefault()}
-                style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 12px', borderRadius: 8, marginBottom: 2, cursor: 'pointer', background: active ? `${T.purple}15` : 'transparent', transition: 'all 0.15s' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 12px', borderRadius: 8, marginBottom: 2, cursor: 'pointer', background: active ? `${T.purple}15` : 'transparent', transition: 'background 0.15s' }}
                 onMouseEnter={e => { if (!active) e.currentTarget.style.background = T.bgHover }}
                 onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
                 <Icon name={sub.icon} size={14} color={active ? T.purple : T.text2} />
@@ -1871,7 +1871,7 @@ setClosedPositions(closedData ?? [])
         <div style={{ padding: '12px 8px', borderTop: `1px solid ${T.border}` }}>
           <div onClick={() => { handleLogout(); if (isMobile) setCollapsed(true) }}
             onMouseDown={e => e.preventDefault()}
-            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, cursor: 'pointer', color: T.text2, transition: 'all 0.15s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '10px' : '10px 14px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, cursor: 'pointer', color: T.text2, transition: 'background 0.15s' }}
             onMouseEnter={e => { e.currentTarget.style.background = T.redDim; e.currentTarget.style.color = T.red }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = T.text2 }}>
             <Icon name="logout" size={16} />
