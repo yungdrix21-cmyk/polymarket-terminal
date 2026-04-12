@@ -385,12 +385,12 @@ function AdminDepositsPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                 <div>
                   <div style={{ color: T.text0, fontWeight: 600, fontSize: 14 }}>
-  {tx.profiles?.first_name && tx.profiles?.last_name
-    ? `${tx.profiles.first_name} ${tx.profiles.last_name}`
-    : tx.profiles?.email ?? tx.user_id}
+  {tx.profiles_with_email?.first_name && tx.profiles_with_email?.last_name
+    ? `${tx.profiles_with_email.first_name} ${tx.profiles_with_email.last_name}`
+    : tx.profiles_with_email?.email ?? tx.user_id}
 </div>
-{tx.profiles?.email && (
-  <div style={{ color: T.blue, fontSize: 12, marginTop: 2 }}>{tx.profiles.email}</div>
+{tx.profiles_with_email?.email && (
+  <div style={{ color: T.blue, fontSize: 12, marginTop: 2 }}>{tx.profiles_with_email.email}</div>
 )}
 
                   <div style={{ fontSize: 11, color: tx.type === 'withdrawal' ? T.red : T.teal, marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tx.type}</div> 
@@ -1233,7 +1233,7 @@ function AdminPositionsPage() {
       pnl: parseFloat(form.pnl) || 0,
       entry_price: parseFloat(form.entry_price) || 0,
       status: 'open'
-    }).select('*, profiles(email)').single()
+    }).select('*, profiles_with_email(email, first_name, last_name)').single()
     if (!error) setPositions(prev => [data, ...prev])
     setForm({ market: '', side: 'YES', amount: '', pnl: '' })
     setSaving(false)
