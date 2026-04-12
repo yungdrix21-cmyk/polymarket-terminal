@@ -335,7 +335,6 @@ function AdminDepositsPage() {
       .from('transactions')
       .select('*, profiles(email)')
       .eq('status', 'pending')
-      .eq('type', 'deposit')
       .order('created_at', { ascending: false })
     setDeposits(data ?? [])
     setLoading(false)
