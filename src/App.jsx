@@ -18,6 +18,10 @@ const T = {
   font: '"DM Sans", "Sora", system-ui, sans-serif',
   mono: '"Manrope", "DM Mono", "Fira Code", monospace',
 }
+const sanitize = (str) => {
+  if (typeof str !== 'string') return str
+  return str.replace(/[<>\"'\/]/g, '')
+}
 const Icon = ({ name, size = 16, color = 'currentColor', strokeWidth = 1.6 }) => {
   const paths = {
     dashboard: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
@@ -853,6 +857,7 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [toast, setToast] = useState(null)
   if (kycStatus !== 'approved') return <LockedPage title="Deposits" />
   const cryptos = [
     { symbol: 'BTC', name: 'Bitcoin', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', address: 'bc1qhvwnm32jpsn7msk58jnem04zyzfh6x4em6ya06', color: '#f7931a', network: 'Bitcoin Network' },
@@ -861,23 +866,54 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
     { symbol: 'USDC', name: 'USD Coin', logo: 'https://assets.coingecko.com/coins/images/6319/large/usdc.png', address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', color: '#2775ca', network: 'Solana (SOL)' },
   ]
   const handleDeposit = async () => {
-    if (!amount || !user) return
-    setLoading(true)
-    try {
-      const depositAmount = parseFloat(amount)
-      const { error } = await supabase.from('transactions').insert({ user_id: user.id, type: 'deposit', crypto: selectedCrypto.symbol, amount: depositAmount, status: 'pending' })
-      if (error) throw error
-      onDepositSuccess({ id: Date.now(), crypto: selectedCrypto.symbol, amount: depositAmount, status: 'pending', created_at: new Date().toISOString() })
-      setShowSuccess(true)
-    } catch (err) {
-      console.error(err)
-      alert("Deposit failed")
-    }
-    setLoading(false)
+  if (!amount || !user) return
+  const depositAmount = parseFloat(amount)
+  if (isNaN(depositAmount) || depositAmount <= 0) {
+    alert('Please enter a valid amount greater than 0')
+    return
   }
-  return (
-    <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
-      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Deposit Funds</h2>
+  if (depositAmount > 1000000) {
+    alert('Maximum deposit amount is $1,000,000')
+    return
+  }
+  const lastDeposit = localStorage.getItem('lastDepositTime')
+if (lastDeposit && Date.now() - parseInt(lastDeposit) < 10000) {
+  setShowSuccess(false)
+  setToast({ msg: 'Please wait 10 seconds before making another deposit', color: T.yellow })
+  setTimeout(() => setToast(null), 3000)
+  return
+}
+  localStorage.setItem('lastDepositTime', Date.now().toString())
+  setLoading(true)
+  try {
+    const { error } = await supabase.from('transactions').insert({ user_id: user.id, type: 'deposit', crypto: selectedCrypto.symbol, amount: depositAmount, status: 'pending' })
+    if (error) throw error
+    onDepositSuccess({ id: Date.now(), crypto: selectedCrypto.symbol, amount: depositAmount, status: 'pending', created_at: new Date().toISOString() })
+    setShowSuccess(true)
+  } catch (err) {
+    console.error(err)
+    alert("Deposit failed")
+  }
+  setLoading(false)
+}
+    return (
+  <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
+    {toast && (
+      <div style={{
+        position: 'fixed', bottom: 24, left: 16, right: 16,
+        background: T.bgCard, border: `1px solid ${toast.color}40`,
+        borderLeft: `4px solid ${toast.color}`,
+        borderRadius: 12, padding: '14px 16px',
+        color: T.text0, fontSize: 13, fontWeight: 600,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        zIndex: 9999,
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: toast.color, flexShrink: 0 }} />
+        {toast.msg}
+      </div>
+    )}
+    <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Deposit Funds</h2>
       <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Choose a crypto asset to deposit</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {cryptos.map(c => (
@@ -1354,6 +1390,7 @@ function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
   const [amount, setAmount] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [toast, setToast] = useState(null)
 
   if (kycStatus !== 'approved') return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: T.text2, padding: 40, textAlign: 'center' }}>
@@ -1373,8 +1410,26 @@ function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
   ]
 
   const handleSubmit = async () => {
-    if (!address || !amount || !user) return
-    setSubmitting(true)
+  if (!address || !amount || !user) return
+  const withdrawAmount = parseFloat(amount)
+  if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
+    setToast({ msg: 'Please enter a valid amount greater than 0', color: T.red })
+    setTimeout(() => setToast(null), 3000)
+    return
+  }
+  if (withdrawAmount > parseFloat(balance)) {
+    setToast({ msg: 'Insufficient balance', color: T.red })
+    setTimeout(() => setToast(null), 3000)
+    return
+  }
+  const lastWithdraw = localStorage.getItem('lastWithdrawTime')
+  if (lastWithdraw && Date.now() - parseInt(lastWithdraw) < 30000) {
+    setToast({ msg: 'Please wait 30 seconds before making another withdrawal', color: T.yellow })
+    setTimeout(() => setToast(null), 3000)
+    return
+  }
+  localStorage.setItem('lastWithdrawTime', Date.now().toString())
+  setSubmitting(true)
     const { data, error } = await supabase.from('transactions').insert({
       user_id: user.id,
       type: 'withdrawal',
@@ -1391,8 +1446,23 @@ function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
   }
 
   return (
-    <div style={{ padding: '28px', overflowY: 'visible', flex: 1 }}>
-      <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Withdraw Funds</h2>
+  <div style={{ padding: '28px', overflowY: 'auto', flex: 1 }}>
+    {toast && (
+      <div style={{
+        position: 'fixed', bottom: 24, left: 16, right: 16,
+        background: T.bgCard, border: `1px solid ${toast.color}40`,
+        borderLeft: `4px solid ${toast.color}`,
+        borderRadius: 12, padding: '14px 16px',
+        color: T.text0, fontSize: 13, fontWeight: 600,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        zIndex: 9999,
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: toast.color, flexShrink: 0 }} />
+        {toast.msg}
+      </div>
+    )}
+    <h2 style={{ color: T.text0, margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Withdraw Funds</h2>
       <p style={{ color: T.text2, margin: '0 0 24px', fontSize: 13 }}>Select a crypto asset to withdraw to</p>
 
       <div style={{ background: T.bgCard, borderRadius: 14, border: `1px solid ${T.border}`, padding: '16px 22px', marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1624,6 +1694,25 @@ const [markets, setMarkets] = useState(
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+  // ADD this useEffect after the resize one:
+useEffect(() => {
+  let timeout
+  const resetTimer = () => {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => {
+      handleLogout()
+    }, 30 * 60 * 1000) // 30 minutes
+  }
+
+  const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
+  events.forEach(e => window.addEventListener(e, resetTimer))
+  resetTimer()
+
+  return () => {
+    clearTimeout(timeout)
+    events.forEach(e => window.removeEventListener(e, resetTimer))
+  }
+}, [user])
   useEffect(() => {
     let mounted = true
     const initAuth = async () => {
@@ -1726,17 +1815,17 @@ setClosedPositions(closedData ?? [])
     />
   )
 }
-    if (view === 'copy') return <CopyTradingPage kycStatus={kycStatus} user={user} />
-    if (view === 'deposits')       return <DepositsPage user={user} onDepositSuccess={handleDepositSuccess} kycStatus={kycStatus} />
-    if (view === 'profile')        return <Profile user={user} kycStatus={kycStatus} onKycUpdate={status => setKycStatus(status)} />
-    if (view === 'admin-kyc')      return <AdminKYCPage />
-    if (view === 'admin-deposits') return <AdminDepositsPage />
-    if (view === 'admin-balance')  return <AdminBalancePage />
-    if (view === 'admin-pnl')       return <AdminPnLPage />
-    if (view === 'admin-positions') return <AdminPositionsPage />
-    if (view === 'settings') return <SettingsPage user={user} />
-    if (view === 'withdraw') return <WithdrawPage kycStatus={kycStatus} balance={balance} user={user} onWithdrawSuccess={handleDepositSuccess} />
-    return (
+   if (view === 'copy') return <CopyTradingPage kycStatus={kycStatus} user={user} />
+if (view === 'deposits')       return <DepositsPage user={user} onDepositSuccess={handleDepositSuccess} kycStatus={kycStatus} />
+if (view === 'profile')        return <Profile user={user} kycStatus={kycStatus} onKycUpdate={status => setKycStatus(status)} />
+if (view === 'admin-kyc')      return isAdmin ? <AdminKYCPage /> : null
+if (view === 'admin-deposits') return isAdmin ? <AdminDepositsPage /> : null
+if (view === 'admin-balance')  return isAdmin ? <AdminBalancePage /> : null
+if (view === 'admin-pnl')      return isAdmin ? <AdminPnLPage /> : null
+if (view === 'admin-positions') return isAdmin ? <AdminPositionsPage /> : null
+if (view === 'settings') return <SettingsPage user={user} />
+if (view === 'withdraw') return <WithdrawPage kycStatus={kycStatus} balance={balance} user={user} onWithdrawSuccess={handleDepositSuccess} />
+return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, color: T.text2 }}>
         <Icon name={BOTTOM_NAV.find(i => i.id === view)?.icon || 'dashboard'} size={40} color={T.text2} />
         <div style={{ fontSize: 14, textTransform: 'capitalize' }}>{view}</div>

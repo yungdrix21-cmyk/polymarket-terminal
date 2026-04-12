@@ -14,6 +14,10 @@ const T = {
   font: '"DM Sans", "Sora", system-ui, sans-serif',
   mono: '"DM Mono", "Fira Code", monospace',
 }
+const sanitize = (str) => {
+  if (typeof str !== 'string') return str
+  return str.replace(/[<>\"'\/]/g, '')
+}
 
 const Icon = ({ name, size = 16, color = 'currentColor', strokeWidth = 1.6 }) => {
   const paths = {
@@ -102,11 +106,11 @@ export default function Profile({ user, kycStatus, onKycUpdate }) {
   const saveProfile = async () => {
     setSaving(true); setSaveMsg('')
     const { error } = await supabase.from('profiles').upsert({
-      id: user.id, email: user.email,
-      first_name: profile.first_name, last_name: profile.last_name,
-      phone: profile.phone, address: profile.address,
-      city: profile.city, country: profile.country,
-    })
+  id: user.id, email: user.email,
+  first_name: sanitize(profile.first_name), last_name: sanitize(profile.last_name),
+  phone: sanitize(profile.phone), address: sanitize(profile.address),
+  city: sanitize(profile.city), country: sanitize(profile.country),
+})
     setSaving(false)
     setSaveMsg(error ? 'Error saving. Please try again.' : 'Profile saved successfully!')
     setTimeout(() => setSaveMsg(''), 3000)
