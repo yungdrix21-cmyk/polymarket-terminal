@@ -878,7 +878,7 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
   const cryptos = [
     { symbol: 'BTC', name: 'Bitcoin', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', address: 'bc1qhvwnm32jpsn7msk58jnem04zyzfh6x4em6ya06', color: '#f7931a', network: 'Bitcoin Network' },
     { symbol: 'ETH', name: 'Ethereum', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png', address: '0x8c3d836edc23cdeF4aee9f2895890562b57Ba4e5', color: '#627eea', network: 'ERC-20' },
-    { symbol: 'USDT', name: 'Tether', logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png', address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', color: '#26a17b', network: 'Solana (SOL)' },
+    { symbol: 'USDT', name: 'Tether', logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png', address: 'TWKPtJC4s7bcvWuSFMEcsc5KRWZhNu8Y7S', color: '#26a17b', network: 'Tron (TRC-20)' },
     { symbol: 'USDC', name: 'USD Coin', logo: 'https://assets.coingecko.com/coins/images/6319/large/usdc.png', address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', color: '#2775ca', network: 'Solana (SOL)' },
   ]
   const handleDeposit = async () => {
