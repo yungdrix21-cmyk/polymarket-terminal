@@ -2,6 +2,7 @@
 import Auth from './components/Auth'
 import Legal from './pages/Legal'
 import Profile from './components/Profile'
+import Notifications, { addNotification } from './components/Notifications'
 import PolymarketMarkets from './components/PolymarketMarkets'
 import AdminKYCReview from './components/admin/AdminKYCReview';
 import React, { useState, useEffect } from "react";
@@ -373,7 +374,6 @@ function AdminDepositsPage() {
   const handleDecision = async (tx, decision) => {
     await supabase.from('transactions').update({ status: decision }).eq('id', tx.id)
     if (decision === 'completed') {
-      // Credit balance
       const { data: profile } = await supabase
         .from('profiles')
         .select('balance')
@@ -381,6 +381,22 @@ function AdminDepositsPage() {
         .single()
       const newBal = (parseFloat(profile?.balance ?? 0) + parseFloat(tx.amount)).toFixed(2)
       await supabase.from('profiles').update({ balance: newBal }).eq('id', tx.user_id)
+      await supabase.from('notifications').insert({
+        user_id: tx.user_id,
+        type: tx.type === 'withdrawal' ? 'withdrawal' : 'deposit',
+        title: tx.type === 'withdrawal' ? 'Withdrawal Approved ✓' : 'Deposit Approved ✓',
+        message: tx.type === 'withdrawal'
+          ? `Your withdrawal of $${Number(tx.amount).toFixed(2)} in ${tx.crypto} has been approved and is being processed.`
+          : `Your $${Number(tx.amount).toFixed(2)} ${tx.crypto} deposit has been confirmed and added to your balance.`,
+      })
+    }
+    if (decision === 'declined') {
+      await supabase.from('notifications').insert({
+        user_id: tx.user_id,
+        type: tx.type === 'withdrawal' ? 'withdrawal' : 'deposit',
+        title: tx.type === 'withdrawal' ? 'Withdrawal Declined' : 'Deposit Declined',
+        message: `Your ${tx.type} of $${Number(tx.amount).toFixed(2)} in ${tx.crypto} was declined. Please contact support.`,
+      })
     }
     setDeposits(prev => prev.filter(d => d.id !== tx.id))
   }
@@ -890,6 +906,12 @@ if (lastDeposit && Date.now() - parseInt(lastDeposit) < 10000) {
     if (error) throw error
     onDepositSuccess({ id: Date.now(), crypto: selectedCrypto.symbol, amount: depositAmount, status: 'pending', created_at: new Date().toISOString() })
     setShowSuccess(true)
+    await supabase.from('notifications').insert({
+      user_id: user.id,
+      type: 'deposit',
+      title: 'Deposit Submitted',
+      message: `Your $${depositAmount.toFixed(2)} ${selectedCrypto.symbol} deposit has been submitted and is pending approval.`,
+    })
   } catch (err) {
     console.error(err)
     alert("Deposit failed")
@@ -1280,9 +1302,15 @@ function AdminPositionsPage() {
       entry_price: parseFloat(form.entry_price) || 0,
       status: 'open'
     }).select('*, profiles_with_email(email, first_name, last_name)').single()
-    if (!error) setPositions(prev => [data, ...prev])
-    setForm({ market: '', side: 'YES', amount: '', pnl: '' })
-    setSaving(false)
+    if (!error) {
+      setPositions(prev => [data, ...prev])
+      await supabase.from('notifications').insert({
+        user_id: selectedUser,
+        type: 'order_placed',
+        title: 'Position Opened',
+        message: `A ${form.side} position of $${Number(form.amount).toFixed(2)} has been opened on "${form.market}".`,
+      })
+    }
   }
 
   const handleDelete = async (id) => {
@@ -1292,6 +1320,16 @@ function AdminPositionsPage() {
 
   const handleClose = async (id) => {
     await supabase.from('positions').update({ status: 'closed' }).eq('id', id)
+    const position = positions.find(p => p.id === id)
+    if (position) {
+      const isProfit = (position.pnl ?? 0) >= 0
+      await supabase.from('notifications').insert({
+        user_id: position.user_id,
+        type: 'order_cancelled',
+        title: isProfit ? 'Position Closed — Profit 🎉' : 'Position Closed — Loss',
+        message: `Your ${position.side} position on "${position.market}" has been closed with a ${isProfit ? 'profit' : 'loss'} of ${isProfit ? '+' : ''}$${Number(position.pnl ?? 0).toFixed(2)}.`,
+      })
+    }
     setPositions(prev => prev.map(p => p.id === id ? { ...p, status: 'closed' } : p))
   }
 
@@ -1442,6 +1480,12 @@ function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
     if (!error) {
       if (onWithdrawSuccess) onWithdrawSuccess(data)
       setShowSuccess(true)
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        type: 'withdrawal',
+        title: 'Withdrawal Submitted',
+        message: `Your withdrawal of $${Number(amount).toFixed(2)} in ${selectedCrypto.symbol} has been submitted and is pending review.`,
+      })
     }
   }
 
@@ -1992,7 +2036,7 @@ return (
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 700, color: T.teal }}>{fmt(balance)}</div>
-            <Icon name="bell" size={16} color={T.text2} />
+            <Notifications userId={user?.id} />
             <div onClick={() => setView('profile')} style={{ width: 30, height: 30, borderRadius: 8, background: `${T.purple}20`, border: `1px solid ${T.purple}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <Icon name="profile" size={14} color={T.purple} />
             </div>
