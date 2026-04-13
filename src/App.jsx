@@ -1757,6 +1757,23 @@ useEffect(() => {
     events.forEach(e => window.removeEventListener(e, resetTimer))
   }
 }, [user])
+
+useEffect(() => {
+  if (!user) return
+  const channel = supabase
+    .channel('balance-updates-' + user.id)
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'profiles',
+      filter: `id=eq.${user.id}`,
+    }, payload => {
+      setBalance(payload.new.balance)
+    })
+    .subscribe()
+  return () => supabase.removeChannel(channel)
+}, [user])
+
   useEffect(() => {
     let mounted = true
     const initAuth = async () => {
