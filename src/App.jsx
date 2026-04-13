@@ -1766,9 +1766,10 @@ useEffect(() => {
       event: 'UPDATE',
       schema: 'public',
       table: 'profiles',
-      filter: `id=eq.${user.id}`,
     }, payload => {
-      setBalance(payload.new.balance)
+      if (payload.new.id === user.id) {
+        setBalance(payload.new.balance)
+      }
     })
     .subscribe()
   return () => supabase.removeChannel(channel)
