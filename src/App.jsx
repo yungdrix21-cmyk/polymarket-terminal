@@ -1325,7 +1325,7 @@ function AdminPositionsPage() {
       const isProfit = (position.pnl ?? 0) >= 0
       await supabase.from('notifications').insert({
         user_id: position.user_id,
-        type: 'order_cancelled',
+        type: isProfit ? 'position_profit' : 'position_loss',
         title: isProfit ? 'Position Closed — Profit 🎉' : 'Position Closed — Loss',
         message: `Your ${position.side} position on "${position.market}" has been closed with a ${isProfit ? 'profit' : 'loss'} of ${isProfit ? '+' : ''}$${Number(position.pnl ?? 0).toFixed(2)}.`,
       })

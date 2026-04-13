@@ -16,13 +16,15 @@ const T = {
 }
 
 const NOTIF_META = {
-  order_placed:    { color: T.teal,   icon: '✓',  label: 'Order Placed'      },
-  order_cancelled: { color: T.red,    icon: '✕',  label: 'Order Cancelled'   },
-  ai_analysis:     { color: T.purple, icon: '⚡', label: 'AI Analysis'       },
-  probability:     { color: T.blue,   icon: '◎',  label: 'Probability Update' },
-  kyc_update:      { color: T.yellow, icon: '⬡',  label: 'KYC Status'        },
-  deposit:         { color: T.teal,   icon: '↓',  label: 'Deposit'           },
-  withdrawal:      { color: T.red,    icon: '↑',  label: 'Withdrawal'        },
+  order_placed:    { color: T.teal,   svgPath: <><polyline points="20 6 9 17 4 12"/></>,                                                                    label: 'Position Opened'    },
+  order_cancelled: { color: T.red,    svgPath: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,                            label: 'Position Closed'    },
+  ai_analysis:     { color: T.purple, svgPath: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></>,                                             label: 'AI Analysis'        },
+  probability:     { color: T.blue,   svgPath: <><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></>,                                        label: 'Probability Update' },
+  kyc_update:      { color: T.yellow, svgPath: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>,                                               label: 'KYC Status'         },
+  deposit:         { color: T.teal,   svgPath: <><path d="M12 2v10"/><path d="m8 8 4 4 4-4"/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></>,   label: 'Deposit'            },
+  withdrawal:      { color: T.red,    svgPath: <><path d="M12 14v-10"/><path d="m8 8 4-4 4 4"/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></>, label: 'Withdrawal'         },
+  position_profit: { color: T.teal, svgPath: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>, label: 'Position Closed' },
+  position_loss:   { color: T.red,  svgPath: <><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></>, label: 'Position Closed' },
 }
 
 function timeAgo(ts) {
@@ -260,21 +262,16 @@ export default function Notifications({ userId }) {
 
                     {/* Icon */}
                     <div style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 10,
-                      background: `${meta.color}18`,
-                      border: `1px solid ${meta.color}30`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      fontSize: 14,
-                      color: meta.color,
-                      fontWeight: 700,
-                    }}>
-                      {meta.icon}
-                    </div>
+  width: 34, height: 34, borderRadius: 10,
+  background: `${meta.color}18`,
+  border: `1px solid ${meta.color}30`,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  flexShrink: 0,
+}}>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={meta.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    {meta.svgPath}
+  </svg>
+</div>
 
                     {/* Content */}
                     <div style={{ flex: 1, minWidth: 0 }}>
