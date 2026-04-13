@@ -1429,6 +1429,7 @@ function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
   const [submitting, setSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [toast, setToast] = useState(null)
+  const [selectedNetwork, setSelectedNetwork] = useState('')
 
   if (kycStatus !== 'approved') return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, color: T.text2, padding: 40, textAlign: 'center' }}>
@@ -1443,7 +1444,7 @@ function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
   const cryptos = [
     { symbol: 'BTC', name: 'Bitcoin', color: '#f7931a', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
     { symbol: 'ETH', name: 'Ethereum', color: '#627eea', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' },
-    { symbol: 'USDT', name: 'Tether', color: '#26a17b', logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png' },
+    { symbol: 'USDT', name: 'Tether (TRC-20)', color: '#26a17b', logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png' },
     { symbol: 'USDC', name: 'USD Coin', color: '#2775ca', logo: 'https://assets.coingecko.com/coins/images/6319/large/usdc.png' },
   ]
 
@@ -1529,8 +1530,26 @@ function WithdrawPage({ kycStatus, balance, user, onWithdrawSuccess }) {
         <div style={{ maxWidth: 560, background: T.bgCard, borderRadius: 18, border: `1px solid ${T.border}`, padding: '24px 28px' }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: T.text0, marginBottom: 20 }}>Withdraw {selectedCrypto.name}</div>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: T.text1, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 7 }}>{selectedCrypto.symbol} Wallet Address</label>
-            <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Enter your wallet address"
+  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: T.text1, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 7 }}>Network</label>
+  <select
+    value={selectedNetwork}
+    onChange={e => setSelectedNetwork(e.target.value)}
+    style={{ width: '100%', padding: '11px 14px', background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text0, fontSize: 13, fontFamily: T.font, outline: 'none' }}
+    onFocus={e => e.target.style.borderColor = T.blue}
+    onBlur={e => e.target.style.borderColor = T.border}>
+    {selectedCrypto.symbol === 'USDT' && <option value="TRC-20">Tron (TRC-20)</option>}
+    {selectedCrypto.symbol === 'USDT' && <option value="ERC-20">Ethereum (ERC-20)</option>}
+    {selectedCrypto.symbol === 'USDT' && <option value="SOL">Solana (SOL)</option>}
+    {selectedCrypto.symbol === 'USDC' && <option value="SOL">Solana (SOL)</option>}
+    {selectedCrypto.symbol === 'USDC' && <option value="ERC-20">Ethereum (ERC-20)</option>}
+    {selectedCrypto.symbol === 'BTC' && <option value="BTC">Bitcoin Network</option>}
+    {selectedCrypto.symbol === 'ETH' && <option value="ERC-20">Ethereum (ERC-20)</option>}
+  </select>
+</div>
+
+<div style={{ marginBottom: 16 }}>
+  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: T.text1, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 7 }}>{selectedCrypto.symbol} Wallet Address</label>
+  <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Enter your wallet address"
               style={{ width: '100%', padding: '11px 14px', background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text0, fontSize: 13, fontFamily: T.mono, outline: 'none', boxSizing: 'border-box' }}
               onFocus={e => e.target.style.borderColor = T.blue}
               onBlur={e => e.target.style.borderColor = T.border} />
