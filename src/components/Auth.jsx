@@ -667,7 +667,7 @@ export default function Auth({ onLogin, onNavigate }) {
           {[
            { label: 'Privacy Policy', onClick: () => onNavigate('legal') },
 { label: 'Terms of Service', onClick: () => onNavigate('legal') },
-{ label: 'Contact', onClick: () => window.open('mailto:admin.polytrader@gmail.com'), icon: true },
+{ label: 'Contact', onClick: () => window.open('mailto:admin@polytrader.tech'), icon: true },
 ].map(({ label, onClick, icon }, i) => (
   <span key={i} onClick={onClick}
     style={{ fontSize: 12, color: T.text2, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
