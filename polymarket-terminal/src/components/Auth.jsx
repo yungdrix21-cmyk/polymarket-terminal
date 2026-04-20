@@ -180,9 +180,11 @@ export default function Auth({ onLogin }) {
 
   useEffect(() => {
   const hash = window.location.hash
-  if (hash && hash.includes('access_token')) {
+  useEffect(() => {
+  const verified = sessionStorage.getItem('emailVerified')
+  if (verified) {
+    sessionStorage.removeItem('emailVerified')
     setMode('verified')
-    window.history.replaceState(null, '', window.location.pathname)
   }
 }, [])
 
