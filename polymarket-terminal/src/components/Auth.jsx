@@ -179,8 +179,6 @@ export default function Auth({ onLogin }) {
   }, [])
 
   useEffect(() => {
-  const hash = window.location.hash
-  useEffect(() => {
   const verified = sessionStorage.getItem('emailVerified')
   if (verified) {
     sessionStorage.removeItem('emailVerified')
