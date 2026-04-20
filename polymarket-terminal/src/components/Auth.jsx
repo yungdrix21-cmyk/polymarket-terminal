@@ -178,6 +178,14 @@ export default function Auth({ onLogin }) {
     return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current) }
   }, [])
 
+  useEffect(() => {
+  const hash = window.location.hash
+  if (hash && hash.includes('access_token')) {
+    setMode('verified')
+    window.history.replaceState(null, '', window.location.pathname)
+  }
+}, [])
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -297,6 +305,29 @@ export default function Auth({ onLogin }) {
       </div>
     )
   }
+
+  if (mode === 'verified') return (
+  <div style={{ minHeight: '100vh', background: T.bg0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, padding: 20 }}>
+    <div style={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
+      <Logo />
+      <div style={{ background: T.bgCard, borderRadius: 20, border: `1px solid ${T.borderHi}`, padding: '40px 36px' }}>
+        <div style={{ width: 72, height: 72, borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.teal}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={T.teal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <h2 style={{ color: T.teal, fontSize: 22, fontWeight: 800, margin: '0 0 12px' }}>Email Verified!</h2>
+        <p style={{ color: T.text1, fontSize: 14, lineHeight: 1.7, margin: '0 0 28px' }}>
+          Your email has been confirmed successfully.<br />You can now sign in to your PolyTrader account.
+        </p>
+        <button onClick={() => { setMode('signin'); reset() }}
+          style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #4f8eff, #9b7dff)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: T.font, color: '#fff' }}>
+          Sign In Now →
+        </button>
+      </div>
+    </div>
+  </div>
+)
 
   if (mode === 'signin') {
     return (
