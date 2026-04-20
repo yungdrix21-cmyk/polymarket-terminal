@@ -233,7 +233,7 @@ export default function Auth({ onLogin }) {
       if (err) {
         if (err.message.toLowerCase().includes('already') || err.message.toLowerCase().includes('registered')) {
           setError('An account with this email already exists. Please sign in instead.')
-        } else if (err.message.toLowerCase().includes('rate limit')) {
+        } else if (err.message.toLowerCase().includes('rate') || err.message.toLowerCase().includes('limit') || err.message.toLowerCase().includes('exceeded')) {
           setError('Too many signups right now. Please try again in a few minutes.')
         } else {
           setError(err.message)
