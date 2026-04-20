@@ -838,13 +838,22 @@ export default function App() {
         const { data, error } = await supabase.auth.getSession()
         if (error) console.error("Session error:", error)
         if (mounted) {
-          if (data?.session?.user) {
-            setUser(data.session.user)
-            await loadUserData(data.session.user.id)
-            setShowLanding(false)
-          } else {
-            setShowLanding(true)
-          }
+          const params = new URLSearchParams(window.location.search)
+const code = params.get('code')
+if (code) {
+  await supabase.auth.signOut()
+  setShowLanding(true)
+  setLoading(false)
+  sessionStorage.setItem('emailVerified', 'true')
+  window.history.replaceState(null, '', window.location.pathname)
+  return
+} else if (data?.session?.user) {
+  setUser(data.session.user)
+  await loadUserData(data.session.user.id)
+  setShowLanding(false)
+} else {
+  setShowLanding(true)
+}
         }
       } catch (err) {
         console.error("Auth crash:", err)
