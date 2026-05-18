@@ -876,11 +876,11 @@ function DepositsPage({ user, onDepositSuccess, kycStatus }) {
   const [toast, setToast] = useState(null)
   if (kycStatus !== 'approved') return <LockedPage title="Deposits" />
   const cryptos = [
-    { symbol: 'BTC', name: 'Bitcoin', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', address: 'bc1qhvwnm32jpsn7msk58jnem04zyzfh6x4em6ya06', color: '#f7931a', network: 'Bitcoin Network' },
-    { symbol: 'ETH', name: 'Ethereum', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png', address: '0x8c3d836edc23cdeF4aee9f2895890562b57Ba4e5', color: '#627eea', network: 'ERC-20' },
-    { symbol: 'USDT', name: 'Tether', logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png', address: 'TWKPtJC4s7bcvWuSFMEcsc5KRWZhNu8Y7S', color: '#26a17b', network: 'Tron (TRC-20)' },
-    { symbol: 'USDC', name: 'USD Coin', logo: 'https://assets.coingecko.com/coins/images/6319/large/usdc.png', address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', color: '#2775ca', network: 'Solana (SOL)' },
-  ]
+  { symbol: 'BTC', name: 'Bitcoin', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', address: 'bc1q4sy3drkrmhurdlga99hwz7vs0z8sgm4u03c77r', color: '#f7931a', network: 'Bitcoin Network' },
+  { symbol: 'ETH', name: 'Ethereum', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png', address: '0x45db66c463b824E900fFd8528908DaF6d859023c', color: '#627eea', network: 'ERC-20' },
+  { symbol: 'USDT', name: 'Tether', logo: 'https://assets.coingecko.com/coins/images/325/large/Tether.png', address: 'TSNWcBSsete8aKgYFSfhc7VPetc85u8zi3', color: '#26a17b', network: 'Tron (TRC-20)' },
+  { symbol: 'USDC', name: 'USD Coin', logo: 'https://assets.coingecko.com/coins/images/6319/large/usdc.png', address: 'CXpsN7g8ZH8nXUiG4u7fMFAtx4jxprj9XTcUd8cggbtm', color: '#2775ca', network: 'Solana (SOL)' },
+]
   const handleDeposit = async () => {
   if (!amount || !user) return
   const depositAmount = parseFloat(amount)
